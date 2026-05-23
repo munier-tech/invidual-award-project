@@ -85,14 +85,16 @@ export const useDailyQuranStore = create((set, get) => ({
       const res = await axios.get(`/dailyQuran/class/${classId}/date/${date}`);
       console.log("Class sessions by date response:", res.data);
       
-      // Handle different response structures
+      // Handle different response structures and prefer raw session objects
       let sessions = [];
-      if (res.data.data?.attendanceList) {
-        sessions = res.data.data.attendanceList;
-      } else if (res.data.data && res.data.data.sessions) {
+      if (res.data.data?.sessions) {
         sessions = res.data.data.sessions;
-      } else if (res.data.data) {
+      } else if (res.data.data?.attendanceList) {
+        sessions = res.data.data.attendanceList;
+      } else if (Array.isArray(res.data.data)) {
         sessions = res.data.data;
+      } else if (res.data.data) {
+        sessions = [res.data.data];
       }
       
       set({ 

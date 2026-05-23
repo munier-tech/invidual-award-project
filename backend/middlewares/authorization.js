@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import User from "../models/userModel.js";
+import Teachers from "../models/teachersModel.js";
 
 export const protectedRoute = async (req, res, next) => {
   try {
@@ -33,6 +34,12 @@ export const protectedRoute = async (req, res, next) => {
     }
 
     req.user = user;
+
+    if (user.role === "teacher") {
+      const teacher = await Teachers.findOne({ email: user.email }).populate('assignedClasses', 'name level');
+      req.teacher = teacher || null;
+    }
+
     next();
 
   } catch (error) {

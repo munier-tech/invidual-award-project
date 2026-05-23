@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import useTeachersStore from '../../store/teachersStore';
+import useClassesStore from '../../store/classesStore';
 import { 
   GraduationCap, Mail, Phone, BookOpen, FileText, User, 
   Search, Edit, Trash2, Save, X, Loader2, ChevronLeft, ChevronRight
@@ -14,11 +15,13 @@ const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 
 
 const GetAllTeachers = () => {
   const { teachers, fetchTeachers, deleteTeacher, updateTeacher, loading, deleting, updating } = useTeachersStore();
+  const { classes, fetchClasses } = useClassesStore();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [editingTeacher, setEditingTeacher] = useState(null);
   const [editForm, setEditForm] = useState({
     name: '', number: '', email: '', subject: '',
+    assignedClasses: [],
     profilePicture: null, certificate: null,
     previewImage: null, certificatePreview: null
   });
@@ -27,7 +30,7 @@ const GetAllTeachers = () => {
   const [selectedCertificate, setSelectedCertificate] = useState(null);
   const [showCertificateViewer, setShowCertificateViewer] = useState(false);
 
-  useEffect(() => { fetchTeachers(); }, [fetchTeachers]);
+  useEffect(() => { fetchTeachers(); fetchClasses(); }, [fetchTeachers, fetchClasses]);
 
   const handleSearch = (e) => { setSearchQuery(e.target.value); setCurrentPage(1); };
 
@@ -57,6 +60,7 @@ const GetAllTeachers = () => {
       number: teacher.number,
       email: teacher.email,
       subject: teacher.subject,
+      assignedClasses: teacher.assignedClasses?.map((cls) => cls._id) || [],
       profilePicture: null,
       certificate: null,
       previewImage: teacher.profilePicture,
@@ -67,6 +71,18 @@ const GetAllTeachers = () => {
   const handleEditChange = (e) => {
     const { name, value } = e.target;
     setEditForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleClassToggle = (classId) => {
+    setEditForm((prev) => {
+      const assignedClasses = prev.assignedClasses || [];
+      return {
+        ...prev,
+        assignedClasses: assignedClasses.includes(classId)
+          ? assignedClasses.filter((id) => id !== classId)
+          : [...assignedClasses, classId],
+      };
+    });
   };
 
   const convertFileToBase64 = (file, callback) => {
@@ -97,6 +113,7 @@ const GetAllTeachers = () => {
       number: editForm.number,
       email: editForm.email,
       subject: editForm.subject,
+      assignedClasses: editForm.assignedClasses,
       profilePicture: editForm.profilePicture,
       certificate: editForm.certificate
     };
@@ -176,6 +193,28 @@ const GetAllTeachers = () => {
                       </div>
 
                       <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Fasalada La Xushay</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto rounded-lg border border-gray-200 p-3 bg-white">
+                          {classes.length > 0 ? classes.map((cls) => {
+                            const isSelected = editForm.assignedClasses?.includes(cls._id);
+                            return (
+                              <button
+                                key={cls._id}
+                                type="button"
+                                onClick={() => handleClassToggle(cls._id)}
+                                className={`text-left rounded-lg border px-3 py-2 transition-all ${isSelected ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 bg-gray-50 text-gray-700 hover:bg-blue-50 hover:border-blue-300'}`}
+                              >
+                                <div className="font-semibold">{cls.name}</div>
+                                <div className="text-xs text-gray-500">{cls.level}</div>
+                              </button>
+                            );
+                          }) : (
+                            <div className="text-sm text-gray-500">Fasal ma jiro ama lama heli karo.</div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mb-4">
                         <label className="block text-sm font-medium text-gray-700 mb-1">Sawirka</label>
                         <div className="flex items-center space-x-4">
                           {editForm.previewImage ? (
@@ -220,6 +259,7 @@ const GetAllTeachers = () => {
                         <div className="flex items-start"><Mail className="flex-shrink-0 h-5 w-5 text-blue-500 mt-0.5"/><div className="ml-3"><p className="text-sm font-medium text-gray-500">Iimaylka</p><p className="text-sm text-gray-900 break-all">{teacher.email}</p></div></div>
                         <div className="flex items-start"><Phone className="flex-shrink-0 h-5 w-5 text-blue-500 mt-0.5"/><div className="ml-3"><p className="text-sm font-medium text-gray-500">Telefoonka</p><p className="text-sm text-gray-900">{teacher.number || 'Lama siin'}</p></div></div>
                         <div className="flex items-start"><BookOpen className="flex-shrink-0 h-5 w-5 text-blue-500 mt-0.5"/><div className="ml-3"><p className="text-sm font-medium text-gray-500">Qaybta</p><p className="text-sm text-gray-900">{teacher.subject}</p></div></div>
+                        <div className="flex items-start"><BookOpen className="flex-shrink-0 h-5 w-5 text-blue-500 mt-0.5"/><div className="ml-3"><p className="text-sm font-medium text-gray-500">Fasalada La Xushay</p><p className="text-sm text-gray-900">{teacher.assignedClasses && teacher.assignedClasses.length > 0 ? teacher.assignedClasses.map((cls) => cls.name).join(', ') : 'Lama qoondeyn'}</p></div></div>
                         <div className="flex items-start"><FileText className="flex-shrink-0 h-5 w-5 text-blue-500 mt-0.5"/><div className="ml-3"><p className="text-sm font-medium text-gray-500">Shahaadada</p>{teacher.certificate && teacher.certificate !== 'no certificate' ? <button onClick={() => handleViewCertificate(teacher.certificate, teacher.name)} className="text-sm text-blue-600 hover:text-blue-800 hover:underline cursor-pointer">Fiiri shahaadada</button> : <p className="text-sm text-gray-500 italic">Lama helin</p>}</div></div>
 
                         <div className="mt-6 flex space-x-3">

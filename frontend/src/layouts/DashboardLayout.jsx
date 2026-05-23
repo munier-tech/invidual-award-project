@@ -30,61 +30,67 @@ const menuItems = [
     text: 'Dashboard',
     icon: Home,
     path: '/dashboard',
-  },
-  {
-    text: 'Arday',
-    icon: Users,
-    path: '/students',
-    subItems: [
-      { text: 'dhamaan Ardayda', path: '/getAllStudents', icon: Users },
-      { text: 'Ku biiri Arday Cusub', path: '/createStudent', icon: PlusCircle },
-      { text: 'Ku biiri Arday badan oo Cusub', path: '/createMultipleStudents', icon: PlusCircle },
-      { text: 'Xogta Arday Gaara', path: '/getOneStudent', icon: FileSearch },
-    ]
-  },
-  {
-    text: 'Macalimiinta',
-    icon: GraduationCap,
-    path: '/getAllTeachers',
-        subItems: [
+    adminOnly: true,
+  },
+  {
+    text: 'Arday',
+    icon: Users,
+    path: '/students',
+    adminOnly: true,
+    subItems: [
+      { text: 'dhamaan Ardayda', path: '/getAllStudents', icon: Users },
+      { text: 'Ku biiri Arday Cusub', path: '/createStudent', icon: PlusCircle },
+      { text: 'Ku biiri Arday badan oo Cusub', path: '/createMultipleStudents', icon: PlusCircle },
+      { text: 'Xogta Arday Gaara', path: '/getOneStudent', icon: FileSearch },
+    ]
+  },
+  {
+    text: 'Macalimiinta',
+    icon: GraduationCap,
+    path: '/getAllTeachers',
+    adminOnly: true,
+    subItems: [
       { text: 'Dhamaan Macalimiinta', path: '/getAllTeachers', icon: Users },
       { text: 'Ku Biiri Macalin Cusub', path: '/addTeachers', icon: PlusCircle },
       { text: 'Xaadiriska Macilimiinta', path: '/createTeacherAttendance', icon: CalendarCheck },
       { text: 'Taarikhda Xaadiriska', path: '/GetTeacherAttendanceByDate', icon: Clock },
       { text: 'Mushaharka Macalimiinta', path: '/teacherSalaries', icon: DollarSign },
     ]
-  },
-  {
-    text: 'Fasalada',
-    icon: BookOpen,
-    path: '/classes',
-    subItems: [
-      { text: 'Dhamaan Fasalada', path: '/getAll', icon: Layers },
-      { text: 'Fasal cusub abuur', path: '/addClass', icon: PlusCircle },
-    ]
-  },
-  {
-    text: 'Cashar maalinle',
-    icon: BookOpen,
-    path: '/casharmalinle',
-    subItems: [
-      { text: 'Abuur cashar maalinle', path: '/CreateDailyQuranSession', icon: Layers },
-    ]
-  },
-  {
-    text: 'Imtixaanaadka',
-    icon: ClipboardList,
-    path: '/allExams',
-    subItems: [
-      { text: 'Dhamaan Imtixinaadka Class yada', path: '/allExams', icon: BookCheck },
-      { text: 'Gali imtixaan Arday Khaasa', path: '/addExams', icon: PlusCircle },
-      { text: 'Gali Imtixan Fasal', path: '/addClassExams', icon: PlusCircle },
-    ]
-  },
-    {
+  },
+  {
+    text: 'Fasalada',
+    icon: BookOpen,
+    path: '/classes',
+    adminOnly: true,
+    subItems: [
+      { text: 'Dhamaan Fasalada', path: '/getAll', icon: Layers },
+      { text: 'Fasal cusub abuur', path: '/addClass', icon: PlusCircle },
+    ]
+  },
+  {
+    text: 'Cashar maalinle',
+    icon: BookOpen,
+    path: '/casharmalinle',
+    subItems: [
+      { text: 'Abuur cashar maalinle', path: '/CreateDailyQuranSession', icon: Layers },
+      { text: 'Diiwaanka casharrada', path: '/daily-quran/records', icon: List },
+    ]
+  },
+  {
+    text: 'Imtixaanaadka',
+    icon: ClipboardList,
+    path: '/allExams',
+    subItems: [
+      { text: 'Dhamaan Imtixinaadka Class yada', path: '/allExams', icon: BookCheck },
+      { text: 'Gali imtixaan Arday Khaasa', path: '/addExams', icon: PlusCircle },
+      { text: 'Gali Imtixan Fasal', path: '/addClassExams', icon: PlusCircle },
+    ]
+  },
+  {
     text: 'Maadooyinka',
     icon: BookKey,
     path: '/AllSubjects',
+    adminOnly: true,
     subItems: [
       { text: 'Dhamaan Maadooyinka', path: '/AllSubjects', icon: BookOpen },
       { text: 'Abuur Maado Cusub', path: '/AddSubjects', icon: PlusCircle },
@@ -100,44 +106,40 @@ const menuItems = [
       { text: 'Maamul Xalqooyin (Subcis)', path: '/subci/manage', icon: Layers },
     ]
   },
-  {
-    text: 'Arimaha Ardayga',
-    icon: User2,
-    path: '/studentHealth',
-        subItems: [
+  {
+    text: 'Arimaha Ardayga',
+    icon: User2,
+    path: '/studentHealth',
+    subItems: [
       { text: 'Xogta Caafimadka', path: '/studentHealth', icon: HeartPulse },
       { text: 'Xogta Imtixinaadka', path: '/studentExams', icon: BookCheck },
       { text: 'Xogta Anshaxa', path: '/studentdiscipline', icon: Gavel },
     ]
-  },
-  {
-    text: 'Arimaha Fee ga',
-    icon: User2,
-    path: '/studentFees',
-        subItems: [
+  },
+  {
+    text: 'Arimaha Fee ga',
+    icon: User2,
+    path: '/studentFees',
+    adminOnly: true,
+    subItems: [
       { text: 'Fee ga Ardayga', path: '/studentFees', icon: DollarSign },
       { text: 'Fee ga Qoyska', path: '/familyFees', icon: Wallet },
     ]
-  },
-  {
-    text: 'Xaadiris',
-    icon: CalendarCheck,
-    path: '/attendance',
-    subItems: [
-      { text: 'Raadi Xaadiriska', path: '/AttendanceByDate', icon: FileSearch },
-      { text: 'Abuur Xaadirska Fasalka', path: '/createAttendance', icon: ClipboardCheck },
-    ]
-  },
-    {
+  },
+  {
+    text: 'Xaadiris',
+    icon: CalendarCheck,
+    path: '/attendance',
+    subItems: [
+      { text: 'Raadi Xaadiriska', path: '/AttendanceByDate', icon: FileSearch },
+      { text: 'Abuur Xaadirska Fasalka', path: '/createAttendance', icon: ClipboardCheck },
+    ]
+  },
+  {
     text: 'Dhaqaalaha',
     icon: DollarSign,
     path: '/finance',
-    subItems: [
-      { text: 'Maamulka Dhaqaalaha', path: '/finance', icon: DollarSign },
-      { text: 'Ku dar Dhaqaale Cusub', path: '/finance/add', icon: PlusCircle },
-      { text: 'Faahfaahinta Dhaqaalaha', path: '/finance/summary', icon: PieChart },
-      { text: 'Eeg Dhammaan', path: '/finance/getAll', icon: List },
-    ]
+    adminOnly: true,
   },
   {
     text: 'Maamulka isticmaalayaasha',
@@ -174,7 +176,10 @@ function DashboardLayout({ children }) {
       });
     }
 
-    const currentParent = menuItems.find(item => location.pathname.startsWith(item.path));
+    const currentParent = menuItems.find(item =>
+      location.pathname.startsWith(item.path) ||
+      item.subItems?.some(subItem => location.pathname === subItem.path)
+    );
     if (currentParent && currentParent.subItems) {
       setActiveParent(currentParent.text);
     } else {
@@ -218,7 +223,9 @@ function DashboardLayout({ children }) {
       <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto custom-scrollbar">
         {filteredMenuItems.map((item) => {
           const Icon = item.icon;
-          const isActive = location.pathname.startsWith(item.path);
+          const isActive =
+            location.pathname.startsWith(item.path) ||
+            item.subItems?.some(subItem => location.pathname === subItem.path);
           const isParentActive = activeParent === item.text;
 
           return (

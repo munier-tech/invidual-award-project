@@ -1,3 +1,4 @@
+import Class from "../models/classModel.js";
 import Teachers from "../models/teachersModel.js";
 import cloudinary from "../lib/cloudinary.js";
 
@@ -14,10 +15,18 @@ const getPublicIdFromUrl = (url) => {
 // 1. Create Teacher
 export const createTeacher = async (req, res) => {
   try {
-    const { name, number, email, subject, profilePicture, certificate } = req.body;
+    const { name, number, email, subject, profilePicture, certificate, assignedClasses } = req.body;
 
     if (!name || !number || !email || !subject) {
       return res.status(400).json({ message: "Fadlan buuxi dhammaan meelaha loo baahan yahay" });
+    }
+
+    let validClasses = [];
+    if (assignedClasses && Array.isArray(assignedClasses) && assignedClasses.length > 0) {
+      validClasses = await Class.find({ _id: { $in: assignedClasses } }).select('_id');
+      if (validClasses.length !== assignedClasses.length) {
+        return res.status(400).json({ message: "Fasalka qaar lama helin ama xogta waa khalad" });
+      }
     }
 
     // Upload profile picture if provided
@@ -51,9 +60,11 @@ export const createTeacher = async (req, res) => {
       subject,
       profilePicture: profileUrl,
       certificate: certificateUrl,
+      assignedClasses: validClasses.map(cls => cls._id),
     });
 
     await teacher.save();
+    await teacher.populate('assignedClasses', 'name level');
     res.status(201).json({ message: "Macallinka si guul leh ayaa loo abuuray", teacher });
   } catch (error) {
     console.error(error);
@@ -64,7 +75,10 @@ export const createTeacher = async (req, res) => {
 // 2. Get all Teachers
 export const getAllTeachers = async (req, res) => {
   try {
-    const teachers = await Teachers.find({}).sort({ createdAt: -1 });
+    const query = {};
+    const options = { sort: { createdAt: -1 } };
+
+    const teachers = await Teachers.find(query, null, options).populate('assignedClasses', 'name level');
     res.status(200).json({ message: "Macallimiinta si guul leh ayaa loo helay", teachers });
   } catch (error) {
     console.error("Error in getAllTeachers:", error);
@@ -76,7 +90,7 @@ export const getAllTeachers = async (req, res) => {
 export const getTeacherById = async (req, res) => {
   try {
     const { teacherId } = req.params;
-    const teacher = await Teachers.findById(teacherId);
+    const teacher = await Teachers.findById(teacherId).populate('assignedClasses', 'name level');
     if (!teacher) return res.status(404).json({ message: "Macallin lama helin" });
     res.status(200).json({ message: "Macallinka si guul leh ayaa loo helay", teacher });
   } catch (error) {
@@ -89,10 +103,19 @@ export const getTeacherById = async (req, res) => {
 export const updateTeacher = async (req, res) => {
   try {
     const { teacherId } = req.params;
-    const { name, number, email, subject, profilePicture, certificate } = req.body;
+    const { name, number, email, subject, profilePicture, certificate, assignedClasses } = req.body;
 
     const teacher = await Teachers.findById(teacherId);
     if (!teacher) return res.status(404).json({ message: "Macallin lama helin" });
+
+    let validClasses = teacher.assignedClasses || [];
+    if (assignedClasses && Array.isArray(assignedClasses)) {
+      const foundClasses = await Class.find({ _id: { $in: assignedClasses } }).select('_id');
+      if (foundClasses.length !== assignedClasses.length) {
+        return res.status(400).json({ message: "Fasalka qaar lama helin ama xogta waa khalad" });
+      }
+      validClasses = foundClasses.map(cls => cls._id);
+    }
 
     // Update profile picture if provided
     if (profilePicture) {
@@ -133,6 +156,7 @@ export const updateTeacher = async (req, res) => {
     teacher.number = number || teacher.number;
     teacher.email = email || teacher.email;
     teacher.subject = subject || teacher.subject;
+    teacher.assignedClasses = validClasses;
 
     await teacher.save();
 

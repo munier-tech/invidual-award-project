@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useExamStore } from "../../store/examStore";
 import { useSubjectStore } from "../../store/subjectsStore";
 import useClassesStore from "../../store/classesStore";
@@ -17,6 +17,7 @@ const translations = {
   loading: "Soo dejinta natiijooyinka...",
   noResults: "Natiijooyin lama helin",
   tableHeaders: {
+    rank: "Kaalinta",
     student: "Arday",
     obtained: "Qiimaha",
     total: "Wadarta",
@@ -72,6 +73,28 @@ const GetClassExams = () => {
     }
     getExamsByClassAndYear(form);
   };
+
+  const getPercentage = (exam) => {
+    const obtained = Number(exam?.obtainedMarks ?? exam?.marks ?? 0);
+    const total = Number(exam?.totalMarks ?? exam?.total ?? 0);
+
+    return total > 0 ? (obtained / total) * 100 : 0;
+  };
+
+  const rankedExams = useMemo(() => {
+    const sortedExams = [...(exams || [])].sort((a, b) => getPercentage(b) - getPercentage(a));
+
+    return sortedExams.reduce((ranked, exam, index) => {
+      const previousExam = sortedExams[index - 1];
+      const previousRankedExam = ranked[index - 1];
+      const rank = index > 0 && getPercentage(exam) === getPercentage(previousExam)
+        ? previousRankedExam.rank
+        : index + 1;
+
+      ranked.push({ ...exam, rank });
+      return ranked;
+    }, []);
+  }, [exams]);
 
   // Calculate grade with color
   const getGrade = (obtained, total) => {
@@ -227,11 +250,11 @@ const GetClassExams = () => {
           </div>
         )}
 
-        {(exams || []).length > 0 ? (
+        {rankedExams.length > 0 ? (
           <div>
             <div className="flex justify-end mb-4">
               {(() => {
-                const tableRows = (exams || []).map((exam) => {
+                const tableRows = rankedExams.map((exam) => {
                   const percentage = ((exam?.obtainedMarks || 0) / (exam?.totalMarks || 100)) * 100;
                   let grade = 'F';
                   if (percentage >= 90) grade = 'A';
@@ -240,6 +263,7 @@ const GetClassExams = () => {
                   else if (percentage >= 60) grade = 'D';
 
                   return '<tr>' +
+                    '<td>' + exam.rank + '</td>' +
                     '<td>' + (exam?.student?.fullname || "N/A") + '</td>' +
                     '<td>' + (exam?.student?.class?.name || "") + '</td>' +
                     '<td>' + (exam?.obtainedMarks ?? exam?.marks ?? "N/A") + '</td>' +
@@ -277,39 +301,39 @@ const GetClassExams = () => {
                           </div>
                           <div class="info-item">
                             <span class="info-key">Wadarta Ardayda:</span>
-                            <span class="info-value">${exams.length}</span>
+                            <span class="info-value">${rankedExams.length}</span>
                           </div>
                           <div class="info-item">
                             <span class="info-key">Celceliska Dhibcaha:</span>
-                            <span class="info-value">${exams.length > 0 ? Math.round((exams.reduce((sum, exam) => sum + (exam?.obtainedMarks || 0), 0) / exams.length)) : 0}%</span>
+                            <span class="info-value">${rankedExams.length > 0 ? Math.round((rankedExams.reduce((sum, exam) => sum + (exam?.obtainedMarks || 0), 0) / rankedExams.length)) : 0}%</span>
                           </div>
                         </div>
                       </div>
                       
                       <div class="summary-stats">
                         <div class="stat-item">
-                          <div class="stat-number">${exams.filter(exam => {
+                          <div class="stat-number">${rankedExams.filter(exam => {
                             const percentage = ((exam?.obtainedMarks || 0) / (exam?.totalMarks || 100)) * 100;
                             return percentage >= 90;
                           }).length}</div>
                           <div class="stat-label">Darajada A</div>
                         </div>
                         <div class="stat-item">
-                          <div class="stat-number">${exams.filter(exam => {
+                          <div class="stat-number">${rankedExams.filter(exam => {
                             const percentage = ((exam?.obtainedMarks || 0) / (exam?.totalMarks || 100)) * 100;
                             return percentage >= 80 && percentage < 90;
                           }).length}</div>
                           <div class="stat-label">Darajada B</div>
                         </div>
                         <div class="stat-item">
-                          <div class="stat-number">${exams.filter(exam => {
+                          <div class="stat-number">${rankedExams.filter(exam => {
                             const percentage = ((exam?.obtainedMarks || 0) / (exam?.totalMarks || 100)) * 100;
                             return percentage >= 70 && percentage < 80;
                           }).length}</div>
                           <div class="stat-label">Darajada C</div>
                         </div>
                         <div class="stat-item">
-                          <div class="stat-number">${exams.filter(exam => {
+                          <div class="stat-number">${rankedExams.filter(exam => {
                             const percentage = ((exam?.obtainedMarks || 0) / (exam?.totalMarks || 100)) * 100;
                             return percentage < 70;
                           }).length}</div>
@@ -320,6 +344,7 @@ const GetClassExams = () => {
                       <table>
                         <thead>
                           <tr>
+                            <th>Kaalinta</th>
                             <th>Magaca Ardayga</th>
                             <th>Fasalka</th>
                             <th>Dhibcaha La Helay</th>
@@ -342,6 +367,9 @@ const GetClassExams = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {translations.tableHeaders.rank}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       <FiUser className="inline mr-1" /> {translations.tableHeaders.student}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -359,8 +387,11 @@ const GetClassExams = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {(exams || []).map((exam) => (
+                  {rankedExams.map((exam) => (
                     <tr key={exam._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-indigo-700">
+                        #{exam.rank}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="ml-4">

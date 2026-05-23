@@ -1,17 +1,20 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { GraduationCap, Upload, X, User, FileText, Save } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import useTeachersStore from '../../store/teachersStore';
+import useClassesStore from '../../store/classesStore';
 import { motion } from 'framer-motion';
 
 const CreateTeachers = ({ onClose }) => {
   const { createTeacher } = useTeachersStore();
+  const { classes, fetchClasses } = useClassesStore();
   const [formData, setFormData] = useState({
     name: '',
     number: '',
     email: '',
     subject: ''
   });
+  const [assignedClasses, setAssignedClasses] = useState([]);
   const [profilePicture, setProfilePicture] = useState(null);
   const [certificate, setCertificate] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
@@ -19,6 +22,18 @@ const CreateTeachers = ({ onClose }) => {
 
   const profileInputRef = useRef(null);
   const certInputRef = useRef(null);
+
+  useEffect(() => {
+    fetchClasses();
+  }, [fetchClasses]);
+
+  const handleClassToggle = (classId) => {
+    setAssignedClasses((prev) =>
+      prev.includes(classId)
+        ? prev.filter((id) => id !== classId)
+        : [...prev, classId]
+    );
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -55,6 +70,7 @@ const CreateTeachers = ({ onClose }) => {
       // Send JSON instead of FormData
       const teacherPayload = {
         ...formData,
+        assignedClasses,
         profilePicture, // Base64 string or null
         certificate     // Base64 string or null
       };
@@ -154,6 +170,31 @@ const CreateTeachers = ({ onClose }) => {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
+          </div>
+
+          {/* Assigned Classes */}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Fasalada La Xushay</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto rounded-lg border border-gray-200 p-3 bg-white">
+              {classes.length > 0 ? (
+                classes.map((cls) => {
+                  const isSelected = assignedClasses.includes(cls._id);
+                  return (
+                    <button
+                      key={cls._id}
+                      type="button"
+                      onClick={() => handleClassToggle(cls._id)}
+                      className={`text-left rounded-lg border px-3 py-2 transition-all ${isSelected ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 bg-gray-50 text-gray-700 hover:bg-blue-50 hover:border-blue-300'}`}
+                    >
+                      <div className="font-semibold">{cls.name}</div>
+                      <div className="text-xs text-gray-500">{cls.level}</div>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="text-sm text-gray-500">Fasal ma jiro ama lama heli karo.</div>
+              )}
+            </div>
           </div>
         </div>
 

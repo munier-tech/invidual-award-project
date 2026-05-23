@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import useClassesStore from '../../store/classesStore'
 import axios from '../../config/axios'
@@ -60,6 +60,87 @@ const statusConfig = {
     gradient: 'from-red-400 to-rose-500'
   }
 }
+
+const StudentPerformanceRow = memo(function StudentPerformanceRow({ student, idx, row, onChange }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: idx * 0.03 }}
+      className="bg-white rounded-lg border border-gray-200 p-3 hover:shadow-md transition-shadow"
+    >
+      <div className="flex items-start gap-3">
+        <div className="flex-shrink-0">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold">
+            {student.fullname?.charAt(0) || '?'}
+          </div>
+        </div>
+
+        <div className="flex-1 space-y-3">
+          <div>
+            <h4 className="font-semibold text-gray-900">{student.fullname}</h4>
+            <p className="text-xs text-gray-500">ID: {student.studentId || '-'}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-600 block mb-1">Cashar (bog)</label>
+              <input
+                value={row?.dailyLessonHint || ''}
+                onChange={e => onChange(idx, 'dailyLessonHint', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                placeholder="Casharka"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-600 block mb-1">Suuro</label>
+              <input
+                value={row?.currentSurah || ''}
+                onChange={e => onChange(idx, 'currentSurah', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                placeholder="Suuro"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-600 block mb-1">Taxdiid</label>
+              <input
+                value={row?.taxdiid || ''}
+                onChange={e => onChange(idx, 'taxdiid', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                placeholder="Taxdiid"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-600 block mb-1">Xaalad</label>
+              <select
+                value={row?.studentStatus || 'dhexda_maraya'}
+                onChange={e => onChange(idx, 'studentStatus', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+              >
+                <option value="gaadhay">Gaadhay</option>
+                <option value="dhexda_maraya">Dhexda maraya</option>
+                <option value="aad_uga_fog">Aad uga fog</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-600 block mb-1">Faallo</label>
+            <input
+              value={row?.notes || ''}
+              onChange={e => onChange(idx, 'notes', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+              placeholder="Faallo dheeraad ah..."
+            />
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )
+})
 
 function QuranSection() {
   const { classes, fetchClasses } = useClassesStore()
@@ -172,6 +253,15 @@ function QuranSection() {
       toast.error('Kaydintu wey fashilantay') 
     } finally { 
       setSaving(false) 
+    }
+  }
+
+  const preventEnterSubmitWhileTyping = (e) => {
+    const tagName = e.target.tagName?.toLowerCase()
+    const isTextField = tagName === 'input' || tagName === 'select' || tagName === 'textarea'
+
+    if (e.key === 'Enter' && isTextField) {
+      e.preventDefault()
     }
   }
 
@@ -292,7 +382,7 @@ function QuranSection() {
     </motion.div>
   )
 
-  const StudentPerformanceRow = ({ student, idx, row, onChange }) => (
+  const InlineStudentPerformanceRow = ({ student, idx, row, onChange }) => (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
@@ -754,7 +844,7 @@ function QuranSection() {
                       </p>
                     </div>
                   ) : (
-                    <form onSubmit={saveRecord} className="space-y-4">
+                    <form onSubmit={saveRecord} onKeyDown={preventEnterSubmitWhileTyping} className="space-y-4">
                       <div className="max-h-96 overflow-auto space-y-3">
                         {students.map((student, idx) => (
                           <StudentPerformanceRow

@@ -51,7 +51,7 @@ const formVariants = {
 
 function Login() {
   const navigate = useNavigate()
-  const { login, isLoading, isAuthenticated } = useAuthStore()
+  const { login, isLoading, isAuthenticated, user } = useAuthStore()
   const [showPassword, setShowPassword] = React.useState(false)
 
   const {
@@ -64,14 +64,15 @@ function Login() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard')
+      navigate(user?.role === 'teacher' ? '/quran' : '/dashboard')
     }
-  }, [isAuthenticated, navigate])
+  }, [isAuthenticated, navigate, user])
 
   const onSubmit = async (data) => {
     const result = await login(data)
     if (result.success) {
-      navigate('/dashboard')
+      const destination = result.user?.role === 'teacher' ? '/quran' : '/dashboard'
+      navigate(destination)
     }
   }
 

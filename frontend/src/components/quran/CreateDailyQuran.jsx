@@ -986,7 +986,7 @@ const CreateDailyQuranSession = () => {
             </div>
             
             <Link
-              to="/daily-quran/view"
+              to="/daily-quran/records"
               className="px-4 py-3 bg-blue-800 hover:bg-blue-900 text-white rounded-lg flex items-center justify-center transition-colors w-full md:w-auto min-h-[44px]"
             >
               <FiEye className="mr-2" />

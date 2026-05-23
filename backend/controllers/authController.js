@@ -21,10 +21,10 @@ export const SignUp = async (req, res) => {
 
     let teacher = null;
 
-    if (role === "teacher" || role !== "admin") {
-      teacher = await Teachers.findOne({ email: normalizedEmail });
+    if (role === "teacher") {
+      teacher = await Teachers.findOne({ email: normalizedEmail }).populate('assignedClasses', 'name level');
       if (!teacher) {
-        return res.status(400).json({ message: "fadlan lama helin macalin , fadlan la xidhiidh maamulka " });
+        return res.status(400).json({ message: "Fadlan lama helin macalin, fadlan la xidhiidh maamulka" });
       }
     }
     
@@ -49,15 +49,21 @@ export const SignUp = async (req, res) => {
 
     await newUser.save();
 
+    const signedUpUser = {
+      _id: newUser._id,
+      username: newUser.username,
+      email: newUser.email,
+      role: newUser.role,
+      profilePicture: newUser.profilePicture,
+    };
+
+    if (teacher) {
+      signedUpUser.assignedClasses = teacher.assignedClasses || [];
+    }
+
     res.status(201).json({ 
       message: "Isticmaalaha si guul leh ayaa loo abuuray", 
-      user: {
-        _id: newUser._id,
-        username: newUser.username,
-        email: newUser.email,
-        role: newUser.role,
-        profilePicture: newUser.profilePicture
-      } 
+      user: signedUpUser
     });
   } catch (error) {
     console.error("Error in SignUp function: ", error);
@@ -110,6 +116,13 @@ export const SignIn = async (req, res) => {
       profilePicture: user.profilePicture,
     };
 
+    if (user.role === "teacher") {
+      const teacher = await Teachers.findOne({ email: normalizedEmail }).populate('assignedClasses', 'name level');
+      if (teacher) {
+        userData.assignedClasses = teacher.assignedClasses || [];
+      }
+    }
+
     res.status(200).json({ 
       message: "Si guul leh ayaad u gashay", 
       user: userData 
@@ -148,6 +161,13 @@ export const WhoAmI = async (req, res) => {
       role: user.role,
       profilePicture: user.profilePicture,
     };
+
+    if (user.role === "teacher") {
+      const teacher = await Teachers.findOne({ email: user.email }).populate('assignedClasses', 'name level');
+      if (teacher) {
+        userData.assignedClasses = teacher.assignedClasses || [];
+      }
+    }
 
     res.status(200).json({ 
       message: "Isticmaale si guul leh ayaa loo helay", 

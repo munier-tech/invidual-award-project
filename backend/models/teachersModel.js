@@ -37,6 +37,12 @@ export const teachersSchema = new mongoose.Schema({
     required: false,
     trim: true,
   },
+  assignedClasses: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Class",
+    },
+  ],
   salaryRecords: [
     {
       type: mongoose.Schema.Types.ObjectId,

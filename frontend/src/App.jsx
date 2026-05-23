@@ -51,6 +51,7 @@ import FamilyFees from './fees/FamilyFees';
 import CreateMultipleStudents from './components/students/CreateMultipeStudents';
 import CreateDailyQuranSession from './components/quran/CreateDailyQuran';
 import DailyQuranLessonHistory from './components/quran/DailyQuranLessonHistory';
+import ViewDailyQuranRecords from './components/quran/ViewDailyQuranRecords';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -110,7 +111,7 @@ const PublicRoute = ({ children }) => {
 };
 
 function App() {
-  const { checkAuth } = useAuthStore();
+  const { checkAuth, user } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -241,6 +242,14 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/daily-quran/records"
+        element={
+          <ProtectedRoute>
+            <ViewDailyQuranRecords />
+          </ProtectedRoute>
+        }
+      />
 
       <Route
         path="/subci"
@@ -257,9 +266,7 @@ function App() {
         path="/subci/manage"
         element={
           <ProtectedRoute>
-            <AdminRoute>
-              <SubcisManage />
-            </AdminRoute>
+            <SubcisManage />
           </ProtectedRoute>
         }
       />
@@ -268,9 +275,7 @@ function App() {
         path="/quran"
         element={
           <ProtectedRoute>
-            <AdminRoute>
-              <QuranSection />
-            </AdminRoute>
+            <QuranSection />
           </ProtectedRoute>
         }
       />
@@ -451,9 +456,7 @@ function App() {
         path="/studentHealth"
         element={
           <ProtectedRoute>
-            <AdminRoute>
             <HealthFile/>
-            </AdminRoute>
           </ProtectedRoute>
         }
       />
@@ -565,8 +568,8 @@ function App() {
       />
 
       {/* Redirects */}
-      <Route path="/" element={<Navigate to="/health" replace />} />
-      <Route path="*" element={<Navigate to="/health" replace />} />
+      <Route path="/" element={<Navigate to={user?.role === 'teacher' ? '/quran' : '/dashboard'} replace />} />
+      <Route path="*" element={<Navigate to={user?.role === 'teacher' ? '/quran' : '/dashboard'} replace />} />
       </Routes>
     </ThemeProvider>
   );

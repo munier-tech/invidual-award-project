@@ -2,6 +2,17 @@ import Class from "../models/classModel.js";
 import DailyQuran from "../models/dailyQuranModel.js";
 import Student from "../models/studentsModel.js";
 
+const getAllowedTeacherClassIds = (req) => {
+  if (req.user?.role !== 'teacher') return null;
+  return req.teacher?.assignedClasses?.map((cls) => String(cls._id)) || [];
+};
+
+const verifyTeacherClassAccess = (req, classId) => {
+  if (req.user?.role !== 'teacher') return true;
+  const allowedIds = getAllowedTeacherClassIds(req);
+  return allowedIds.includes(String(classId));
+};
+
 // Helper function to normalize date (set to beginning of day)
 const normalizeDate = (date) => {
   const normalized = new Date(date);
@@ -75,6 +86,13 @@ export const createDailyQuran = async (req, res) => {
       });
     }
 
+    if (req.user?.role === 'teacher' && !verifyTeacherClassAccess(req, actualClassId)) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden - Uma aadan haysan fasalkan"
+      });
+    }
+
     // Create session with specific date and details
     const dailyQuran = await DailyQuran.create({
       student,
@@ -121,6 +139,13 @@ export const updateDailyQuran = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Casharka lama helin"
+      });
+    }
+
+    if (req.user?.role === 'teacher' && !verifyTeacherClassAccess(req, dailyQuran.class)) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden - Uma aadan haysan fasalkan"
       });
     }
 
@@ -181,6 +206,23 @@ export const getStudentSessions = async (req, res) => {
     const { studentId } = req.params;
     
     let query = { student: studentId };
+
+    if (req.user?.role === 'teacher') {
+      const student = await Student.findById(studentId).select('class');
+      if (!student) {
+        return res.status(404).json({
+          success: false,
+          message: "Ardayga lama helin"
+        });
+      }
+
+      if (!verifyTeacherClassAccess(req, student.class)) {
+        return res.status(403).json({
+          success: false,
+          message: "Forbidden - Uma aadan haysan ardaygan"
+        });
+      }
+    }
 
     // Filter by date range
     if (startDate && endDate) {
@@ -273,6 +315,13 @@ export const getTodaySessions = async (req, res) => {
     const today = normalizeDate(new Date());
     const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
+    if (req.user?.role === 'teacher' && !verifyTeacherClassAccess(req, req.params.classId)) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden - Uma aadan haysan fasalkan"
+      });
+    }
+
     const sessions = await DailyQuran.find({
       class: req.params.classId,
       date: {
@@ -324,6 +373,13 @@ export const createBulkSessions = async (req, res) => {
 
     // Validate class exists
     const classExists = await Class.findById(classId);
+    if (req.user?.role === 'teacher' && !verifyTeacherClassAccess(req, classId)) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden - Uma aadan haysan fasalkan"
+      });
+    }
+
     if (!classExists) {
       return res.status(404).json({
         success: false,
@@ -532,6 +588,13 @@ export const getClassSessionsByDate = async (req, res) => {
       });
     }
 
+    if (req.user?.role === 'teacher' && !verifyTeacherClassAccess(req, classId)) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden - Uma aadan haysan fasalkan"
+      });
+    }
+
     // Parse and normalize date
     let sessionDate;
     try {
@@ -570,7 +633,7 @@ export const getClassSessionsByDate = async (req, res) => {
     console.log(`Found ${sessions.length} sessions for date ${date}`);
 
     // Get all students in the class
-    const allStudents = await Student.find({ classId })
+    const allStudents = await Student.find({ class: classId })
       .select('_id fullname studentId phone fatherNumber motherNumber')
       .sort({ fullname: 1 })
       .lean();
@@ -654,6 +717,13 @@ export const getClassSessions = async (req, res) => {
     const { classId } = req.params;
     const { date, startDate, endDate } = req.query;
     
+    if (req.user?.role === 'teacher' && !verifyTeacherClassAccess(req, classId)) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden - Uma aadan haysan fasalkan"
+      });
+    }
+
     let query = { class: classId };
     
     // Filter by single date

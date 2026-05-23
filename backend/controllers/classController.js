@@ -2,6 +2,12 @@ import Attendance from "../models/attendanceModel.js";
 import Class from "../models/classModel.js";
 import Student from "../models/studentsModel.js";
 
+const verifyTeacherClassAccess = (req, classId) => {
+  if (req.user?.role !== 'teacher') return true;
+  const assignedIds = req.teacher?.assignedClasses?.map((cls) => String(cls._id)) || [];
+  return assignedIds.includes(String(classId));
+};
+
 // ✅ Abuur fasal cusub
 export const createClass = async (req, res) => {
   try {
@@ -29,6 +35,12 @@ export const createClass = async (req, res) => {
 // ✅ Soo hel dhammaan fasalada
 export const getAllClasses = async (req, res) => {
   try {
+    if (req.user?.role === 'teacher') {
+      const classIds = req.teacher?.assignedClasses?.map((cls) => cls._id) || [];
+      const classes = await Class.find({ _id: { $in: classIds } }).populate("students attendance");
+      return res.status(200).json({ classes });
+    }
+
     const classes = await Class.find().populate("students attendance");
     res.status(200).json({ classes });
   } catch (error) {
@@ -40,6 +52,11 @@ export const getAllClasses = async (req, res) => {
 export const getClassById = async (req, res) => {
   try {
     const { classId } = req.params;
+
+    if (req.user?.role === 'teacher' && !verifyTeacherClassAccess(req, classId)) {
+      return res.status(403).json({ message: "Forbidden - Uma aadan haysan fasalkan" });
+    }
+
     const classData = await Class.findById(classId).populate("students");
 
     if (!classData) {
@@ -148,6 +165,10 @@ export const getClassAttendance = async (req, res) => {
   try {
     const { classId } = req.params;
 
+    if (req.user?.role === 'teacher' && !verifyTeacherClassAccess(req, classId)) {
+      return res.status(403).json({ message: "Forbidden - Uma aadan haysan fasalkan" });
+    }
+
     const foundClass = await Class.findById(classId).populate({
       path: "attendance",
       populate: {
@@ -175,6 +196,10 @@ export const getClassAttendance = async (req, res) => {
 export const getClassStudents = async (req, res) => {
   try {
     const { classId } = req.params;
+
+    if (req.user?.role === 'teacher' && !verifyTeacherClassAccess(req, classId)) {
+      return res.status(403).json({ message: "Forbidden - Uma aadan haysan fasalkan" });
+    }
 
     const classData = await Class.findById(classId).populate({
       path: "students",
