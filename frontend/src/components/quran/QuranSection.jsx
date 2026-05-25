@@ -41,6 +41,15 @@ const statusConfig = {
     border: 'border-green-200',
     gradient: 'from-green-400 to-emerald-500'
   },
+  wuu_dhaafay: {
+    label: 'Wuu dhaafay',
+    color: 'blue',
+    icon: TrendingUp,
+    bgLight: 'bg-blue-50',
+    textLight: 'text-blue-700',
+    border: 'border-blue-200',
+    gradient: 'from-blue-400 to-cyan-500'
+  },
   dhexda_maraya: {
     label: 'Dhexda maraya',
     color: 'yellow',
@@ -121,6 +130,7 @@ const StudentPerformanceRow = memo(function StudentPerformanceRow({ student, idx
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
               >
                 <option value="gaadhay">Gaadhay</option>
+                <option value="wuu_dhaafay">Wuu dhaafay</option>
                 <option value="dhexda_maraya">Dhexda maraya</option>
                 <option value="aad_uga_fog">Aad uga fog</option>
               </select>
@@ -441,6 +451,7 @@ function QuranSection() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
               >
                 <option value="gaadhay">✅ Gaadhay</option>
+                <option value="wuu_dhaafay">Wuu dhaafay</option>
                 <option value="dhexda_maraya">🔄 Dhexda maraya</option>
                 <option value="aad_uga_fog">⚠️ Aad uga fog</option>
               </select>
@@ -596,6 +607,7 @@ function QuranSection() {
                         className="border rounded px-2 py-1 text-sm"
                       >
                         <option value="gaadhay">Gaadhay</option>
+                        <option value="wuu_dhaafay">Wuu dhaafay</option>
                         <option value="dhexda_maraya">Dhexda maraya</option>
                         <option value="aad_uga_fog">Aad uga fog</option>
                       </select>

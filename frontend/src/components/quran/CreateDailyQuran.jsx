@@ -547,7 +547,7 @@ const CreateDailyQuranSession = () => {
   // Get status button style
   const getStatusStyle = (status, currentStatus) => {
     const isActive = status === currentStatus;
-    const baseClasses = "px-3 py-2 rounded-md text-sm flex items-center justify-center min-h-[36px] min-w-[80px] transition-all duration-200";
+    const baseClasses = "px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm flex-1 sm:flex-initial flex items-center justify-center min-h-[36px] transition-all duration-200";
     
     switch(status) {
       case 'gartay':
@@ -970,45 +970,45 @@ const CreateDailyQuranSession = () => {
   const successRate = statistics.total > 0 ? ((statistics.gartay / statistics.total) * 100).toFixed(1) : 0;
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-6">
+    <div className="max-w-7xl mx-auto p-3 sm:p-4 md:p-6">
       <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-4 sm:p-6 text-white">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-2xl font-bold flex items-center">
-                <FiBook className="mr-2" />
-                {translations.heading}
+              <h1 className="text-xl sm:text-2xl font-bold flex items-center">
+                <FiBook className="mr-2 flex-shrink-0" />
+                <span>{translations.heading}</span>
               </h1>
-              <p className="mt-1 text-blue-100">
+              <p className="text-sm sm:text-base text-blue-100 mt-1">
                 Deji casharrada quraanka maalinle ee ardayda fasalka
               </p>
             </div>
             
             <Link
               to="/daily-quran/records"
-              className="px-4 py-3 bg-blue-800 hover:bg-blue-900 text-white rounded-lg flex items-center justify-center transition-colors w-full md:w-auto min-h-[44px]"
+              className="px-4 py-2 sm:py-3 bg-blue-800 hover:bg-blue-900 text-white rounded-lg flex items-center justify-center transition-colors w-full sm:w-auto min-h-[44px] text-sm sm:text-base"
             >
-              <FiEye className="mr-2" />
-              {translations.viewSessions}
+              <FiEye className="mr-2 flex-shrink-0" />
+              <span>{translations.viewSessions}</span>
             </Link>
           </div>
         </div>
 
-        <div className="p-4 md:p-6">
+        <div className="p-3 sm:p-4 md:p-6">
           {/* Selection Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
             {/* Class Selection */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700 flex items-center">
-                <FiUsers className="mr-2" /> {translations.selectClass} <span className="text-red-500 ml-1">*</span>
+                <FiUsers className="mr-2 flex-shrink-0" /> {translations.selectClass} <span className="text-red-500 ml-1">*</span>
               </label>
               <div className="relative" ref={classDropdownRef}>
                 <button
                   type="button"
                   onClick={() => !loadingClasses && setIsClassDropdownOpen(!isClassDropdownOpen)}
                   disabled={loadingClasses}
-                  className={`w-full flex justify-between items-center px-4 py-3 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] ${
+                  className={`w-full flex justify-between items-center px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] ${
                     loadingClasses 
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                       : 'bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100'
@@ -1017,7 +1017,7 @@ const CreateDailyQuranSession = () => {
                   <div className="flex items-center truncate">
                     {loadingClasses ? (
                       <>
-                        <FiLoader className="animate-spin mr-2" />
+                        <FiLoader className="animate-spin mr-2 flex-shrink-0" />
                         <span className="truncate">{translations.loading}</span>
                       </>
                     ) : selectedClass ? (
@@ -1092,7 +1092,7 @@ const CreateDailyQuranSession = () => {
               </div>
               {loadingClasses && (
                 <p className="text-xs text-gray-500 mt-1 flex items-center">
-                  <FiLoader className="animate-spin mr-1" />
+                  <FiLoader className="animate-spin mr-1 flex-shrink-0" />
                   Soo dejineyn fasallada...
                 </p>
               )}
@@ -1100,9 +1100,9 @@ const CreateDailyQuranSession = () => {
 
             {/* Date Selection with Load Button */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <label className="text-sm font-medium text-gray-700 flex items-center">
-                  <FiCalendar className="mr-2" /> {translations.selectDate} <span className="text-red-500 ml-1">*</span>
+                  <FiCalendar className="mr-2 flex-shrink-0" /> {translations.selectDate} <span className="text-red-500 ml-1">*</span>
                 </label>
                 {selectedClassId && (
                   <button
@@ -1111,22 +1111,23 @@ const CreateDailyQuranSession = () => {
                     className="text-sm text-blue-600 hover:text-blue-800 flex items-center disabled:opacity-50"
                   >
                     {isLoadingDateSessions ? (
-                      <FiLoader className="animate-spin mr-1" />
+                      <FiLoader className="animate-spin mr-1 flex-shrink-0" />
                     ) : (
-                      <FiRotateCw className="mr-1" />
+                      <FiRotateCw className="mr-1 flex-shrink-0" />
                     )}
-                    {translations.loadDateSessions}
+                    <span className="hidden sm:inline">{translations.loadDateSessions}</span>
+                    <span className="sm:hidden">Soo deji</span>
                   </button>
                 )}
               </div>
               
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <div className="relative flex-1">
                   <input
                     type="date"
                     value={selectedDate}
                     onChange={(e) => handleDateChange(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] text-sm"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] text-sm"
                     disabled={loading || loadingClasses}
                   />
                   <FiCalendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -1136,22 +1137,19 @@ const CreateDailyQuranSession = () => {
                 <div className="flex gap-1">
                   <button
                     onClick={() => handleQuickDate(0)}
-                    className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200 min-h-[44px]"
-                    title="Maanta"
+                    className="flex-1 px-2 sm:px-3 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200 min-h-[44px] whitespace-nowrap"
                   >
                     Maanta
                   </button>
                   <button
                     onClick={() => handleQuickDate(-1)}
-                    className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 min-h-[44px]"
-                    title="Shalay"
+                    className="flex-1 px-2 sm:px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 min-h-[44px] whitespace-nowrap"
                   >
                     Shalay
                   </button>
                   <button
                     onClick={() => handleQuickDate(-2)}
-                    className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 min-h-[44px]"
-                    title="Doraad"
+                    className="flex-1 px-2 sm:px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 min-h-[44px] whitespace-nowrap"
                   >
                     -2
                   </button>
@@ -1159,19 +1157,19 @@ const CreateDailyQuranSession = () => {
               </div>
               
               {dateInfo && (
-                <p className={`text-xs mt-1 flex items-center ${
+                <p className={`text-xs mt-1 flex items-start ${
                   dateInfo.includes('Khalad') ? 'text-red-600' : 
                   dateInfo.includes('hore u cashar') ? 'text-green-600' : 
                   'text-blue-600'
                 }`}>
-                  {dateInfo.includes('Khalad') ? <FiAlertCircle className="mr-1" /> : <FiInfo className="mr-1" />}
-                  {dateInfo}
+                  {dateInfo.includes('Khalad') ? <FiAlertCircle className="mr-1 flex-shrink-0 mt-0.5" /> : <FiInfo className="mr-1 flex-shrink-0 mt-0.5" />}
+                  <span className="break-words">{dateInfo}</span>
                 </p>
               )}
               
               {isLoadingDateSessions && (
                 <p className="text-xs text-blue-600 mt-1 flex items-center">
-                  <FiLoader className="animate-spin mr-1" />
+                  <FiLoader className="animate-spin mr-1 flex-shrink-0" />
                   {translations.loadingDateData}
                 </p>
               )}
@@ -1180,9 +1178,9 @@ const CreateDailyQuranSession = () => {
 
           {/* Quran Lesson Details */}
           {selectedClassId && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="mb-6 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
               <h3 className="text-sm font-medium text-green-800 mb-3">Faahfaahin Casharka Quraanka</h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-green-700 mb-1">Suura</label>
                   <input
@@ -1229,9 +1227,9 @@ const CreateDailyQuranSession = () => {
 
           {/* Display message when no classes */}
           {!loadingClasses && classes.length === 0 && (
-            <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-yellow-700 flex items-center">
-                <FiUsers className="mr-2" />
+                <FiUsers className="mr-2 flex-shrink-0" />
                 {translations.noClasses}
               </p>
               <p className="text-sm text-yellow-600 mt-1">
@@ -1243,9 +1241,9 @@ const CreateDailyQuranSession = () => {
           {/* Date Information */}
           {selectedClassId && (
             <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-700 flex items-center">
-                <FiInfo className="mr-2 flex-shrink-0" />
-                <span>
+              <p className="text-sm text-blue-700 flex items-start">
+                <FiInfo className="mr-2 flex-shrink-0 mt-0.5" />
+                <span className="break-words">
                   Waxaad diiwaan gelin kartaa casharro taariikhda <strong>{formatDateForDisplay(selectedDate)}</strong>.
                   Hadii casharro hore u jiraan taariikhdan, waxaa la cusboonaysiin doonaa.
                 </span>
@@ -1257,25 +1255,25 @@ const CreateDailyQuranSession = () => {
           {selectedClassId && quranRecords.length > 0 && (
             <>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-                <div className="bg-blue-50 p-3 md:p-4 rounded-lg border border-blue-200">
-                  <div className="text-xs md:text-sm text-blue-600 font-medium">{translations.totalStudents}</div>
-                  <div className="text-xl md:text-2xl font-bold text-blue-700">{statistics.total}</div>
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                  <div className="text-xs text-blue-600 font-medium">{translations.totalStudents}</div>
+                  <div className="text-xl font-bold text-blue-700">{statistics.total}</div>
                 </div>
-                <div className="bg-green-50 p-3 md:p-4 rounded-lg border border-green-200">
-                  <div className="text-xs md:text-sm text-green-600 font-medium">{translations.passed}</div>
-                  <div className="text-xl md:text-2xl font-bold text-green-700">{statistics.gartay}</div>
+                <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                  <div className="text-xs text-green-600 font-medium">{translations.passed}</div>
+                  <div className="text-xl font-bold text-green-700">{statistics.gartay}</div>
                 </div>
-                <div className="bg-red-50 p-3 md:p-4 rounded-lg border border-red-200">
-                  <div className="text-xs md:text-sm text-red-600 font-medium">{translations.failed}</div>
-                  <div className="text-xl md:text-2xl font-bold text-red-700">{statistics.garanWaayay}</div>
+                <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+                  <div className="text-xs text-red-600 font-medium">{translations.failed}</div>
+                  <div className="text-xl font-bold text-red-700">{statistics.garanWaayay}</div>
                 </div>
-                <div className="bg-yellow-50 p-3 md:p-4 rounded-lg border border-yellow-200">
-                  <div className="text-xs md:text-sm text-yellow-600 font-medium">{translations.absent}</div>
-                  <div className="text-xl md:text-2xl font-bold text-yellow-700">{statistics.majoogo}</div>
+                <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                  <div className="text-xs text-yellow-600 font-medium">{translations.absent}</div>
+                  <div className="text-xl font-bold text-yellow-700">{statistics.majoogo}</div>
                 </div>
-                <div className="bg-purple-50 p-3 md:p-4 rounded-lg border border-purple-200">
-                  <div className="text-xs md:text-sm text-purple-600 font-medium">Hore u diiwaan gashan</div>
-                  <div className="text-xl md:text-2xl font-bold text-purple-700">{statistics.existing}</div>
+                <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                  <div className="text-xs text-purple-600 font-medium">Hore u diiwaan gashan</div>
+                  <div className="text-xl font-bold text-purple-700">{statistics.existing}</div>
                 </div>
               </div>
 
@@ -1283,9 +1281,9 @@ const CreateDailyQuranSession = () => {
               <div className="flex justify-end mb-6">
                 <button
                   onClick={() => setShowPrintModal(true)}
-                  className="px-4 py-3 bg-blue-600 text-white rounded-lg flex items-center justify-center hover:bg-blue-700 active:bg-blue-800 min-h-[44px] w-full md:w-auto"
+                  className="px-4 py-3 bg-blue-600 text-white rounded-lg flex items-center justify-center hover:bg-blue-700 active:bg-blue-800 min-h-[44px] w-full sm:w-auto"
                 >
-                  <FiPrinter className="mr-2" />
+                  <FiPrinter className="mr-2 flex-shrink-0" />
                   {translations.printReport}
                 </button>
               </div>
@@ -1297,26 +1295,26 @@ const CreateDailyQuranSession = () => {
             <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <div className="flex flex-col gap-3">
                 <span className="text-sm font-medium text-gray-700">{translations.selectAll}:</span>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <button
                     onClick={() => handleSelectAll('gartay')}
-                    className="px-3 py-2 bg-green-100 text-green-700 rounded-md text-sm hover:bg-green-200 active:bg-green-300 flex-1 min-w-[120px] min-h-[44px] flex items-center justify-center"
+                    className="px-3 py-2 bg-green-100 text-green-700 rounded-md text-sm hover:bg-green-200 active:bg-green-300 flex-1 min-h-[44px] flex items-center justify-center"
                   >
-                    <FiCheck className="mr-1" />
+                    <FiCheck className="mr-1 flex-shrink-0" />
                     {translations.gartay} Dhammaan
                   </button>
                   <button
                     onClick={() => handleSelectAll('garan waayay')}
-                    className="px-3 py-2 bg-red-100 text-red-700 rounded-md text-sm hover:bg-red-200 active:bg-red-300 flex-1 min-w-[120px] min-h-[44px] flex items-center justify-center"
+                    className="px-3 py-2 bg-red-100 text-red-700 rounded-md text-sm hover:bg-red-200 active:bg-red-300 flex-1 min-h-[44px] flex items-center justify-center"
                   >
-                    <FiX className="mr-1" />
+                    <FiX className="mr-1 flex-shrink-0" />
                     {translations.garanWaayay} Dhammaan
                   </button>
                   <button
                     onClick={() => handleSelectAll('majoogo')}
-                    className="px-3 py-2 bg-yellow-100 text-yellow-700 rounded-md text-sm hover:bg-yellow-200 active:bg-yellow-300 flex-1 min-w-[120px] min-h-[44px] flex items-center justify-center"
+                    className="px-3 py-2 bg-yellow-100 text-yellow-700 rounded-md text-sm hover:bg-yellow-200 active:bg-yellow-300 flex-1 min-h-[44px] flex items-center justify-center"
                   >
-                    <FiClock className="mr-1" />
+                    <FiClock className="mr-1 flex-shrink-0" />
                     {translations.majoogo} Dhammaan
                   </button>
                 </div>
@@ -1345,21 +1343,161 @@ const CreateDailyQuranSession = () => {
             </div>
           )}
 
-          {/* Students Table */}
+          {/* Students Table - Mobile Optimized */}
           {quranRecords.length > 0 && !loadingStudents && !isLoadingDateSessions && !isInitialLoad && (
             <div className="mb-8">
-              <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
-                <FiUsers className="mr-2" />
+              <h3 className="text-base sm:text-lg font-medium text-gray-800 mb-4 flex flex-wrap items-center gap-2">
+                <FiUsers className="mr-2 flex-shrink-0" />
                 Ardayda Fasalka ({quranRecords.length}) - {formatDateForDisplay(selectedDate)}
                 {hasExistingSessions && (
-                  <span className="ml-2 text-sm text-green-600 bg-green-100 px-2 py-1 rounded">
-                    {statistics.existing} cashar hore u diiwaan gashan
+                  <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded whitespace-nowrap">
+                    {statistics.existing} cashar hore
                   </span>
                 )}
               </h3>
-              <div className="overflow-x-auto -mx-2 md:mx-0">
+              
+              {/* Mobile Card View */}
+              <div className="block md:hidden space-y-4">
+                {quranRecords.map((record, index) => (
+                  <div key={record.student} className={`bg-white rounded-lg border ${record.hasExistingSession ? 'border-blue-300 bg-blue-50' : 'border-gray-200'} p-4 shadow-sm`}>
+                    {/* Header */}
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-gray-500">#{index + 1}</span>
+                        {record.hasExistingSession && (
+                          <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded" title="Hore u diiwaan gashan">
+                            Hore
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className={`w-2 h-2 rounded-full ${
+                          record.status === 'gartay' ? 'bg-green-500' :
+                          record.status === 'garan waayay' ? 'bg-red-500' : 'bg-yellow-500'
+                        }`}></div>
+                        <span className={`text-sm font-medium ${
+                          record.status === 'gartay' ? 'text-green-700' :
+                          record.status === 'garan waayay' ? 'text-red-700' : 'text-yellow-700'
+                        }`}>
+                          {record.status === 'gartay' ? translations.gartay :
+                           record.status === 'garan waayay' ? translations.garanWaayay :
+                           translations.majoogo}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Student Info */}
+                    <div className="space-y-2 mb-3">
+                      <div>
+                        <span className="text-xs text-gray-500 block">{translations.studentName}</span>
+                        <p className="font-medium text-gray-900">{record.name}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <span className="text-xs text-gray-500 block">{translations.studentId}</span>
+                          <p className="text-sm text-gray-700">{record.studentId}</p>
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-500 block">{translations.phone}</span>
+                          <p className="text-sm text-gray-700">{record.phone}</p>
+                        </div>
+                      </div>
+                      
+                      {/* Quran Details */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-xs text-gray-500 block">Suura</label>
+                          <input
+                            type="text"
+                            value={record.surah || ''}
+                            onChange={(e) => handleRecordMetaChange(record.student, 'surah', e.target.value)}
+                            placeholder="Suura"
+                            className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 block">From-To</label>
+                          <div className="flex gap-1">
+                            <input
+                              type="text"
+                              value={record.fromVerse || ''}
+                              onChange={(e) => handleRecordMetaChange(record.student, 'fromVerse', e.target.value)}
+                              placeholder="From"
+                              className="flex-1 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            />
+                            <input
+                              type="text"
+                              value={record.toVerse || ''}
+                              onChange={(e) => handleRecordMetaChange(record.student, 'toVerse', e.target.value)}
+                              placeholder="To"
+                              className="flex-1 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 block">Qoraal</label>
+                        <input
+                          type="text"
+                          value={record.notes || ''}
+                          onChange={(e) => handleRecordMetaChange(record.student, 'notes', e.target.value)}
+                          placeholder="Qoraal dheeraad ah..."
+                          className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleStatusChange(record.student, 'gartay')}
+                          className={`flex-1 px-2 py-2 rounded-md text-xs font-medium flex items-center justify-center gap-1 ${getStatusStyle('gartay', record.status)}`}
+                        >
+                          <FiCheck className="flex-shrink-0" size={14} />
+                          {translations.gartay}
+                        </button>
+                        <button
+                          onClick={() => handleStatusChange(record.student, 'garan waayay')}
+                          className={`flex-1 px-2 py-2 rounded-md text-xs font-medium flex items-center justify-center gap-1 ${getStatusStyle('garan waayay', record.status)}`}
+                        >
+                          <FiX className="flex-shrink-0" size={14} />
+                          {translations.garanWaayay}
+                        </button>
+                        <button
+                          onClick={() => handleStatusChange(record.student, 'majoogo')}
+                          className={`flex-1 px-2 py-2 rounded-md text-xs font-medium flex items-center justify-center gap-1 ${getStatusStyle('majoogo', record.status)}`}
+                        >
+                          <FiClock className="flex-shrink-0" size={14} />
+                          {translations.majoogo}
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => handleSaveSingleSession(record.student, record.status)}
+                        disabled={loading}
+                        className="w-full px-3 py-2 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200 active:bg-blue-300 disabled:opacity-50 flex items-center justify-center gap-1 min-h-[40px]"
+                      >
+                        {loading ? (
+                          <>
+                            <FiLoader className="animate-spin flex-shrink-0" size={14} />
+                            {translations.saving}
+                          </>
+                        ) : (
+                          <>
+                            <FiSave className="flex-shrink-0" size={14} />
+                            {translations.submitSingle}
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto -mx-2">
                 <div className="inline-block min-w-full align-middle">
-                  <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                  <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
                     <table className="min-w-full divide-y divide-gray-300">
                       <thead className="bg-gray-50">
                         <tr>
@@ -1410,24 +1548,27 @@ const CreateDailyQuranSession = () => {
                                 value={record.surah || ''}
                                 onChange={(e) => handleRecordMetaChange(record.student, 'surah', e.target.value)}
                                 placeholder="Suura"
-                                className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                               />
                             </td>
-                            <td className="px-3 py-3 text-sm text-gray-900 grid grid-cols-2 gap-2">
-                              <input
-                                type="text"
-                                value={record.fromVerse || ''}
-                                onChange={(e) => handleRecordMetaChange(record.student, 'fromVerse', e.target.value)}
-                                placeholder="From"
-                                className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                              />
-                              <input
-                                type="text"
-                                value={record.toVerse || ''}
-                                onChange={(e) => handleRecordMetaChange(record.student, 'toVerse', e.target.value)}
-                                placeholder="To"
-                                className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                              />
+                            <td className="px-3 py-3 text-sm text-gray-900">
+                              <div className="flex gap-1">
+                                <input
+                                  type="text"
+                                  value={record.fromVerse || ''}
+                                  onChange={(e) => handleRecordMetaChange(record.student, 'fromVerse', e.target.value)}
+                                  placeholder="From"
+                                  className="w-16 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                />
+                                <span>-</span>
+                                <input
+                                  type="text"
+                                  value={record.toVerse || ''}
+                                  onChange={(e) => handleRecordMetaChange(record.student, 'toVerse', e.target.value)}
+                                  placeholder="To"
+                                  className="w-16 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                />
+                              </div>
                             </td>
                             <td className="px-3 py-3 text-sm text-gray-900">
                               <input
@@ -1435,12 +1576,12 @@ const CreateDailyQuranSession = () => {
                                 value={record.notes || ''}
                                 onChange={(e) => handleRecordMetaChange(record.student, 'notes', e.target.value)}
                                 placeholder="Qoraal"
-                                className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                               />
                             </td>
                             <td className="whitespace-nowrap px-3 py-4 text-sm">
                               <div className="flex items-center">
-                                <div className={`w-3 h-3 rounded-full mr-2 ${
+                                <div className={`w-2 h-2 rounded-full mr-2 ${
                                   record.status === 'gartay' ? 'bg-green-500' :
                                   record.status === 'garan waayay' ? 'bg-red-500' : 'bg-yellow-500'
                                 }`}></div>
@@ -1455,41 +1596,35 @@ const CreateDailyQuranSession = () => {
                               </div>
                             </td>
                             <td className="whitespace-nowrap px-3 py-4 text-sm">
-                              <div className="flex flex-wrap gap-2">
+                              <div className="flex flex-wrap gap-1">
                                 <button
                                   onClick={() => handleStatusChange(record.student, 'gartay')}
-                                  className={`px-3 py-2 rounded-md text-sm flex items-center justify-center min-h-[36px] min-w-[80px] ${getStatusStyle('gartay', record.status)}`}
+                                  className={`px-2 py-1 rounded-md text-xs flex items-center justify-center gap-1 ${getStatusStyle('gartay', record.status)}`}
                                 >
-                                  <FiCheck className="mr-1 flex-shrink-0" /> 
-                                  <span className="truncate">{translations.gartay}</span>
+                                  <FiCheck size={12} />
+                                  {translations.gartay}
                                 </button>
                                 <button
                                   onClick={() => handleStatusChange(record.student, 'garan waayay')}
-                                  className={`px-3 py-2 rounded-md text-sm flex items-center justify-center min-h-[36px] min-w-[80px] ${getStatusStyle('garan waayay', record.status)}`}
+                                  className={`px-2 py-1 rounded-md text-xs flex items-center justify-center gap-1 ${getStatusStyle('garan waayay', record.status)}`}
                                 >
-                                  <FiX className="mr-1 flex-shrink-0" /> 
-                                  <span className="truncate">{translations.garanWaayay}</span>
+                                  <FiX size={12} />
+                                  {translations.garanWaayay}
                                 </button>
                                 <button
                                   onClick={() => handleStatusChange(record.student, 'majoogo')}
-                                  className={`px-3 py-2 rounded-md text-sm flex items-center justify-center min-h-[36px] min-w-[80px] ${getStatusStyle('majoogo', record.status)}`}
+                                  className={`px-2 py-1 rounded-md text-xs flex items-center justify-center gap-1 ${getStatusStyle('majoogo', record.status)}`}
                                 >
-                                  <FiClock className="mr-1 flex-shrink-0" /> 
-                                  <span className="truncate">{translations.majoogo}</span>
+                                  <FiClock size={12} />
+                                  {translations.majoogo}
                                 </button>
                                 <button
                                   onClick={() => handleSaveSingleSession(record.student, record.status)}
                                   disabled={loading}
-                                  className="px-3 py-2 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200 active:bg-blue-300 disabled:opacity-50 flex items-center justify-center min-h-[36px] min-w-[80px]"
+                                  className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs hover:bg-blue-200 disabled:opacity-50 flex items-center justify-center gap-1"
                                 >
-                                  {loading ? (
-                                    <span className="truncate">{translations.saving}</span>
-                                  ) : (
-                                    <>
-                                      <FiSave className="mr-1 flex-shrink-0" />
-                                      <span className="truncate">{translations.submitSingle}</span>
-                                    </>
-                                  )}
+                                  <FiSave size={12} />
+                                  {translations.submitSingle}
                                 </button>
                               </div>
                             </td>
@@ -1505,9 +1640,9 @@ const CreateDailyQuranSession = () => {
 
           {showHistory && (
             <div className="mb-8 p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Taariikhda Casharrada Diiwaangashan</h3>
-                <span className="text-sm text-gray-600">{formatDateForDisplay(selectedDate)}</span>
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-800">Taariikhda Casharrada Diiwaangashan</h3>
+                <span className="text-xs sm:text-sm text-gray-600">{formatDateForDisplay(selectedDate)}</span>
               </div>
 
               {classSessionsByDate && classSessionsByDate.length > 0 ? (
@@ -1540,7 +1675,7 @@ const CreateDailyQuranSession = () => {
                   </table>
                 </div>
               ) : (
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800">
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">
                   Ma jiro casharro la diiwaangeliyay taariikhdaas.
                 </div>
               )}
@@ -1548,14 +1683,14 @@ const CreateDailyQuranSession = () => {
           )}
 
           {/* Action Buttons */}
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-8 pt-6 border-t border-gray-200">
-            <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8 pt-6 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <button
                 onClick={handleRefresh}
                 disabled={loading || !selectedClassId}
-                className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg flex items-center justify-center hover:bg-gray-200 active:bg-gray-300 disabled:opacity-50 w-full md:w-auto min-h-[44px]"
+                className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg flex items-center justify-center hover:bg-gray-200 active:bg-gray-300 disabled:opacity-50 w-full sm:w-auto min-h-[44px]"
               >
-                <FiRotateCw className="mr-2" />
+                <FiRotateCw className="mr-2 flex-shrink-0" />
                 {translations.refresh}
               </button>
               
@@ -1563,16 +1698,16 @@ const CreateDailyQuranSession = () => {
                 <button
                   onClick={handleLoadDateSessions}
                   disabled={isLoadingDateSessions || !selectedClassId}
-                  className="px-4 py-3 bg-blue-100 text-blue-700 rounded-lg flex items-center justify-center hover:bg-blue-200 active:bg-blue-300 disabled:opacity-50 w-full md:w-auto min-h-[44px]"
+                  className="px-4 py-3 bg-blue-100 text-blue-700 rounded-lg flex items-center justify-center hover:bg-blue-200 active:bg-blue-300 disabled:opacity-50 w-full sm:w-auto min-h-[44px]"
                 >
                   {isLoadingDateSessions ? (
                     <>
-                      <FiLoader className="animate-spin mr-2" />
+                      <FiLoader className="animate-spin mr-2 flex-shrink-0" />
                       Soo dejineyn...
                     </>
                   ) : (
                     <>
-                      <FiCalendar className="mr-2" />
+                      <FiCalendar className="mr-2 flex-shrink-0" />
                       Soo deji taariikhdan
                     </>
                   )}
@@ -1584,16 +1719,16 @@ const CreateDailyQuranSession = () => {
               <button
                 onClick={handleSaveAllSessions}
                 disabled={loading || !selectedClassId}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 flex items-center justify-center w-full md:w-auto min-h-[44px]"
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 flex items-center justify-center w-full sm:w-auto min-h-[44px]"
               >
                 {loading ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3 flex-shrink-0"></div>
                     {translations.creating}
                   </>
                 ) : (
                   <>
-                    <FiSave className="mr-2" />
+                    <FiSave className="mr-2 flex-shrink-0" />
                     {translations.submitAll} ({formatDateForDisplay(selectedDate)})
                   </>
                 )}
@@ -1605,10 +1740,10 @@ const CreateDailyQuranSession = () => {
 
       {/* Print Modal */}
       {showPrintModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-5xl max-h-[90vh] overflow-hidden">
             <div className="bg-blue-600 text-white p-4 flex justify-between items-center">
-              <h2 className="text-xl font-bold">{translations.printReport}</h2>
+              <h2 className="text-lg sm:text-xl font-bold">{translations.printReport}</h2>
               <button
                 onClick={() => setShowPrintModal(false)}
                 className="text-white hover:text-gray-200 p-2 -mr-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
@@ -1617,64 +1752,64 @@ const CreateDailyQuranSession = () => {
               </button>
             </div>
 
-            <div className="p-4 md:p-8 overflow-auto max-h-[70vh]">
-              <div className="text-center mb-8 border-b pb-4">
-                <h1 className="text-2xl font-bold text-blue-700 mb-2">{translations.reportTitle}</h1>
-                <p className="text-gray-600">
+            <div className="p-4 sm:p-6 md:p-8 overflow-auto max-h-[70vh]">
+              <div className="text-center mb-6 sm:mb-8 border-b pb-4">
+                <h1 className="text-xl sm:text-2xl font-bold text-blue-700 mb-2">{translations.reportTitle}</h1>
+                <p className="text-sm sm:text-base text-gray-600">
                   {selectedClass?.name || 'Fasalka'} | {formatDateForDisplay(selectedDate)}
                 </p>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 mb-6 sm:mb-8">
                 <div>
-                  <p className="mb-2"><strong className="text-gray-700">{translations.class}:</strong> {selectedClass?.name || '-'}</p>
-                  <p><strong className="text-gray-700">{translations.date}:</strong> {formatDateForDisplay(selectedDate)}</p>
+                  <p className="mb-2 text-sm sm:text-base"><strong className="text-gray-700">{translations.class}:</strong> {selectedClass?.name || '-'}</p>
+                  <p className="text-sm sm:text-base"><strong className="text-gray-700">{translations.date}:</strong> {formatDateForDisplay(selectedDate)}</p>
                 </div>
                 <div>
-                  <p className="mb-2"><strong className="text-gray-700">{translations.generatedOn}:</strong> {new Date().toLocaleDateString('so-SO')}</p>
-                  <p><strong className="text-gray-700">{translations.totalStudents}:</strong> {statistics.total}</p>
+                  <p className="mb-2 text-sm sm:text-base"><strong className="text-gray-700">{translations.generatedOn}:</strong> {new Date().toLocaleDateString('so-SO')}</p>
+                  <p className="text-sm sm:text-base"><strong className="text-gray-700">{translations.totalStudents}:</strong> {statistics.total}</p>
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div className="bg-green-50 p-4 rounded-lg border border-green-200 text-center">
-                  <div className="text-2xl font-bold text-green-700">{statistics.gartay}</div>
-                  <div className="text-sm text-green-600">{translations.passed}</div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+                <div className="bg-green-50 p-3 sm:p-4 rounded-lg border border-green-200 text-center">
+                  <div className="text-xl sm:text-2xl font-bold text-green-700">{statistics.gartay}</div>
+                  <div className="text-xs sm:text-sm text-green-600">{translations.passed}</div>
                 </div>
-                <div className="bg-red-50 p-4 rounded-lg border border-red-200 text-center">
-                  <div className="text-2xl font-bold text-red-700">{statistics.garanWaayay}</div>
-                  <div className="text-sm text-red-600">{translations.failed}</div>
+                <div className="bg-red-50 p-3 sm:p-4 rounded-lg border border-red-200 text-center">
+                  <div className="text-xl sm:text-2xl font-bold text-red-700">{statistics.garanWaayay}</div>
+                  <div className="text-xs sm:text-sm text-red-600">{translations.failed}</div>
                 </div>
-                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200 text-center">
-                  <div className="text-2xl font-bold text-yellow-700">{statistics.majoogo}</div>
-                  <div className="text-sm text-yellow-600">{translations.absent}</div>
+                <div className="bg-yellow-50 p-3 sm:p-4 rounded-lg border border-yellow-200 text-center">
+                  <div className="text-xl sm:text-2xl font-bold text-yellow-700">{statistics.majoogo}</div>
+                  <div className="text-xs sm:text-sm text-yellow-600">{translations.absent}</div>
                 </div>
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 text-center">
-                  <div className="text-2xl font-bold text-blue-700">{successRate}%</div>
-                  <div className="text-sm text-blue-600">Guul</div>
+                <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-200 text-center">
+                  <div className="text-xl sm:text-2xl font-bold text-blue-700">{successRate}%</div>
+                  <div className="text-xs sm:text-sm text-blue-600">Guul</div>
                 </div>
               </div>
               
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse border border-gray-300">
+                <table className="w-full border-collapse border border-gray-300 text-sm">
                   <thead>
                     <tr className="bg-gray-100">
-                      <th className="border border-gray-300 p-3 text-left">#</th>
-                      <th className="border border-gray-300 p-3 text-left">{translations.studentName}</th>
-                      <th className="border border-gray-300 p-3 text-left">{translations.studentId}</th>
-                      <th className="border border-gray-300 p-3 text-left">{translations.phone}</th>
-                      <th className="border border-gray-300 p-3 text-left">{translations.status}</th>
+                      <th className="border border-gray-300 p-2 sm:p-3 text-left">#</th>
+                      <th className="border border-gray-300 p-2 sm:p-3 text-left">{translations.studentName}</th>
+                      <th className="border border-gray-300 p-2 sm:p-3 text-left">{translations.studentId}</th>
+                      <th className="border border-gray-300 p-2 sm:p-3 text-left">{translations.phone}</th>
+                      <th className="border border-gray-300 p-2 sm:p-3 text-left">{translations.status}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {quranRecords.map((record, index) => (
                       <tr key={record.student} className="hover:bg-gray-50">
-                        <td className="border border-gray-300 p-3">{index + 1}</td>
-                        <td className="border border-gray-300 p-3 font-medium">{record.name}</td>
-                        <td className="border border-gray-300 p-3">{record.studentId}</td>
-                        <td className="border border-gray-300 p-3">{record.phone}</td>
-                        <td className="border border-gray-300 p-3">
-                          <span className={`px-2 py-1 rounded text-sm ${
+                        <td className="border border-gray-300 p-2 sm:p-3">{index + 1}</td>
+                        <td className="border border-gray-300 p-2 sm:p-3 font-medium">{record.name}</td>
+                        <td className="border border-gray-300 p-2 sm:p-3">{record.studentId}</td>
+                        <td className="border border-gray-300 p-2 sm:p-3">{record.phone}</td>
+                        <td className="border border-gray-300 p-2 sm:p-3">
+                          <span className={`px-2 py-1 rounded text-xs sm:text-sm ${
                             record.status === 'gartay' ? 'bg-green-100 text-green-800' :
                             record.status === 'garan waayay' ? 'bg-red-100 text-red-800' :
                             'bg-yellow-100 text-yellow-800'
@@ -1690,30 +1825,30 @@ const CreateDailyQuranSession = () => {
                 </table>
               </div>
               
-              <div className="mt-8 pt-4 border-t border-gray-300 text-center text-gray-600 text-sm">
-                <p>Warbixinta ayaa lagu sameeyay ${new Date().toLocaleString('so-SO')}</p>
+              <div className="mt-6 sm:mt-8 pt-4 border-t border-gray-300 text-center text-gray-600 text-xs sm:text-sm">
+                <p>Warbixinta ayaa lagu sameeyay {new Date().toLocaleString('so-SO')}</p>
               </div>
             </div>
 
-            <div className="bg-gray-50 p-4 flex flex-col md:flex-row justify-end gap-3">
+            <div className="bg-gray-50 p-4 flex flex-col sm:flex-row justify-end gap-3">
               <button
                 onClick={() => setShowPrintModal(false)}
-                className="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 active:bg-gray-400 w-full md:w-auto min-h-[44px]"
+                className="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 active:bg-gray-400 w-full sm:w-auto min-h-[44px]"
               >
                 Xidh
               </button>
               <button
                 onClick={handlePrint}
-                className="px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 active:bg-blue-300 flex items-center justify-center w-full md:w-auto min-h-[44px]"
+                className="px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 active:bg-blue-300 flex items-center justify-center w-full sm:w-auto min-h-[44px]"
               >
-                <FiPrinter className="mr-2" />
+                <FiPrinter className="mr-2 flex-shrink-0" />
                 {translations.print}
               </button>
               <button
                 onClick={generatePDF}
-                className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 flex items-center justify-center w-full md:w-auto min-h-[44px]"
+                className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 flex items-center justify-center w-full sm:w-auto min-h-[44px]"
               >
-                <FiDownload className="mr-2" />
+                <FiDownload className="mr-2 flex-shrink-0" />
                 {translations.downloadPDF}
               </button>
             </div>

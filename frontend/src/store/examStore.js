@@ -1,5 +1,6 @@
 import {create} from "zustand";
 import axios from "../config/axios"; 
+import toast from "react-hot-toast";
 
 export const useExamStore = create((set) => ({
   // State properties
@@ -59,6 +60,28 @@ export const useExamStore = create((set) => ({
         error: error.response?.data?.message || "Failed to fetch exams",
         loading: false,
       });
+    }
+  },
+
+  updateExam: async (examId, examData) => {
+    try {
+      set({ isLoading: true, error: null });
+      const res = await axios.patch(`/exams/update/${examId}`, examData);
+      const updatedExam = res.data.exam;
+
+      set((state) => ({
+        exams: state.exams.map((exam) => exam._id === examId ? { ...exam, ...updatedExam } : exam),
+        isLoading: false,
+        successMessage: res.data.message,
+      }));
+
+      toast.success("Imtixaanka waa la cusbooneysiiyay");
+      return { success: true, data: updatedExam };
+    } catch (error) {
+      const message = error.response?.data?.message || "Failed to update exam";
+      set({ isLoading: false, error: message });
+      toast.error(message);
+      return { success: false, error: message };
     }
   },
 

@@ -36,11 +36,10 @@ const menuItems = [
     text: 'Arday',
     icon: Users,
     path: '/students',
-    adminOnly: true,
     subItems: [
-      { text: 'dhamaan Ardayda', path: '/getAllStudents', icon: Users },
-      { text: 'Ku biiri Arday Cusub', path: '/createStudent', icon: PlusCircle },
-      { text: 'Ku biiri Arday badan oo Cusub', path: '/createMultipleStudents', icon: PlusCircle },
+      { text: 'dhamaan Ardayda', path: '/getAllStudents', icon: Users, adminOnly: true },
+      { text: 'Ku biiri Arday Cusub', path: '/createStudent', icon: PlusCircle, adminOnly: true },
+      { text: 'Ku biiri Arday badan oo Cusub', path: '/createMultipleStudents', icon: PlusCircle, adminOnly: true },
       { text: 'Xogta Arday Gaara', path: '/getOneStudent', icon: FileSearch },
     ]
   },
@@ -198,10 +197,16 @@ function DashboardLayout({ children }) {
     setProfileDropdownOpen(false);
   };
 
-  const filteredMenuItems = menuItems.filter(item => {
-    if (item.adminOnly && user?.role !== 'admin') return false;
-    return true;
-  });
+  const filteredMenuItems = menuItems
+    .map(item => ({
+      ...item,
+      subItems: item.subItems?.filter(subItem => !subItem.adminOnly || user?.role === 'admin'),
+    }))
+    .filter(item => {
+      if (item.adminOnly && user?.role !== 'admin') return false;
+      if (item.subItems && item.subItems.length === 0) return false;
+      return true;
+    });
   
   const SidebarContent = ({ onItemClick }) => (
     <div className="flex flex-col h-full bg-gray-900 text-gray-100">

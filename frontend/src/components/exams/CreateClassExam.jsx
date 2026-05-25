@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FiBook, FiCalendar, FiUsers, FiAward, FiSave, FiChevronDown, FiUser } from 'react-icons/fi';
+import { FiBook, FiCalendar, FiUsers, FiAward, FiSave, FiUser, FiTrendingUp } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import Select from 'react-select';
 import { useExamStore } from '../../store/examStore';
@@ -43,10 +43,10 @@ const CreateClassExam = () => {
   }, [formData.classId]);
 
   const examTypeOptions = [
-    { value: 'mid-term', label: '📝 Imtixaan Dhexe', color: '#3B82F6' },
-    { value: 'final', label: '🎯 Imtixaan Final', color: '#EF4444' },
-    { value: 'quiz', label: '⚡ Imtixaan Kooban', color: '#10B981' },
-    { value: 'assignment', label: '📚 Imtixaan Wayn', color: '#F59E0B' },
+    { value: 'mid-term', label: '📝 Imtixaan Dhexe' },
+    { value: 'final', label: '🎯 Imtixaan Final' },
+    { value: 'quiz', label: '⚡ Imtixaan Kooban' },
+    { value: 'assignment', label: '📚 Imtixaan Wayn' },
   ];
 
   const classOptions = classes.map(cls => ({
@@ -143,12 +143,20 @@ const CreateClassExam = () => {
     })
   };
 
+  // Helper function to get progress color
+  const getProgressColor = (percentage) => {
+    if (percentage >= 80) return 'bg-green-500';
+    if (percentage >= 60) return 'bg-blue-500';
+    if (percentage >= 40) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Animated Header */}
-        <div className="mb-6 md:mb-8 animate-fade-in">
-          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 rounded-2xl md:rounded-3xl p-6 md:p-8 text-white shadow-xl transform transition-all duration-300 hover:shadow-2xl">
+        {/* Header */}
+        <div className="mb-6 md:mb-8">
+          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 rounded-2xl md:rounded-3xl p-6 md:p-8 text-white shadow-xl">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
               <div>
                 <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold flex items-center gap-3 mb-2">
@@ -161,8 +169,8 @@ const CreateClassExam = () => {
                   Deji xogta imtixanka mar keliya oo geli dhammaan dhibcaha ardayda fasalka
                 </p>
               </div>
-              <div className="hidden md:block">
-                <div className="bg-white/10 rounded-full px-4 py-2 text-sm">
+              <div className="hidden md:block mt-4 md:mt-0">
+                <div className="bg-white/10 rounded-full px-4 py-2 text-sm backdrop-blur-sm">
                   <FiAward className="inline mr-1" /> Diiwaan gelinta Imtixanka
                 </div>
               </div>
@@ -171,15 +179,15 @@ const CreateClassExam = () => {
         </div>
 
         {/* Main Form Card */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden transform transition-all duration-300 hover:shadow-2xl">
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
           <form onSubmit={handleSubmit}>
-            {/* Form Fields - Grid Layout */}
             <div className="p-4 md:p-6 lg:p-8 space-y-6">
+              {/* Form Fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
                 {/* Exam Type */}
-                <div className="space-y-2 group">
+                <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <FiBook className="text-blue-500 group-hover:scale-110 transition-transform" />
+                    <FiBook className="text-blue-500" size={16} />
                     Nooca Imtixanka
                     <span className="text-red-500 text-xs">*</span>
                   </label>
@@ -190,15 +198,13 @@ const CreateClassExam = () => {
                     placeholder="Dooro nooca imtixanka..."
                     isClearable
                     styles={customSelectStyles}
-                    className="react-select-container"
-                    classNamePrefix="react-select"
                   />
                 </div>
 
                 {/* Date */}
-                <div className="space-y-2 group">
+                <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <FiCalendar className="text-blue-500 group-hover:scale-110 transition-transform" />
+                    <FiCalendar className="text-blue-500" size={16} />
                     Taariikhda Imtixanka
                     <span className="text-red-500 text-xs">*</span>
                   </label>
@@ -213,9 +219,9 @@ const CreateClassExam = () => {
                 </div>
 
                 {/* Class */}
-                <div className="space-y-2 group">
+                <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <FiUsers className="text-blue-500 group-hover:scale-110 transition-transform" />
+                    <FiUsers className="text-blue-500" size={16} />
                     Fasalka
                     <span className="text-red-500 text-xs">*</span>
                   </label>
@@ -230,9 +236,9 @@ const CreateClassExam = () => {
                 </div>
 
                 {/* Subject */}
-                <div className="space-y-2 group">
+                <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <FiBook className="text-blue-500 group-hover:scale-110 transition-transform" />
+                    <FiBook className="text-blue-500" size={16} />
                     Mawduuca
                     <span className="text-red-500 text-xs">*</span>
                   </label>
@@ -247,9 +253,9 @@ const CreateClassExam = () => {
                 </div>
 
                 {/* Total Marks */}
-                <div className="space-y-2 group sm:col-span-2 lg:col-span-1">
+                <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <FiAward className="text-yellow-500 group-hover:scale-110 transition-transform" />
+                    <FiAward className="text-yellow-500" size={16} />
                     Dhibcaha Guud
                     <span className="text-red-500 text-xs">*</span>
                   </label>
@@ -268,63 +274,77 @@ const CreateClassExam = () => {
 
               {/* Students Marks Section */}
               {students?.length > 0 && (
-                <div className="mt-8 animate-slide-up">
+                <div className="mt-8">
                   <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-4 md:p-6">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 md:mb-6 gap-3">
                       <h3 className="text-lg md:text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <FiUsers className="text-blue-600" />
+                        <FiUsers className="text-blue-600" size={20} />
                         Dhibcaha Ardayda
                         <span className="bg-blue-100 text-blue-700 text-sm px-3 py-1 rounded-full ml-2">
                           {students.length} Arday
                         </span>
                       </h3>
-                      <div className="text-sm text-gray-600 bg-white px-3 py-1 rounded-lg">
-                        Guud: {formData.totalMarks || '?'} dhibcood
-                      </div>
+                      {formData.totalMarks && (
+                        <div className="text-sm text-gray-600 bg-white px-3 py-1 rounded-lg shadow-sm">
+                          Guud: {formData.totalMarks} dhibcood
+                        </div>
+                      )}
                     </div>
 
                     {/* Mobile Card View */}
                     <div className="block md:hidden space-y-3">
-                      {students.map((student, index) => (
-                        <div key={student._id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center">
-                                  <FiUser className="text-blue-600 text-sm" />
-                                </div>
-                                <div>
-                                  <p className="font-semibold text-gray-800">{student.fullname}</p>
-                                  <p className="text-xs text-gray-500">Roll: {student.rollNumber || '-'}</p>
+                      {students.map((student) => {
+                        const obtainedMark = studentMarks[student._id] || 0;
+                        const percentage = formData.totalMarks ? (obtainedMark / formData.totalMarks) * 100 : 0;
+                        
+                        return (
+                          <div key={student._id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center">
+                                    <FiUser className="text-blue-600 text-sm" />
+                                  </div>
+                                  <div>
+                                    <p className="font-semibold text-gray-800">{student.fullname}</p>
+                                    <p className="text-xs text-gray-500">Roll: {student.rollNumber || '-'}</p>
+                                  </div>
                                 </div>
                               </div>
+                              <div className="w-32">
+                                <label className="block text-xs font-medium text-gray-600 mb-1">Dhibcaha</label>
+                                <input
+                                  type="number"
+                                  value={studentMarks[student._id] ?? ''}
+                                  onChange={(e) => handleMarkChange(student._id, e.target.value)}
+                                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center"
+                                  min="0"
+                                  max={formData.totalMarks || ''}
+                                  placeholder="0"
+                                />
+                              </div>
                             </div>
-                            <div className="w-32">
-                              <label className="block text-xs font-medium text-gray-600 mb-1">Dhibcaha</label>
-                              <input
-                                type="number"
-                                value={studentMarks[student._id] ?? ''}
-                                onChange={(e) => handleMarkChange(student._id, e.target.value)}
-                                className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center"
-                                min="0"
-                                max={formData.totalMarks || ''}
-                                placeholder="0"
-                                required
-                              />
-                            </div>
+                            {formData.totalMarks && obtainedMark > 0 && (
+                              <div className="mt-2">
+                                <div className="flex justify-between text-xs text-gray-600 mb-1">
+                                  <span>Horumarka</span>
+                                  <span>{Math.round(percentage)}%</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                  <div 
+                                    className={`rounded-full h-2 transition-all duration-300 ${getProgressColor(percentage)}`}
+                                    style={{ width: `${percentage}%` }}
+                                  />
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-1.5">
-                            <div 
-                              className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full h-1.5 transition-all duration-300"
-                              style={{ width: `${((studentMarks[student._id] || 0) / (formData.totalMarks || 1)) * 100}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
 
                     {/* Desktop Table View */}
-                    <div className="hidden md:block overflow-x-auto rounded-xl">
+                    <div className="hidden md:block overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                           <tr>
@@ -338,16 +358,20 @@ const CreateClassExam = () => {
                               Lambarka Roll
                             </th>
                             <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                              Dhibcaha Laga Helay / {formData.totalMarks || '0'}
+                              Dhibcaha Laga Helay
                             </th>
-                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                              Horumarka
-                            </th>
+                            {formData.totalMarks && (
+                              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Horumarka
+                              </th>
+                            )}
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-100">
                           {students.map((student, idx) => {
-                            const percentage = ((studentMarks[student._id] || 0) / (formData.totalMarks || 1)) * 100;
+                            const obtainedMark = studentMarks[student._id] || 0;
+                            const percentage = formData.totalMarks ? (obtainedMark / formData.totalMarks) * 100 : 0;
+                            
                             return (
                               <tr key={student._id} className="hover:bg-gray-50 transition-colors duration-150">
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -360,35 +384,38 @@ const CreateClassExam = () => {
                                   {student.rollNumber || '-'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                  <input
-                                    type="number"
-                                    value={studentMarks[student._id] ?? ''}
-                                    onChange={(e) => handleMarkChange(student._id, e.target.value)}
-                                    className="w-28 px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                    min="0"
-                                    max={formData.totalMarks || ''}
-                                    placeholder="Dhibcaha"
-                                    required
-                                  />
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
                                   <div className="flex items-center gap-2">
-                                    <div className="flex-1 bg-gray-200 rounded-full h-2">
-                                      <div 
-                                        className={`rounded-full h-2 transition-all duration-300 ${
-                                          percentage >= 80 ? 'bg-green-500' :
-                                          percentage >= 60 ? 'bg-blue-500' :
-                                          percentage >= 40 ? 'bg-yellow-500' :
-                                          'bg-red-500'
-                                        }`}
-                                        style={{ width: `${percentage}%` }}
-                                      />
-                                    </div>
-                                    <span className="text-xs font-medium text-gray-600 min-w-[40px]">
-                                      {Math.round(percentage)}%
-                                    </span>
+                                    <input
+                                      type="number"
+                                      value={studentMarks[student._id] ?? ''}
+                                      onChange={(e) => handleMarkChange(student._id, e.target.value)}
+                                      className="w-28 px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                      min="0"
+                                      max={formData.totalMarks || ''}
+                                      placeholder="0"
+                                    />
+                                    {formData.totalMarks && (
+                                      <span className="text-xs text-gray-500">
+                                        / {formData.totalMarks}
+                                      </span>
+                                    )}
                                   </div>
                                 </td>
+                                {formData.totalMarks && (
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-32 bg-gray-200 rounded-full h-2 overflow-hidden">
+                                        <div 
+                                          className={`rounded-full h-2 transition-all duration-300 ${getProgressColor(percentage)}`}
+                                          style={{ width: `${percentage}%` }}
+                                        />
+                                      </div>
+                                      <span className="text-xs font-medium text-gray-600 min-w-[45px]">
+                                        {Math.round(percentage)}%
+                                      </span>
+                                    </div>
+                                  </td>
+                                )}
                               </tr>
                             );
                           })}
@@ -401,7 +428,7 @@ const CreateClassExam = () => {
 
               {/* Empty State */}
               {students?.length === 0 && formData.classId?.value && (
-                <div className="text-center py-12 animate-fade-in">
+                <div className="text-center py-12">
                   <div className="bg-gray-50 rounded-2xl p-8">
                     <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                       <FiUsers className="text-gray-400 text-3xl" />
@@ -433,7 +460,7 @@ const CreateClassExam = () => {
                     </>
                   ) : (
                     <>
-                      <FiSave className="text-lg group-hover:scale-110 transition-transform" />
+                      <FiSave className="text-lg" />
                       Gudbi Imtixanka
                     </>
                   )}
@@ -443,45 +470,6 @@ const CreateClassExam = () => {
           </form>
         </div>
       </div>
-
-      {/* Custom Animations */}
-      <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes slide-up {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        .animate-fade-in {
-          animation: fade-in 0.5s ease-out;
-        }
-        
-        .animate-slide-up {
-          animation: slide-up 0.6s ease-out;
-        }
-        
-        @media (max-width: 768px) {
-          .react-select-container {
-            font-size: 14px;
-          }
-        }
-      `}</style>
     </div>
   );
 };

@@ -13,7 +13,7 @@ const studentPerformanceSchema = new mongoose.Schema({
   dailyLessonHint: { type: String, default: "" },
   currentSurah: { type: String, default: "" },
   taxdiid: { type: String, default: "" },
-  studentStatus: { type: String, enum: ["gaadhay", "dhexda_maraya", "aad_uga_fog", ""], default: "" },
+  studentStatus: { type: String, enum: ["gaadhay", "wuu_dhaafay", "dhexda_maraya", "aad_uga_fog", ""], default: "" },
   // Common
   notes: { type: String, default: "" }
 }, { _id: false });
@@ -40,7 +40,7 @@ const lessonRecordSchema = new mongoose.Schema({
     dailyLessonHint: { type: String, default: "" },
     currentSurah: { type: String, default: "" },
     taxdiid: { type: String, default: "" },
-    studentStatus: { type: String, enum: ["gaadhay", "dhexda_maraya", "aad_uga_fog"], default: "dhexda_maraya" },
+    studentStatus: { type: String, enum: ["gaadhay", "wuu_dhaafay", "dhexda_maraya", "aad_uga_fog"], default: "dhexda_maraya" },
     notes: { type: String, default: "" }
   },
   subci: {

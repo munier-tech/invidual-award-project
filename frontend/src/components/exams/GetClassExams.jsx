@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useExamStore } from "../../store/examStore";
 import { useSubjectStore } from "../../store/subjectsStore";
 import useClassesStore from "../../store/classesStore";
-import { FiSearch, FiBook, FiUser, FiAward, FiCalendar } from "react-icons/fi";
+import { FiSearch, FiBook, FiUser, FiAward, FiCalendar, FiEdit2, FiSave, FiX } from "react-icons/fi";
 import PrintButton from "../common/PrintButton";
+import { toast } from "react-hot-toast";
 
 // Somali translations
 const translations = {
@@ -22,7 +23,8 @@ const translations = {
     obtained: "Qiimaha",
     total: "Wadarta",
     date: "Taariikhda",
-    grade: "Darajada"
+    grade: "Darajada",
+    actions: "Tallaabo"
   },
   examTypes: {
     "mid-term": "Imtixaan Shahri 1",
@@ -33,7 +35,7 @@ const translations = {
 };
 
 const GetClassExams = () => {
-  const { exams, loading, error, getExamsByClassAndYear } = useExamStore();
+  const { exams, loading, error, isLoading, getExamsByClassAndYear, updateExam } = useExamStore();
   const { subjects, getAllSubjects } = useSubjectStore();
   const { classes, fetchClasses } = useClassesStore();
 
@@ -44,6 +46,12 @@ const GetClassExams = () => {
     examType: "",
   });
   const [yearError, setYearError] = useState("");
+  const [editingExamId, setEditingExamId] = useState(null);
+  const [editForm, setEditForm] = useState({
+    obtainedMarks: "",
+    totalMarks: "",
+    date: "",
+  });
 
   useEffect(() => {
     getAllSubjects();
@@ -72,6 +80,64 @@ const GetClassExams = () => {
       return;
     }
     getExamsByClassAndYear(form);
+  };
+
+  const formatDateInput = (date) => {
+    if (!date) return "";
+    return new Date(date).toISOString().slice(0, 10);
+  };
+
+  const startEdit = (exam) => {
+    setEditingExamId(exam._id);
+    setEditForm({
+      obtainedMarks: exam?.obtainedMarks ?? exam?.marks ?? "",
+      totalMarks: exam?.totalMarks ?? exam?.total ?? "",
+      date: formatDateInput(exam?.date),
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingExamId(null);
+    setEditForm({
+      obtainedMarks: "",
+      totalMarks: "",
+      date: "",
+    });
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const saveEdit = async (exam) => {
+    const obtainedMarks = Number(editForm.obtainedMarks);
+    const totalMarks = Number(editForm.totalMarks);
+
+    if (editForm.obtainedMarks === "" || editForm.totalMarks === "" || !editForm.date) {
+      toast.error("Fadlan buuxi dhibcaha iyo taariikhda");
+      return;
+    }
+
+    if (Number.isNaN(obtainedMarks) || Number.isNaN(totalMarks) || obtainedMarks < 0 || totalMarks < 1) {
+      toast.error("Fadlan geli dhibco sax ah");
+      return;
+    }
+
+    if (obtainedMarks > totalMarks) {
+      toast.error("Dhibcaha la helay kama badnaan karaan wadarta");
+      return;
+    }
+
+    const result = await updateExam(exam._id, {
+      obtainedMarks,
+      totalMarks,
+      date: editForm.date,
+    });
+
+    if (result?.success) {
+      cancelEdit();
+    }
   };
 
   const getPercentage = (exam) => {
@@ -384,40 +450,112 @@ const GetClassExams = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       <FiCalendar className="inline mr-1" /> {translations.tableHeaders.date}
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {translations.tableHeaders.actions}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {rankedExams.map((exam) => (
-                    <tr key={exam._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-indigo-700">
-                        #{exam.rank}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {exam?.student?.fullname || "N/A"}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {exam?.student?.class?.name || ""}
+                  {rankedExams.map((exam) => {
+                    const isEditing = editingExamId === exam._id;
+
+                    return (
+                      <tr key={exam._id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-indigo-700">
+                          #{exam.rank}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                {exam?.student?.fullname || "N/A"}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {exam?.student?.class?.name || ""}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {exam?.obtainedMarks ?? exam?.marks ?? "N/A"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {exam?.totalMarks ?? exam?.total ?? "N/A"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {getGrade(exam?.obtainedMarks || 0, exam?.totalMarks || 100)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {exam?.date ? new Date(exam.date).toLocaleDateString('so-SO') : "N/A"}
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {isEditing ? (
+                            <input
+                              type="number"
+                              name="obtainedMarks"
+                              min="0"
+                              max={editForm.totalMarks || ""}
+                              value={editForm.obtainedMarks}
+                              onChange={handleEditChange}
+                              className="w-24 rounded-md border border-gray-300 px-2 py-1 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                            />
+                          ) : (
+                            exam?.obtainedMarks ?? exam?.marks ?? "N/A"
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {isEditing ? (
+                            <input
+                              type="number"
+                              name="totalMarks"
+                              min="1"
+                              value={editForm.totalMarks}
+                              onChange={handleEditChange}
+                              className="w-24 rounded-md border border-gray-300 px-2 py-1 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                            />
+                          ) : (
+                            exam?.totalMarks ?? exam?.total ?? "N/A"
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {getGrade(
+                            isEditing ? Number(editForm.obtainedMarks || 0) : (exam?.obtainedMarks || 0),
+                            isEditing ? Number(editForm.totalMarks || 100) : (exam?.totalMarks || 100)
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {isEditing ? (
+                            <input
+                              type="date"
+                              name="date"
+                              value={editForm.date}
+                              onChange={handleEditChange}
+                              className="rounded-md border border-gray-300 px-2 py-1 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                            />
+                          ) : (
+                            exam?.date ? new Date(exam.date).toLocaleDateString('so-SO') : "N/A"
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {isEditing ? (
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => saveEdit(exam)}
+                                disabled={isLoading}
+                                className="inline-flex items-center gap-1 rounded-md bg-green-600 px-3 py-1.5 text-white hover:bg-green-700 disabled:opacity-60"
+                              >
+                                <FiSave /> Kaydi
+                              </button>
+                              <button
+                                type="button"
+                                onClick={cancelEdit}
+                                className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 text-gray-700 hover:bg-gray-50"
+                              >
+                                <FiX /> Jooji
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => startEdit(exam)}
+                              className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-3 py-1.5 text-white hover:bg-indigo-700"
+                            >
+                              <FiEdit2 /> Tafatir
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
