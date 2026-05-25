@@ -8,6 +8,7 @@ const studentPerformanceSchema = new mongoose.Schema({
   },
   // For Subci
   versesTaken: { type: String, default: "" },
+  versesLost: { type: Number, min: 0, default: 0 },
   statusScore: { type: Number, min: 0, default: 0 },
   // For Qur'aan per-student
   dailyLessonHint: { type: String, default: "" },

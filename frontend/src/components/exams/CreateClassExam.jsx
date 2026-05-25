@@ -34,7 +34,7 @@ const CreateClassExam = () => {
         if (res?.success) {
           const initialMarks = {};
           res.students.forEach(student => {
-            initialMarks[student._id] = '';
+            initialMarks[student._id] = 0;
           });
           setStudentMarks(initialMarks);
         }

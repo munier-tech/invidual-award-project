@@ -1181,7 +1181,7 @@ const CreateDailyQuranSession = () => {
             <div className="mb-6 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
               <h3 className="text-sm font-medium text-green-800 mb-3">Faahfaahin Casharka Quraanka</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                <div>
+                <div className="sm:col-span-2 md:col-span-1">
                   <label className="block text-xs font-medium text-green-700 mb-1">Suura</label>
                   <input
                     type="text"
@@ -1198,7 +1198,7 @@ const CreateDailyQuranSession = () => {
                     value={currentFromVerse}
                     onChange={(e) => setCurrentFromVerse(e.target.value)}
                     placeholder="Tusaale: 1"
-                    className="w-full px-3 py-2 border border-green-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                    className="w-full min-h-[44px] px-3 py-2 border border-green-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
                   />
                 </div>
                 <div>
@@ -1208,10 +1208,10 @@ const CreateDailyQuranSession = () => {
                     value={currentToVerse}
                     onChange={(e) => setCurrentToVerse(e.target.value)}
                     placeholder="Tusaale: 7"
-                    className="w-full px-3 py-2 border border-green-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                    className="w-full min-h-[44px] px-3 py-2 border border-green-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
                   />
                 </div>
-                <div>
+                <div className="sm:col-span-2 md:col-span-1">
                   <label className="block text-xs font-medium text-green-700 mb-1">Qoraal dheeraad ah</label>
                   <input
                     type="text"
@@ -1404,7 +1404,7 @@ const CreateDailyQuranSession = () => {
                       </div>
                       
                       {/* Quran Details */}
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 gap-3">
                         <div>
                           <label className="text-xs text-gray-500 block">Suura</label>
                           <input
@@ -1412,26 +1412,32 @@ const CreateDailyQuranSession = () => {
                             value={record.surah || ''}
                             onChange={(e) => handleRecordMetaChange(record.student, 'surah', e.target.value)}
                             placeholder="Suura"
-                            className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            className="w-full min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                           />
                         </div>
                         <div>
-                          <label className="text-xs text-gray-500 block">From-To</label>
-                          <div className="flex gap-1">
-                            <input
-                              type="text"
-                              value={record.fromVerse || ''}
-                              onChange={(e) => handleRecordMetaChange(record.student, 'fromVerse', e.target.value)}
-                              placeholder="From"
-                              className="flex-1 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                            />
-                            <input
-                              type="text"
-                              value={record.toVerse || ''}
-                              onChange={(e) => handleRecordMetaChange(record.student, 'toVerse', e.target.value)}
-                              placeholder="To"
-                              className="flex-1 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                            />
+                          <label className="text-xs text-gray-500 block mb-1">From-To</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="sr-only">From</label>
+                              <input
+                                type="text"
+                                value={record.fromVerse || ''}
+                                onChange={(e) => handleRecordMetaChange(record.student, 'fromVerse', e.target.value)}
+                                placeholder="From"
+                                className="w-full min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                              />
+                            </div>
+                            <div>
+                              <label className="sr-only">To</label>
+                              <input
+                                type="text"
+                                value={record.toVerse || ''}
+                                onChange={(e) => handleRecordMetaChange(record.student, 'toVerse', e.target.value)}
+                                placeholder="To"
+                                className="w-full min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>

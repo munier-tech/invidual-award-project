@@ -170,7 +170,7 @@ function SubcisSection() {
 
   useEffect(() => {
     if (selected?.students) {
-      setSubciPerformances(selected.students.map(s => ({ student: s._id, versesTaken: 0, statusScore: 0, notes: '' })))
+      setSubciPerformances(selected.students.map(s => ({ student: s._id, versesTaken: 0, versesLost: 0, statusScore: 0, notes: '' })))
     }
   }, [selected])
 
@@ -186,7 +186,7 @@ function SubcisSection() {
     setSubciPerformances(prev => prev.map((sp, i) => i === idx ? { 
       ...sp, 
       [key]: value, 
-      statusScore: key === 'versesTaken' ? autoJudge(value) : sp.statusScore 
+      statusScore: key === 'versesLost' ? autoJudge(value) : sp.statusScore 
     } : sp))
   }
 
@@ -204,7 +204,7 @@ function SubcisSection() {
       toast.success('Diiwaan Subci waa la kaydiyay')
       setEditMode(false)
       loadRecords(selected._id)
-      setSubciPerformances(selected.students.map(s => ({ student: s._id, versesTaken: 0, statusScore: 0, notes: '' })))
+      setSubciPerformances(selected.students.map(s => ({ student: s._id, versesTaken: 0, versesLost: 0, statusScore: 0, notes: '' })))
     } catch (e) { 
       toast.error('Kaydinta Subci waa fashilantay') 
     } finally {
@@ -228,6 +228,7 @@ function SubcisSection() {
     setEditingRows((r.studentPerformances || []).map(sp => ({ 
       student: sp.student?._id || sp.student, 
       versesTaken: sp.versesTaken || 0, 
+      versesLost: sp.versesLost || 0,
       statusScore: sp.statusScore || 0, 
       notes: sp.notes || '' 
     })))
@@ -239,7 +240,7 @@ function SubcisSection() {
     setEditingRows(prev => prev.map((x, i) => i === idx ? { 
       ...x, 
       [key]: value,
-      statusScore: key === 'versesTaken' && editingId === 'new' ? autoJudge(value) : x.statusScore
+      statusScore: key === 'versesLost' ? autoJudge(value) : x.statusScore
     } : x)) 
   }
   
@@ -277,6 +278,22 @@ function SubcisSection() {
         <Icon className="w-3 h-3" />
         {config.label}
       </span>
+    )
+  }
+
+  const LostDots = ({ count = 0 }) => {
+    const dotCount = Math.max(0, Math.min(Number(count) || 0, 20))
+
+    if (dotCount === 0) {
+      return <span className="text-xs text-gray-400">0</span>
+    }
+
+    return (
+      <div className="flex flex-wrap gap-1" aria-label={`${dotCount} aayado laga qaatay`}>
+        {Array.from({ length: dotCount }).map((_, index) => (
+          <span key={index} className="w-2 h-2 rounded-full bg-red-500" />
+        ))}
+      </div>
     )
   }
 
@@ -371,7 +388,7 @@ function SubcisSection() {
             {getStatusBadge(performance?.statusScore || 0)}
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="text-xs text-gray-600 block mb-1">Aayadaha</label>
               <input
@@ -381,6 +398,20 @@ function SubcisSection() {
                 onChange={e => onChange(idx, 'versesTaken', Number(e.target.value))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-600 block mb-1">Ayadaha laga qaatay</label>
+              <input
+                type="number"
+                min="0"
+                value={performance?.versesLost || 0}
+                onChange={e => onChange(idx, 'versesLost', Number(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+              <div className="mt-2 min-h-[12px]">
+                <LostDots count={performance?.versesLost || 0} />
+              </div>
             </div>
             
             <div>
@@ -449,6 +480,7 @@ function SubcisSection() {
                         <th style="border: 1px solid #ddd; padding: 8px;">#</th>
                         <th style="border: 1px solid #ddd; padding: 8px;">Arday</th>
                         <th style="border: 1px solid #ddd; padding: 8px;">Aayadaha</th>
+                        <th style="border: 1px solid #ddd; padding: 8px;">Ayadaha laga qaatay</th>
                         <th style="border: 1px solid #ddd; padding: 8px;">Xaalad</th>
                         <th style="border: 1px solid #ddd; padding: 8px;">Faallo</th>
                       </tr>
@@ -459,6 +491,7 @@ function SubcisSection() {
                           <td style="border: 1px solid #ddd; padding: 8px;">${idx + 1}</td>
                           <td style="border: 1px solid #ddd; padding: 8px;">${sp.student?.fullname || sp.student?.name || '-'}</td>
                           <td style="border: 1px solid #ddd; padding: 8px;">${sp.versesTaken ?? '-'}</td>
+                          <td style="border: 1px solid #ddd; padding: 8px;">${sp.versesLost ?? 0}</td>
                           <td style="border: 1px solid #ddd; padding: 8px;">${statusConfig[sp.statusScore]?.label || '-'}</td>
                           <td style="border: 1px solid #ddd; padding: 8px;">${sp.notes || '-'}</td>
                         </tr>
@@ -507,7 +540,7 @@ function SubcisSection() {
                 return (
                   <div key={idx} className="border border-gray-200 rounded-lg p-3">
                     <div className="font-medium mb-2">{student?.fullname || 'Arday'}</div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <label className="text-xs text-gray-600">Aayadaha</label>
                         <input
@@ -516,6 +549,19 @@ function SubcisSection() {
                           onChange={e => updateRow(idx, 'versesTaken', Number(e.target.value))}
                           className="w-full border rounded px-2 py-1 text-sm"
                         />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-600">Ayadaha laga qaatay</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={editingRows[idx]?.versesLost || 0}
+                          onChange={e => updateRow(idx, 'versesLost', Number(e.target.value))}
+                          className="w-full border rounded px-2 py-1 text-sm"
+                        />
+                        <div className="mt-2 min-h-[12px]">
+                          <LostDots count={editingRows[idx]?.versesLost || 0} />
+                        </div>
                       </div>
                       <div>
                         <label className="text-xs text-gray-600">Faallo</label>
@@ -576,6 +622,12 @@ function SubcisSection() {
                             <div>
                               <p className="text-xs text-gray-500">Aayadaha</p>
                               <p className="font-medium">{sp.versesTaken || 0}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500">Ayadaha laga qaatay</p>
+                              <div className="mt-1">
+                                <LostDots count={sp.versesLost || 0} />
+                              </div>
                             </div>
                             <div>
                               <p className="text-xs text-gray-500">Faallo</p>
