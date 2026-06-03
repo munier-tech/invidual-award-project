@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion'; // Import motion from framer-motion
 import {
   Users,
   GraduationCap,
   BookOpen,
-  Calendar,
   TrendingUp,
   RefreshCw,
   Activity,
@@ -39,6 +38,94 @@ const containerVariants = {
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 }
+};
+
+const getRecordDate = (record) => {
+  const value = record?.updatedAt || record?.createdAt;
+  if (!value) return null;
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const formatRelativeTime = (date) => {
+  if (!date) return 'Hadda';
+
+  const diffMs = Date.now() - date.getTime();
+  const diffMinutes = Math.max(0, Math.floor(diffMs / 60000));
+
+  if (diffMinutes < 1) return 'Hadda';
+  if (diffMinutes < 60) return `${diffMinutes}m kahor`;
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h kahor`;
+
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 30) return `${diffDays}d kahor`;
+
+  return date.toLocaleDateString('so-SO', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+};
+
+const getClassName = (studentClass) => {
+  if (!studentClass) return 'Fasal lama xirin';
+  if (typeof studentClass === 'string') return 'Fasal la xirey';
+
+  return [studentClass.name, studentClass.level].filter(Boolean).join(' - ') || 'Fasal la xirey';
+};
+
+const buildRecentActivities = ({ students, teachers, classes }) => {
+  const studentActivities = students.map((student) => {
+    const date = getRecordDate(student);
+
+    return {
+      id: `student-${student._id || student.studentId || student.fullname}`,
+      icon: Users,
+      title: 'Arday Cusub oo Diiwaan Gashay',
+      description: `${student.fullname || 'Arday cusub'} - ${getClassName(student.class)}`,
+      time: formatRelativeTime(date),
+      date,
+      color: 'blue'
+    };
+  });
+
+  const teacherActivities = teachers.map((teacher) => {
+    const date = getRecordDate(teacher);
+    const wasUpdated = teacher.updatedAt && teacher.createdAt && teacher.updatedAt !== teacher.createdAt;
+
+    return {
+      id: `teacher-${teacher._id || teacher.email || teacher.name}`,
+      icon: GraduationCap,
+      title: wasUpdated ? 'Baraha Profile-ka la Cusboonaysiiyay' : 'Bare Cusub oo la Diiwaan Galiyay',
+      description: `${teacher.name || 'Bare'}${teacher.subject ? ` - ${teacher.subject}` : ''}`,
+      time: formatRelativeTime(date),
+      date,
+      color: 'green'
+    };
+  });
+
+  const classActivities = classes.map((cls) => {
+    const date = getRecordDate(cls);
+    const teacherName = cls.teacher?.name || cls.teacher?.fullname;
+
+    return {
+      id: `class-${cls._id || cls.name}`,
+      icon: BookOpen,
+      title: 'Fasalka Cusub la Abuuro',
+      description: `${cls.name || 'Fasal'}${cls.level ? ` - ${cls.level}` : ''}${teacherName ? ` (${teacherName})` : ''}`,
+      time: formatRelativeTime(date),
+      date,
+      color: 'purple'
+    };
+  });
+
+  return [...studentActivities, ...teacherActivities, ...classActivities]
+    .filter((activity) => activity.date)
+    .sort((a, b) => b.date.getTime() - a.date.getTime())
+    .slice(0, 4);
 };
 
 // StatCard Component
@@ -785,6 +872,11 @@ function Dashboard() {
   const [isAddTeacherModalOpen, setIsAddTeacherModalOpen] = useState(false);
   const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
   const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false);
+  const recentActivities = useMemo(
+    () => buildRecentActivities({ students, teachers, classes }),
+    [students, teachers, classes]
+  );
+  const isActivityLoading = studentsLoading || teachersLoading || classesLoading || isRefreshing;
 
   const fetchAllData = async () => {
     setIsRefreshing(true);
@@ -989,34 +1081,33 @@ function Dashboard() {
             animate="visible"
             className="space-y-2"
           >
-            <RecentActivityItem
-              icon={Users}
-              title="Arday Cusub oo Diiwaan Gashay"
-              description="Axmed Cali waxa uu ku biiray Fasalka 10A"
-              time="2h kahor"
-              color="blue"
-            />
-            <RecentActivityItem
-              icon={Calendar}
-              title="Haddaha la Qoray"
-              description="Fasalka 10A - 25/30 halkaa joogay"
-              time="3h kahor"
-              color="green"
-            />
-            <RecentActivityItem
-              icon={BookOpen}
-              title="Fasalka Cusub la Abuuro"
-              description="Xisaab Fasalka 9aad"
-              time="5h kahor"
-              color="purple"
-            />
-            <RecentActivityItem
-              icon={GraduationCap}
-              title="Baraha Profile-ka la Cusboonaysiiyay"
-              description="Xaawa waxay cusboonaysiisay profile-keeda"
-              time="1d kahor"
-              color="orange"
-            />
+            {isActivityLoading ? (
+              Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="flex items-start space-x-3 p-3 rounded-lg">
+                  <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse mt-1" />
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-3 w-1/2 bg-gray-100 rounded animate-pulse" />
+                  </div>
+                  <div className="h-3 w-12 bg-gray-100 rounded animate-pulse" />
+                </div>
+              ))
+            ) : recentActivities.length > 0 ? (
+              recentActivities.map((activity) => (
+                <RecentActivityItem
+                  key={activity.id}
+                  icon={activity.icon}
+                  title={activity.title}
+                  description={activity.description}
+                  time={activity.time}
+                  color={activity.color}
+                />
+              ))
+            ) : (
+              <div className="p-4 text-sm text-gray-500 bg-gray-50 rounded-lg">
+                Waxqabad dhab ah wali lama helin.
+              </div>
+            )}
           </motion.div>
         </div>
       </div>

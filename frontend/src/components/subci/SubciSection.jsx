@@ -47,6 +47,14 @@ const ChevronRightIcon = ({ className }) => (
   </svg>
 )
 
+const getDateInputValue = (date = new Date()) => {
+  const parsedDate = date ? new Date(date) : new Date()
+  if (Number.isNaN(parsedDate.getTime())) return getDateInputValue()
+
+  const timezoneOffset = parsedDate.getTimezoneOffset() * 60000
+  return new Date(parsedDate.getTime() - timezoneOffset).toISOString().slice(0, 10)
+}
+
 function SubcisSection() {
   const { students, fetchStudents, loading: studentsLoading } = useStudentsStore()
   const [query, setQuery] = useState('')
@@ -58,8 +66,10 @@ function SubcisSection() {
   const [removing, setRemoving] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [subciPerformances, setSubciPerformances] = useState([])
+  const [subciDate, setSubciDate] = useState(getDateInputValue())
   const [records, setRecords] = useState([])
   const [editingId, setEditingId] = useState(null)
+  const [editingDate, setEditingDate] = useState('')
   const [editingRows, setEditingRows] = useState([])
   const [mobileView, setMobileView] = useState('list')
   const [expandedRecords, setExpandedRecords] = useState({})
@@ -192,12 +202,14 @@ function SubcisSection() {
 
   const saveSubciRecord = async () => {
     if (!selected?._id) return toast.error('Xulo Xalqad')
+    if (!subciDate) return toast.error('Fadlan dooro taariikhda Subciska')
     setSaving(true)
     try {
       await LessonRecordsAPI.createSubci({ 
         halaqaId: selected._id, 
         startingSurah: selected.startingSurah || '', 
         taxdiid: selected.taxdiid || '', 
+        date: subciDate,
         notes: '', 
         studentPerformances: subciPerformances 
       })
@@ -205,6 +217,7 @@ function SubcisSection() {
       setEditMode(false)
       loadRecords(selected._id)
       setSubciPerformances(selected.students.map(s => ({ student: s._id, versesTaken: 0, versesLost: 0, statusScore: 0, notes: '' })))
+      setSubciDate(getDateInputValue())
     } catch (e) { 
       toast.error('Kaydinta Subci waa fashilantay') 
     } finally {
@@ -225,6 +238,7 @@ function SubcisSection() {
 
   const startEdit = (r) => {
     setEditingId(r._id)
+    setEditingDate(getDateInputValue(r.date))
     setEditingRows((r.studentPerformances || []).map(sp => ({ 
       student: sp.student?._id || sp.student, 
       versesTaken: sp.versesTaken || 0, 
@@ -234,7 +248,7 @@ function SubcisSection() {
     })))
   }
   
-  const cancelEdit = () => { setEditingId(null); setEditingRows([]) }
+  const cancelEdit = () => { setEditingId(null); setEditingDate(''); setEditingRows([]) }
   
   const updateRow = (idx, key, value) => { 
     setEditingRows(prev => prev.map((x, i) => i === idx ? { 
@@ -245,10 +259,12 @@ function SubcisSection() {
   }
   
   const saveEdit = async (id) => {
+    if (!editingDate) return toast.error('Fadlan dooro taariikhda Subciska')
     try {
-      const res = await LessonRecordsAPI.update(id, { studentPerformances: editingRows })
+      const res = await LessonRecordsAPI.update(id, { date: editingDate, studentPerformances: editingRows })
       setRecords(prev => prev.map(r => r._id === id ? res.data : r))
       setEditingId(null); 
+      setEditingDate('');
       setEditingRows([])
       toast.success('Diiwaan Subcis waa la cusbooneysiiyay')
     } catch { toast.error('Cusbooneysiin fashilantay') }
@@ -534,6 +550,17 @@ function SubcisSection() {
         
         {isEditing ? (
           <div className="p-4">
+            <div className="mb-4 bg-indigo-50 border border-indigo-100 rounded-lg p-3">
+              <label className="text-xs font-medium text-indigo-700 block mb-1">
+                Taariikhda Subciska
+              </label>
+              <input
+                type="date"
+                value={editingDate}
+                onChange={(e) => setEditingDate(e.target.value)}
+                className="w-full sm:w-56 px-3 py-2 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+              />
+            </div>
             <div className="space-y-3 max-h-96 overflow-auto">
               {(record.studentPerformances || []).map((sp, idx) => {
                 const student = selected?.students?.find(s => s._id === (sp.student?._id || sp.student))
@@ -854,6 +881,18 @@ function SubcisSection() {
                         <Edit3 className="w-4 h-4 text-indigo-600" />
                         Diiwaanka Subciska Cusub
                       </h4>
+
+                      <div className="mb-4 bg-indigo-50 border border-indigo-100 rounded-lg p-3">
+                        <label className="text-xs font-medium text-indigo-700 block mb-1">
+                          Taariikhda Subciska
+                        </label>
+                        <input
+                          type="date"
+                          value={subciDate}
+                          onChange={(e) => setSubciDate(e.target.value)}
+                          className="w-full sm:w-56 px-3 py-2 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        />
+                      </div>
                       
                       <div className="space-y-3 max-h-96 overflow-auto">
                         {(selected.students || []).map((student, idx) => (

@@ -214,8 +214,8 @@ function DashboardLayout({ children }) {
         <div className="flex items-center space-x-3">
             <img src="/hello.jpg" alt="Logo" className='h-8 w-8 rounded-full' />
 <div className='grid'>
-            <span className="text-xl font-bold text-white">MARAAKIS </span>
-            <span className="text-xl font-bold text-white"> AL-FURQAAN</span>
+            <span className="text-xl font-bold text-white">مُؤَسَّسَةُ  </span>
+            <span className="text-xl font-bold text-white"> الفُرْقَانِ</span>
 </div>
         </div>
         <button

@@ -34,14 +34,20 @@ export const createQuranRecord = async (req, res) => {
 
 export const createSubcisRecord = async (req, res) => {
   try {
-    const { halaqaId, startingSurah, taxdiid, notes, studentPerformances } = req.body;
+    const { halaqaId, startingSurah, taxdiid, date, notes, studentPerformances } = req.body;
 
     const halaqa = await Halaqa.findById(halaqaId);
     if (!halaqa) return res.status(404).json({ message: "Halaqa not found" });
 
+    const recordDate = date ? new Date(date) : new Date();
+    if (Number.isNaN(recordDate.getTime())) {
+      return res.status(400).json({ message: "Taariikh sax ah geli" });
+    }
+
     const created = await LessonRecord.create({
       type: "subcis",
       halaqa: halaqaId,
+      date: recordDate,
       subci: {
         startingSurah,
         taxdiid,
@@ -63,11 +69,18 @@ export const createSubcisRecord = async (req, res) => {
 export const updateRecord = async (req, res) => {
   try {
     const { id } = req.params;
-    const { quran, subci, studentPerformances } = req.body;
+    const { quran, subci, date, studentPerformances } = req.body;
 
     const record = await LessonRecord.findById(id);
     if (!record) return res.status(404).json({ message: "Record not found" });
 
+    if (date !== undefined) {
+      const recordDate = new Date(date);
+      if (Number.isNaN(recordDate.getTime())) {
+        return res.status(400).json({ message: "Taariikh sax ah geli" });
+      }
+      record.date = recordDate;
+    }
     if (quran && typeof quran === 'object') {
       record.quran = { ...record.quran?.toObject?.() || {}, ...quran };
     }
