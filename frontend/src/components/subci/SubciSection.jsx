@@ -67,9 +67,11 @@ function SubcisSection() {
   const [editMode, setEditMode] = useState(false)
   const [subciPerformances, setSubciPerformances] = useState([])
   const [subciDate, setSubciDate] = useState(getDateInputValue())
+  const [subciMeta, setSubciMeta] = useState({ startingSurah: '', taxdiid: '', notes: '' })
   const [records, setRecords] = useState([])
   const [editingId, setEditingId] = useState(null)
   const [editingDate, setEditingDate] = useState('')
+  const [editingSubciMeta, setEditingSubciMeta] = useState({ startingSurah: '', taxdiid: '', notes: '' })
   const [editingRows, setEditingRows] = useState([])
   const [mobileView, setMobileView] = useState('list')
   const [expandedRecords, setExpandedRecords] = useState({})
@@ -181,6 +183,11 @@ function SubcisSection() {
   useEffect(() => {
     if (selected?.students) {
       setSubciPerformances(selected.students.map(s => ({ student: s._id, versesTaken: 0, versesLost: 0, statusScore: 0, notes: '' })))
+      setSubciMeta({
+        startingSurah: selected.startingSurah || '',
+        taxdiid: selected.taxdiid || '',
+        notes: ''
+      })
     }
   }, [selected])
 
@@ -207,10 +214,10 @@ function SubcisSection() {
     try {
       await LessonRecordsAPI.createSubci({ 
         halaqaId: selected._id, 
-        startingSurah: selected.startingSurah || '', 
-        taxdiid: selected.taxdiid || '', 
+        startingSurah: subciMeta.startingSurah, 
+        taxdiid: subciMeta.taxdiid, 
         date: subciDate,
-        notes: '', 
+        notes: subciMeta.notes, 
         studentPerformances: subciPerformances 
       })
       toast.success('Diiwaan Subci waa la kaydiyay')
@@ -218,6 +225,11 @@ function SubcisSection() {
       loadRecords(selected._id)
       setSubciPerformances(selected.students.map(s => ({ student: s._id, versesTaken: 0, versesLost: 0, statusScore: 0, notes: '' })))
       setSubciDate(getDateInputValue())
+      setSubciMeta({
+        startingSurah: selected.startingSurah || '',
+        taxdiid: selected.taxdiid || '',
+        notes: ''
+      })
     } catch (e) { 
       toast.error('Kaydinta Subci waa fashilantay') 
     } finally {
@@ -239,6 +251,11 @@ function SubcisSection() {
   const startEdit = (r) => {
     setEditingId(r._id)
     setEditingDate(getDateInputValue(r.date))
+    setEditingSubciMeta({
+      startingSurah: r.subci?.startingSurah || '',
+      taxdiid: r.subci?.taxdiid || '',
+      notes: r.subci?.notes || ''
+    })
     setEditingRows((r.studentPerformances || []).map(sp => ({ 
       student: sp.student?._id || sp.student, 
       versesTaken: sp.versesTaken || 0, 
@@ -248,7 +265,12 @@ function SubcisSection() {
     })))
   }
   
-  const cancelEdit = () => { setEditingId(null); setEditingDate(''); setEditingRows([]) }
+  const cancelEdit = () => { 
+    setEditingId(null); 
+    setEditingDate('');
+    setEditingSubciMeta({ startingSurah: '', taxdiid: '', notes: '' });
+    setEditingRows([]) 
+  }
   
   const updateRow = (idx, key, value) => { 
     setEditingRows(prev => prev.map((x, i) => i === idx ? { 
@@ -261,10 +283,15 @@ function SubcisSection() {
   const saveEdit = async (id) => {
     if (!editingDate) return toast.error('Fadlan dooro taariikhda Subciska')
     try {
-      const res = await LessonRecordsAPI.update(id, { date: editingDate, studentPerformances: editingRows })
+      const res = await LessonRecordsAPI.update(id, { 
+        date: editingDate, 
+        subci: editingSubciMeta,
+        studentPerformances: editingRows 
+      })
       setRecords(prev => prev.map(r => r._id === id ? res.data : r))
       setEditingId(null); 
       setEditingDate('');
+      setEditingSubciMeta({ startingSurah: '', taxdiid: '', notes: '' });
       setEditingRows([])
       toast.success('Diiwaan Subcis waa la cusbooneysiiyay')
     } catch { toast.error('Cusbooneysiin fashilantay') }
@@ -486,8 +513,8 @@ function SubcisSection() {
                     <div class="info-label">Xogta Guud ee Xalqada</div>
                     <div class="info-grid">
                       <div class="info-item"><span class="info-key">Xalqada</span><span class="info-value">${selected?.name || '-'}</span></div>
-                      <div class="info-item"><span class="info-key">Suurada laga bilaabayo</span><span class="info-value">${selected?.startingSurah || '-'}</span></div>
-                      <div class="info-item"><span class="info-key">Taxdiid</span><span class="info-value">${selected?.taxdiid || '-'}</span></div>
+                      <div class="info-item"><span class="info-key">Suurada laga bilaabayo</span><span class="info-value">${record.subci?.startingSurah || '-'}</span></div>
+                      <div class="info-item"><span class="info-key">Taxdiid</span><span class="info-value">${record.subci?.taxdiid || '-'}</span></div>
                     </div>
                   </div>
                   <table style="border-collapse: collapse; width: 100%; margin-top: 20px;">
@@ -561,6 +588,37 @@ function SubcisSection() {
                 className="w-full sm:w-56 px-3 py-2 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
               />
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+              <div>
+                <label className="text-xs text-gray-600 block mb-1">Suurada laga bilaabayo</label>
+                <input
+                  value={editingSubciMeta.startingSurah}
+                  onChange={(e) => setEditingSubciMeta(prev => ({ ...prev, startingSurah: e.target.value }))}
+                  className="w-full border rounded px-3 py-2 text-sm"
+                  placeholder="Tusaale: Al-Baqarah"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-600 block mb-1">Taxdiid</label>
+                <input
+                  value={editingSubciMeta.taxdiid}
+                  onChange={(e) => setEditingSubciMeta(prev => ({ ...prev, taxdiid: e.target.value }))}
+                  className="w-full border rounded px-3 py-2 text-sm"
+                  placeholder="Taxdiid"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-600 block mb-1">Faallo Guud</label>
+                <input
+                  value={editingSubciMeta.notes}
+                  onChange={(e) => setEditingSubciMeta(prev => ({ ...prev, notes: e.target.value }))}
+                  className="w-full border rounded px-3 py-2 text-sm"
+                  placeholder="Faallo guud"
+                />
+              </div>
+            </div>
+
             <div className="space-y-3 max-h-96 overflow-auto">
               {(record.studentPerformances || []).map((sp, idx) => {
                 const student = selected?.students?.find(s => s._id === (sp.student?._id || sp.student))
@@ -628,6 +686,20 @@ function SubcisSection() {
                 className="overflow-hidden"
               >
                 <div className="p-4 bg-gray-50">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                    <div className="bg-white rounded-lg p-3 border">
+                      <p className="text-xs text-gray-500">Suurada laga bilaabayo</p>
+                      <p className="font-medium text-gray-900">{record.subci?.startingSurah || '-'}</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 border">
+                      <p className="text-xs text-gray-500">Taxdiid</p>
+                      <p className="font-medium text-gray-900">{record.subci?.taxdiid || '-'}</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 border">
+                      <p className="text-xs text-gray-500">Faallo Guud</p>
+                      <p className="font-medium text-gray-900">{record.subci?.notes || '-'}</p>
+                    </div>
+                  </div>
                   <div className="space-y-2">
                     {(record.studentPerformances || []).map((sp, idx) => {
                       const student = selected?.students?.find(s => s._id === (sp.student?._id || sp.student))
@@ -883,15 +955,52 @@ function SubcisSection() {
                       </h4>
 
                       <div className="mb-4 bg-indigo-50 border border-indigo-100 rounded-lg p-3">
-                        <label className="text-xs font-medium text-indigo-700 block mb-1">
-                          Taariikhda Subciska
-                        </label>
-                        <input
-                          type="date"
-                          value={subciDate}
-                          onChange={(e) => setSubciDate(e.target.value)}
-                          className="w-full sm:w-56 px-3 py-2 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
-                        />
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                          <div>
+                            <label className="text-xs font-medium text-indigo-700 block mb-1">
+                              Taariikhda Subciska
+                            </label>
+                            <input
+                              type="date"
+                              value={subciDate}
+                              onChange={(e) => setSubciDate(e.target.value)}
+                              className="w-full px-3 py-2 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-indigo-700 block mb-1">
+                              Suurada laga bilaabayo
+                            </label>
+                            <input
+                              value={subciMeta.startingSurah}
+                              onChange={(e) => setSubciMeta(prev => ({ ...prev, startingSurah: e.target.value }))}
+                              className="w-full px-3 py-2 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                              placeholder="Tusaale: Al-Baqarah"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-indigo-700 block mb-1">
+                              Taxdiid
+                            </label>
+                            <input
+                              value={subciMeta.taxdiid}
+                              onChange={(e) => setSubciMeta(prev => ({ ...prev, taxdiid: e.target.value }))}
+                              className="w-full px-3 py-2 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                              placeholder="Taxdiid"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-indigo-700 block mb-1">
+                              Faallo Guud
+                            </label>
+                            <input
+                              value={subciMeta.notes}
+                              onChange={(e) => setSubciMeta(prev => ({ ...prev, notes: e.target.value }))}
+                              className="w-full px-3 py-2 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                              placeholder="Faallo guud"
+                            />
+                          </div>
+                        </div>
                       </div>
                       
                       <div className="space-y-3 max-h-96 overflow-auto">
