@@ -215,7 +215,7 @@ function DashboardLayout({ children }) {
             <img src="/hello.jpg" alt="Logo" className='h-8 w-8 rounded-full' />
 <div className='grid'>
             <span className="text-xl font-bold text-white">مُؤَسَّسَةُ  </span>
-            <span className="text-xl font-bold text-white"> الفُرْقَانِ</span>
+            <span className="text-xl font-bold text-white"> الفُرْقَنِ</span>
 </div>
         </div>
         <button
