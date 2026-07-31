@@ -372,7 +372,7 @@ function DashboardLayout({ children }) {
                   >
                     <div className="py-1">
                       <div className="px-4 py-2 text-sm font-medium text-gray-900 border-b border-gray-100">
-                        Notification
+                        Notification 
                       </div>
                       <div className="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
                         <p className="text-sm font-medium text-gray-900">New exam scheduled</p>

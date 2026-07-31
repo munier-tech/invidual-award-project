@@ -28,9 +28,9 @@ const translations = {
   },
   examTypes: {
     "mid-term": "Imtixaan Shahri 1",
-    "final": "Imtixaan Yar",
+    "final": "Imtixaan wayn",
     "quiz": "Imtixaan Shahri 2",
-    "assignment": "Imtixaan Wayn"
+    "assignment": "Imtixaan yar"
   },
 };
 

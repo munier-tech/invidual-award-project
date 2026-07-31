@@ -1,33 +1,10 @@
-import mongoose from "mongoose";
-
-
-
+import mongoose from 'mongoose';
 
 const healthSchema = new mongoose.Schema({
-  student : {
-    type : mongoose.Schema.Types.ObjectId,
-    ref : 'Student',
-    required: true
-  },
-  date : {
-    type : Date,
-    required : true,
-    default: Date.now
-  },
-  condition : {
-    type : String,
-    required: true
-  },
-  treated : {
-    type : Boolean,
-    required: true
-  },
-  note : {
-    type : String,
-    required: false
-  }
-} , { timestamps: true });
+  student: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
+  date: { type: Date, default: Date.now },
+  healthStatus: { type: String, default: 'normal' },
+  notes: { type: String, default: '' },
+}, { timestamps: true });
 
-const Health = mongoose.model('Health', healthSchema);
-
-export default Health;
+export default mongoose.models.Health || mongoose.model('Health', healthSchema);

@@ -1,59 +1,13 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
+const teachersSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  number: { type: String, required: true },
+  email: { type: String, required: true, unique: true, lowercase: true },
+  subject: { type: String, required: true },
+  profilePicture: { type: String, default: 'no profile picture' },
+  certificate: { type: String, default: 'no certificate' },
+  assignedClasses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Class' }],
+}, { timestamps: true });
 
-export const teachersSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-  },
-  number : {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  subject : {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  profilePicture : {
-    type: String,
-    required: false,
-    trim: true,
-  },
-  attendance : {
-    type: Number,
-    ref: 'Attendance',
-  },
-  certificate : {
-    type: String,
-    required: false,
-    trim: true,
-  },
-  assignedClasses: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Class",
-    },
-  ],
-  salaryRecords: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Salary",
-    },
-  ]
-}, {
-  timestamps: true,
-});
-
-
-const Teachers = mongoose.model('Teachers', teachersSchema);
-
-export default Teachers;
+export default mongoose.models.Teachers || mongoose.model('Teachers', teachersSchema);
