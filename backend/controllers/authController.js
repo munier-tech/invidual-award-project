@@ -316,7 +316,8 @@ export const forgotPassword = async (req, res) => {
     user.resetPasswordExpires = Date.now() + 60 * 60 * 1000;
     await user.save();
 
-    const frontendBaseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const requestOrigin = req.headers.origin || req.headers.referer || process.env.FRONTEND_URL;
+    const frontendBaseUrl = process.env.FRONTEND_URL || process.env.CORS_ORIGIN || requestOrigin || "http://localhost:5173";
     const resetLink = `${frontendBaseUrl}/reset-password?token=${resetToken}`;
     const mailResult = await sendPasswordResetEmail(user.email, resetLink);
 
@@ -324,7 +325,7 @@ export const forgotPassword = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: "dib u hagaajinta passwordka waxay la socotaa emailkaaga.",
-        resetLink: process.env.NODE_ENV !== "production" ? resetLink : undefined,
+        resetLink,
         emailDelivery: "not-configured"
       });
     }
@@ -332,6 +333,7 @@ export const forgotPassword = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Tilmaamaha dib u hagaajinta passwordka ayaa loo diray emailkaaga.",
+      resetLink,
       emailDelivery: "sent"
     });
   } catch (error) {
