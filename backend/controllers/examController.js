@@ -251,7 +251,7 @@ export const getStudentExamsByYear = async (req, res) => {
       student: studentId,
       academicYear: academicYear
     })
-      .populate('student', 'name email')
+      .populate('student', 'fullname')
       .populate('class', 'name')
       .populate('teacher', 'name email')
       .populate('subjectId', 'name');
@@ -313,6 +313,7 @@ export const getExamsByClassAndYear = async (req, res) => {
       subjectId,
     })
       .populate("student", "fullname")
+      .populate("teacher", "name email")
       .populate("subjectId", "name")
       .sort({ date: -1 });
 
@@ -357,7 +358,9 @@ export const updateExam = async (req, res) => {
       examId,
       updateData,
       { new: true }
-    ).populate("student", "fullname");
+    ).populate("student", "fullname")
+     .populate("teacher", "name email")
+     .populate("subjectId", "name");
 
     if (!updatedExam) {
       return res.status(404).json({ message: "Exam not found" });
