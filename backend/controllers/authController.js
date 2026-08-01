@@ -316,8 +316,15 @@ export const forgotPassword = async (req, res) => {
     user.resetPasswordExpires = Date.now() + 60 * 60 * 1000;
     await user.save();
 
-    const requestOrigin = req.headers.origin || req.headers.referer || process.env.FRONTEND_URL;
-    const frontendBaseUrl = process.env.FRONTEND_URL || process.env.CORS_ORIGIN || requestOrigin || "http://localhost:5173";
+    const requestOrigin = req.headers.origin || req.headers.referer || '';
+    const rawFrontendOrigin = requestOrigin
+      ? requestOrigin.replace(/\/$/, '')
+      : (process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:5173');
+
+    const frontendBaseUrl = rawFrontendOrigin.includes('://')
+      ? rawFrontendOrigin.replace(/\/$/, '')
+      : `https://${rawFrontendOrigin.replace(/\/$/, '')}`;
+
     const resetLink = `${frontendBaseUrl}/reset-password?token=${resetToken}`;
     const mailResult = await sendPasswordResetEmail(user.email, resetLink);
 
