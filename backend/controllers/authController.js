@@ -316,10 +316,16 @@ export const forgotPassword = async (req, res) => {
     user.resetPasswordExpires = Date.now() + 60 * 60 * 1000;
     await user.save();
 
-    const requestOrigin = req.headers.origin || req.headers.referer || '';
-    const rawFrontendOrigin = requestOrigin
-      ? requestOrigin.replace(/\/$/, '')
-      : (process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:5173');
+    const requestOrigin = req.headers.origin || '';
+    const forwardedProto = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+    const forwardedHost = req.headers['x-forwarded-host'] || req.headers.host || '';
+    const refererOrigin = req.headers.referer ? new URL(req.headers.referer).origin : '';
+
+    const rawFrontendOrigin = requestOrigin || refererOrigin || (
+      forwardedHost
+        ? `${forwardedProto}://${forwardedHost}`
+        : (process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:5173')
+    );
 
     const frontendBaseUrl = rawFrontendOrigin.includes('://')
       ? rawFrontendOrigin.replace(/\/$/, '')
