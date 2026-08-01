@@ -7,6 +7,7 @@ import ThemeProvider from './components/ThemeProvider';
 
 // Pages
 import Login from './pages/Login';
+import ResetPassword from './pages/ResetPassword';
 import Signup from './pages/signUp';
 import Dashboard from './pages/Dashboard';
 import UserManagement from './pages/UserManagement';
@@ -148,6 +149,15 @@ function App() {
           element={
             <PublicRoute>
               <Login />
+            </PublicRoute>
+          }
+        />
+
+        <Route
+          path="/reset-password"
+          element={
+            <PublicRoute>
+              <ResetPassword />
             </PublicRoute>
           }
         />

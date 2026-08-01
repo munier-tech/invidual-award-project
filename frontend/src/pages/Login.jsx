@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 import { useNavigate, Link } from 'react-router-dom'
-import { Lock, User, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Lock, User, Eye, EyeOff, Loader2, Mail } from 'lucide-react'
 import { motion } from 'framer-motion'
 import useAuthStore from '../store/authStore'
 
@@ -51,8 +51,12 @@ const formVariants = {
 
 function Login() {
   const navigate = useNavigate()
-  const { login, isLoading, isAuthenticated, user } = useAuthStore()
+  const { login, forgotPassword, isLoading, isAuthenticated, user } = useAuthStore()
   const [showPassword, setShowPassword] = React.useState(false)
+  const [showForgotPassword, setShowForgotPassword] = React.useState(false)
+  const [forgotEmail, setForgotEmail] = React.useState('')
+  const [forgotResetLink, setForgotResetLink] = React.useState('')
+  const [forgotMessage, setForgotMessage] = React.useState('')
 
   const {
     register,
@@ -74,6 +78,20 @@ function Login() {
       const destination = result.user?.role === 'teacher' ? '/quran' : '/dashboard'
       navigate(destination)
     }
+  }
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault()
+
+    if (!forgotEmail.trim()) {
+      return
+    }
+
+    const result = await forgotPassword({ email: forgotEmail.trim() })
+    setForgotResetLink(result.resetLink || '')
+    setForgotMessage(result.message || '')
+    setShowForgotPassword(false)
+    setForgotEmail('')
   }
 
   return (
@@ -203,6 +221,16 @@ function Login() {
               )}
             </motion.div>
 
+            <div className="flex items-center justify-between text-sm">
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword((prev) => !prev)}
+                className="font-medium text-primary-600 hover:text-primary-500 transition-colors"
+              >
+                Forgot password?
+              </button>
+            </div>
+
             {/* Submit Button */}
             <motion.button
               type="submit"
@@ -222,6 +250,50 @@ function Login() {
               )}
             </motion.button>
           </form>
+
+          {showForgotPassword && (
+            <form onSubmit={handleForgotPassword} className="space-y-3 border-t border-gray-200 pt-4">
+              <label htmlFor="forgotEmail" className="block text-sm font-medium text-gray-700">
+                Emailkaaga geli si aad u hesho dib-u-hagaajinta passwordka
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="forgotEmail"
+                  type="email"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  autoComplete="email"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="Geli emailkaaga"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-2 px-4 rounded-lg bg-primary-600 text-white text-sm font-medium disabled:opacity-50"
+              >
+                {isLoading ? 'Furay... ' : 'Dib u hagaajinta passwordka'}
+              </button>
+            </form>
+          )}
+
+          {forgotResetLink && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              <p className="font-medium">Reset link:</p>
+              <a href={forgotResetLink} className="break-all text-blue-700 underline">
+                {forgotResetLink}
+              </a>
+            </div>
+          )}
+
+          {forgotMessage && !forgotResetLink && (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+              {forgotMessage}
+            </div>
+          )}
 
           {/* Footer */}
           <motion.div 

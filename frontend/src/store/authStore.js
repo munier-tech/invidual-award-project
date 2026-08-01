@@ -62,6 +62,41 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
+  forgotPassword: async (emailData) => {
+    set({ isLoading: true })
+    try {
+      const response = await axios.post('/auth/forgot-password', emailData)
+      const message = response.data?.message || 'Password reset instructions sent.'
+      const resetLink = response.data?.resetLink
+      set({ isLoading: false })
+      toast.success(message)
+      return { success: true, message, resetLink, emailDelivery: response.data?.emailDelivery }
+    } catch (error) {
+      console.error('Forgot password error:', error)
+      set({ isLoading: false })
+      const message = error.response?.data?.message || error.message || 'Failed to request reset'
+      toast.error(message)
+      return { success: false, message }
+    }
+  },
+
+  resetPassword: async (payload) => {
+    set({ isLoading: true })
+    try {
+      const response = await axios.post('/auth/reset-password', payload)
+      const message = response.data?.message || 'Password reset successful.'
+      set({ isLoading: false })
+      toast.success(message)
+      return { success: true, message }
+    } catch (error) {
+      console.error('Reset password error:', error)
+      set({ isLoading: false })
+      const message = error.response?.data?.message || error.message || 'Reset failed'
+      toast.error(message)
+      return { success: false, message }
+    }
+  },
+
   signup: async (userData) => {
   set({ isLoading: true })
 

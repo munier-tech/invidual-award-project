@@ -1,5 +1,5 @@
 import express from "express"
-import {  deleteUser, getAllUser, LogOut, SignIn, SignUp, updateUser, WhoAmI } from "../controllers/authController.js";
+import {  deleteUser, forgotPassword, getAllUser, LogOut, resetPassword, SignIn, SignUp, updateUser, WhoAmI } from "../controllers/authController.js";
 import { protectedRoute } from "../middlewares/authorization.js";
 const router = express.Router();
 
@@ -8,6 +8,8 @@ const router = express.Router();
 
 router.post("/signUp", SignUp)
 router.post("/login", SignIn)
+router.post("/forgot-password", forgotPassword)
+router.post("/reset-password", resetPassword)
 router.post("/logout",protectedRoute ,  LogOut)
 router.get("/",protectedRoute ,  getAllUser)
 router.put("/update/:userId",protectedRoute ,  updateUser)
