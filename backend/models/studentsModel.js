@@ -12,6 +12,8 @@ const studentsSchema = new mongoose.Schema({
     paid: { type: Number, default: 0 },
   },
   examRecords: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Exam' }],
+  disciplineReports: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Discipline' }],
+  healthRecords: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Health' }],
 }, { timestamps: true });
 
 export default mongoose.models.Student || mongoose.model('Student', studentsSchema);
