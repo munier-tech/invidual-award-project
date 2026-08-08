@@ -212,10 +212,12 @@ function DashboardLayout({ children }) {
     <div className="flex flex-col h-full bg-gray-900 text-gray-100">
       <div className="flex items-center justify-between h-16 px-4 border-b border-gray-700">
         <div className="flex items-center space-x-3">
-            <img src="/hello.jpg" alt="Logo" className='h-8 w-8 rounded-full' />
+  		  <div className="rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 p-2 shadow-lg shadow-violet-950/40">
+  		    <img src="/hello.jpg" alt="Logo" className='h-8 w-8 rounded-full border border-white/30' />
+  		  </div>
 <div className='grid'>
-            <span className="text-xl font-bold text-white">مُؤَسَّسَةُ  </span>
-            <span className="text-xl font-bold text-white"> الفُرْقَنِ</span>
+            <span className="text-lg font-black tracking-tight text-white">مؤسسة</span>
+            <span className="text-lg font-black tracking-tight text-violet-200">الفُرْقَنِ</span>
 </div>
         </div>
         <button

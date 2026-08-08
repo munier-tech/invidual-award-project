@@ -345,7 +345,7 @@ export const forgotPassword = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Tilmaamaha dib u hagaajinta passwordka ayaa loo diray emailkaaga.",
+      message: "Tilmaamaha dib u hagaajintaa passwordka ayaa loo diray emailkaaga.",
       resetLink,
       emailDelivery: "sent"
     });

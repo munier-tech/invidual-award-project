@@ -131,10 +131,10 @@ const buildRecentActivities = ({ students, teachers, classes }) => {
 // StatCard Component
 const StatCard = ({ title, value, icon: Icon, color, trend, loading }) => {
   const colorMap = {
-    blue: { border: 'border-blue-500', bg: 'bg-blue-100', text: 'text-blue-600' },
-    green: { border: 'border-green-500', bg: 'bg-green-100', text: 'text-green-600' },
-    purple: { border: 'border-purple-500', bg: 'bg-purple-100', text: 'text-purple-600' },
-    orange: { border: 'border-orange-500', bg: 'bg-orange-100', text: 'text-orange-600' }
+    blue: { accent: 'from-blue-500 to-sky-500', bg: 'bg-blue-50', iconBg: 'bg-blue-100', text: 'text-blue-700', chip: 'text-blue-700' },
+    green: { accent: 'from-emerald-500 to-green-500', bg: 'bg-emerald-50', iconBg: 'bg-emerald-100', text: 'text-emerald-700', chip: 'text-emerald-700' },
+    purple: { accent: 'from-violet-500 to-fuchsia-500', bg: 'bg-violet-50', iconBg: 'bg-violet-100', text: 'text-violet-700', chip: 'text-violet-700' },
+    orange: { accent: 'from-orange-500 to-amber-500', bg: 'bg-orange-50', iconBg: 'bg-orange-100', text: 'text-orange-700', chip: 'text-orange-700' }
   };
 
   return (
@@ -142,24 +142,25 @@ const StatCard = ({ title, value, icon: Icon, color, trend, loading }) => {
       variants={itemVariants}
       initial="hidden"
       animate="visible"
-      whileHover={{ scale: 1.03 }}
+      whileHover={{ scale: 1.03, y: -3 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className={`bg-white rounded-xl shadow-sm p-6 border-l-4 ${colorMap[color].border}`}
+      className={`bg-white/95 rounded-2xl shadow-[0_12px_30px_rgba(15,23,42,0.08)] p-6 border border-slate-100 overflow-hidden relative`}
     >
+      <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${colorMap[color].accent}`} />
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-          <p className="text-3xl font-bold text-gray-900">
-            {loading ? <div className="animate-pulse bg-gray-200 h-8 w-16 rounded"></div> : value}
+          <p className="text-sm font-semibold text-slate-500 mb-2">{title}</p>
+          <p className="text-3xl font-black text-slate-900">
+            {loading ? <div className="animate-pulse bg-slate-200 h-8 w-16 rounded"></div> : value}
           </p>
           {trend && (
-            <div className="flex items-center mt-2">
-              <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-              <span className="text-sm text-green-600 font-medium">{trend}</span>
+            <div className="flex items-center mt-3 gap-1">
+              <TrendingUp className="w-4 h-4 text-emerald-500" />
+              <span className="text-sm text-emerald-600 font-semibold">{trend}</span>
             </div>
           )}
         </div>
-        <div className={`p-3 rounded-lg ${colorMap[color].bg}`}>
+        <div className={`p-3 rounded-2xl ${colorMap[color].iconBg} ${colorMap[color].bg}`}>
           <Icon className={`w-6 h-6 ${colorMap[color].text}`} />
         </div>
       </div>
@@ -170,32 +171,32 @@ const StatCard = ({ title, value, icon: Icon, color, trend, loading }) => {
 // QuickActionCard Component
 const QuickActionCard = ({ title, description, icon: Icon, color, onClick }) => {
   const colorMap = {
-    blue: 'bg-blue-500',
-    green: 'bg-green-500',
-    purple: 'bg-purple-500',
-    orange: 'bg-orange-500'
+    blue: 'from-blue-500 to-sky-500',
+    green: 'from-emerald-500 to-green-500',
+    purple: 'from-violet-500 to-fuchsia-500',
+    orange: 'from-orange-500 to-amber-500'
   };
 
   return (
     <motion.button
       variants={itemVariants}
-      whileHover={{ scale: 1.05, boxShadow: "0px 10px 20px rgba(0, 0, 0, 0.1)" }}
-      whileTap={{ scale: 0.95 }}
+      whileHover={{ scale: 1.03, y: -2 }}
+      whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="bg-white rounded-xl shadow-sm p-5 transition-all duration-200 text-left w-full group border border-gray-100"
+      className="bg-white rounded-2xl shadow-[0_10px_25px_rgba(15,23,42,0.08)] p-5 transition-all duration-200 text-left w-full group border border-slate-100"
     >
       <div className="flex items-center space-x-4">
         <motion.div
-          whileHover={{ scale: 1.1 }}
-          className={`p-3 rounded-lg ${colorMap[color]} group-hover:scale-105 transition-transform`}
+          whileHover={{ scale: 1.08 }}
+          className={`p-3 rounded-2xl bg-gradient-to-br ${colorMap[color]} group-hover:scale-105 transition-transform shadow-lg`}
         >
           <Icon className="w-5 h-5 text-white" />
         </motion.div>
         <div>
-          <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+          <h3 className="font-bold text-slate-900 group-hover:text-violet-700 transition-colors">
             {title}
           </h3>
-          <p className="text-sm text-gray-500">{description}</p>
+          <p className="text-sm text-slate-500">{description}</p>
         </div>
       </div>
     </motion.button>
@@ -214,18 +215,18 @@ const RecentActivityItem = ({ icon: Icon, title, description, time, color }) => 
   return (
     <motion.div
       variants={itemVariants}
-      whileHover={{ x: 5 }}
+      whileHover={{ x: 4 }}
       transition={{ type: "spring", stiffness: 400, damping: 20 }}
-      className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+      className="flex items-start space-x-3 p-3 hover:bg-slate-50 rounded-2xl transition-colors border border-transparent hover:border-slate-100"
     >
-      <div className={`p-2 rounded-full ${colorMap[color]} mt-1`}>
+      <div className={`p-2 rounded-full ${colorMap[color]} mt-1 shadow-sm`}>
         <Icon className="w-4 h-4 text-white" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 truncate">{title}</p>
-        <p className="text-xs text-gray-500 truncate">{description}</p>
+        <p className="text-sm font-semibold text-slate-900 truncate">{title}</p>
+        <p className="text-xs text-slate-500 truncate">{description}</p>
       </div>
-      <div className="flex items-center text-xs text-gray-400 whitespace-nowrap">
+      <div className="flex items-center text-xs text-slate-400 whitespace-nowrap">
         <Clock className="w-3 h-3 mr-1" />
         {time}
       </div>
@@ -941,7 +942,7 @@ function Dashboard() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="space-y-6 p-4 md:p-6 bg-gray-50 min-h-screen"
+      className="space-y-6 p-4 md:p-6 bg-transparent min-h-screen"
     >
       <AddTeacherModal 
         isOpen={isAddTeacherModalOpen}
@@ -964,24 +965,24 @@ function Dashboard() {
       />
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl bg-white/85 backdrop-blur-sm border border-slate-100 px-5 py-4 shadow-[0_12px_30px_rgba(15,23,42,0.08)]">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-            Ku soo dhawoow, <span className="text-blue-600">{user?.username}</span>!
+          <h1 className="text-2xl md:text-3xl font-black text-slate-900">
+            Ku soo dhawoow, <span className="text-violet-700">{user?.username}</span>!
           </h1>
-          <p className="text-gray-600 mt-1 text-sm md:text-base">
+          <p className="text-slate-600 mt-1 text-sm md:text-base">
             Halkan waxa ku yaal waxyaabaha ka dhacaya Maamulka AL-Furqaan maanta.
           </p>
         </div>
         <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
           onClick={fetchAllData}
           disabled={isRefreshing}
-          className="flex items-center space-x-2 bg-white text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg border border-blue-100 shadow-sm transition-colors duration-200"
+          className="flex items-center space-x-2 bg-white text-violet-700 hover:bg-violet-50 px-4 py-2 rounded-xl border border-violet-100 shadow-sm transition-colors duration-200"
         >
           <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          <span className="text-sm font-medium">Cusboonaysii Xogta</span>
+          <span className="text-sm font-semibold">Cusboonaysii Xogta</span>
         </motion.button>
       </div>
 
@@ -1021,12 +1022,12 @@ function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Quick Actions */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white/90 rounded-3xl shadow-[0_12px_30px_rgba(15,23,42,0.08)] p-6 border border-slate-100">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
-              <h2 className="text-xl font-semibold text-gray-900">Ficilal Degdeg ah</h2>
-              <div className="flex items-center space-x-2 bg-green-50 px-3 py-1 rounded-full">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-green-700">Nidaamka Online ah</span>
+              <h2 className="text-xl font-bold text-slate-900">Ficilal Degdeg ah</h2>
+              <div className="flex items-center space-x-2 bg-emerald-50 px-3 py-1 rounded-full">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                <span className="text-sm font-semibold text-emerald-700">Nidaamka Online ah</span>
               </div>
             </div>
             <motion.div
@@ -1070,10 +1071,10 @@ function Dashboard() {
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white/90 rounded-3xl shadow-[0_12px_30px_rgba(15,23,42,0.08)] p-6 border border-slate-100">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Waxqabadka Ugu Danbeeyay</h2>
-            <Activity className="w-5 h-5 text-gray-400" />
+            <h2 className="text-xl font-bold text-slate-900">Waxqabadka Ugu Danbeeyay</h2>
+            <Activity className="w-5 h-5 text-violet-500" />
           </div>
           <motion.div
             variants={containerVariants}
