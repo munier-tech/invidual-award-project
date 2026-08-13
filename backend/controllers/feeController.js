@@ -44,46 +44,56 @@ export const createFeeRecord = async (req, res) => {
       return res.status(400).json({ message: "Ardaygan fasalka lama geeyey" });
     }
 
-    // Check if fee record already exists for this student, month, and year
-    const existingFee = await Fee.findOne({ student, month, year });
-    if (existingFee) {
-      return res.status(400).json({ message: "Lacagta bishan ardaygan horay ayaa loo abuuray" });
+    // Use atomic upsert to avoid race conditions where two requests
+    // may try to create the same fee simultaneously. If the fee
+    // already exists, return it (200) instead of throwing an error.
+
+    const upsertResult = await Fee.findOneAndUpdate(
+      { student, month, year },
+      {
+        $setOnInsert: {
+          student,
+          class: existingStudent.class._id,
+          amount,
+          month,
+          year,
+          dueDate: new Date(dueDate),
+          note: note || "",
+          createdBy: req.user.id,
+          paid: !!paid,
+          paidDate: paid ? (paidDate ? new Date(paidDate) : new Date()) : null
+        }
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true, rawResult: true }
+    );
+
+    // `upsertResult` contains the raw result when `rawResult: true` is used
+    // and `value` is the resulting document.
+    const feeRecord = upsertResult.value;
+    const wasExisting = upsertResult.lastErrorObject && upsertResult.lastErrorObject.updatedExisting;
+
+    // If it was newly inserted, update Finance accordingly
+    if (!wasExisting && feeRecord) {
+      const finance = await getOrCreateMonthlyFinance(parseInt(month), parseInt(year));
+      if (feeRecord.paid) {
+        finance.income = Math.max(0, (finance.income || 0) + feeRecord.amount);
+        finance.paidFeesCount = (finance.paidFeesCount || 0) + 1;
+      } else {
+        finance.debt = Math.max(0, (finance.debt || 0) + feeRecord.amount);
+        finance.unpaidFeesCount = (finance.unpaidFeesCount || 0) + 1;
+      }
+      finance.lastUpdated = new Date();
+      await finance.save();
     }
 
-    const feeRecord = new Fee({
-      student,
-      class: existingStudent.class._id,
-      amount,
-      month,
-      year,
-      dueDate: new Date(dueDate),
-      note: note || "",
-      createdBy: req.user.id,
-      paid: !!paid,
-      paidDate: paid ? (paidDate ? new Date(paidDate) : new Date()) : null
-    });
+    // Populate the returned record for consistency
+    if (feeRecord) await Fee.populate(feeRecord, ['student', 'class', 'createdBy']);
 
-    await feeRecord.save();
-
-    // Real-time Finance update
-    const finance = await getOrCreateMonthlyFinance(parseInt(month), parseInt(year));
-    if (feeRecord.paid) {
-      finance.income = Math.max(0, (finance.income || 0) + feeRecord.amount);
-      finance.paidFeesCount = (finance.paidFeesCount || 0) + 1;
-    } else {
-      finance.debt = Math.max(0, (finance.debt || 0) + feeRecord.amount);
-      finance.unpaidFeesCount = (finance.unpaidFeesCount || 0) + 1;
+    if (wasExisting) {
+      return res.status(200).json({ message: "Fee already exists for this student/month/year", feeRecord });
     }
-    finance.lastUpdated = new Date();
-    await finance.save();
 
-    // Populate the created record for response
-    await feeRecord.populate(['student', 'class', 'createdBy']);
-
-    return res.status(201).json({ 
-      message: "Diiwaanka lacagta si guul leh ayaa loo abuuray", 
-      feeRecord 
-    });
+    return res.status(201).json({ message: "Diiwaanka lacagta si guul leh ayaa loo abuuray", feeRecord });
 
   } catch (error) {
     console.error("Error creating fee record:", error);
