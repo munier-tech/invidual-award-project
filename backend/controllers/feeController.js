@@ -3,6 +3,24 @@ import Student from "../models/studentsModel.js";
 import Class from "../models/classModel.js";
 import Finance from "../models/financeModel.js";
 
+const normalizePaidFlag = (value) => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value === 1 ? true : false;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    return normalized === 'true' || normalized === '1' || normalized === 'yes';
+  }
+  return !!value;
+};
+
+const getPaidQuery = (isPaid) => ({
+  $or: [
+    { paid: isPaid },
+    { paid: isPaid ? 1 : 0 },
+    { paid: String(isPaid) }
+  ]
+});
+
 // Helper: ensure monthly finance exists
 async function getOrCreateMonthlyFinance(month, year) {
   let finance = await Finance.findOne({ month, year });
@@ -29,6 +47,7 @@ async function getOrCreateMonthlyFinance(month, year) {
 export const createFeeRecord = async (req, res) => {
   try {
     const { student, amount, month, year, dueDate, note, paid, paidDate } = req.body;
+    const normalizedPaid = normalizePaidFlag(paid);
 
     if (!student || !amount || !month || !year || !dueDate) {
       return res.status(400).json({ message: "Fadlan buuxi dhammaan meelaha banan" });
@@ -60,8 +79,8 @@ export const createFeeRecord = async (req, res) => {
           dueDate: new Date(dueDate),
           note: note || "",
           createdBy: req.user.id,
-          paid: !!paid,
-          paidDate: paid ? (paidDate ? new Date(paidDate) : new Date()) : null
+          paid: normalizedPaid,
+          paidDate: normalizedPaid ? (paidDate ? new Date(paidDate) : new Date()) : null
         }
       },
       { upsert: true, new: true, setDefaultsOnInsert: true, rawResult: true }
@@ -105,6 +124,7 @@ export const createFeeRecord = async (req, res) => {
 export const createClassFees = async (req, res) => {
   try {
     const { classId, amount, month, year, dueDate, note, paid } = req.body;
+    const normalizedPaid = normalizePaidFlag(paid);
 
     if (!classId || !amount || !month || !year || !dueDate) {
       return res.status(400).json({ message: "Fadlan buuxi dhammaan meelaha banan" });
@@ -150,8 +170,8 @@ export const createClassFees = async (req, res) => {
         dueDate: new Date(dueDate),
         note: note || "",
         createdBy: req.user.id,
-        paid: !!paid,
-        paidDate: paid ? new Date() : null
+        paid: normalizedPaid,
+        paidDate: normalizedPaid ? new Date() : null
       });
 
       await feeRecord.save();
@@ -307,6 +327,7 @@ export const updateFeeRecord = async (req, res) => {
   try {
     const { feeId } = req.params;
     const { paid, paidDate, note, amount, dueDate } = req.body;
+    const normalizedPaid = normalizePaidFlag(paid);
 
     const feeRecord = await Fee.findById(feeId);
     if (!feeRecord) {
@@ -318,8 +339,8 @@ export const updateFeeRecord = async (req, res) => {
 
     // Update fields
     if (paid !== undefined) {
-      feeRecord.paid = paid;
-      feeRecord.paidDate = paid ? (paidDate ? new Date(paidDate) : new Date()) : null;
+      feeRecord.paid = normalizedPaid;
+      feeRecord.paidDate = normalizedPaid ? (paidDate ? new Date(paidDate) : new Date()) : null;
     }
     if (note !== undefined) feeRecord.note = note;
     if (amount !== undefined && !isNaN(amount)) feeRecord.amount = Number(amount);
@@ -421,7 +442,7 @@ export const getFeeStatistics = async (req, res) => {
     if (year) filter.year = parseInt(year);
 
     const totalFees = await Fee.countDocuments(filter);
-    const paidFees = await Fee.countDocuments({ ...filter, paid: true });
+    const paidFees = await Fee.countDocuments({ ...filter, $or: [{ paid: true }, { paid: 1 }, { paid: 'true' }] });
     const unpaidFees = totalFees - paidFees;
     
     const totalAmount = await Fee.aggregate([
@@ -430,7 +451,7 @@ export const getFeeStatistics = async (req, res) => {
     ]);
 
     const paidAmount = await Fee.aggregate([
-      { $match: { ...filter, paid: true } },
+      { $match: { ...filter, $or: [{ paid: true }, { paid: 1 }, { paid: 'true' }] } },
       { $group: { _id: null, total: { $sum: "$amount" } } }
     ]);
 

@@ -3,6 +3,14 @@ import Fee from "../models/feeModel.js";
 import Salary from "../models/salaryModel.js";
 import FamilyFee from "../models/familyFeeModel.js";
 
+const getPaidFeeMatch = (isPaid) => ({
+  $or: [
+    { paid: isPaid },
+    { paid: isPaid ? 1 : 0 },
+    { paid: String(isPaid) }
+  ]
+});
+
 export const AddFinance = async ( req, res ) => {
   try {
 
@@ -56,8 +64,8 @@ export const generateMonthlyFinance = async (req, res) => {
       { 
         $match: { 
           month: monthNum, 
-          year: yearNum, 
-          paid: true 
+          year: yearNum,
+          $or: [{ paid: true }, { paid: 1 }, { paid: 'true' }] 
         } 
       },
       { 
@@ -106,8 +114,8 @@ export const generateMonthlyFinance = async (req, res) => {
       { 
         $match: { 
           month: monthNum, 
-          year: yearNum, 
-          paid: false 
+          year: yearNum,
+          $or: [{ paid: false }, { paid: 0 }, { paid: 'false' }] 
         } 
       },
       { 
@@ -200,8 +208,8 @@ export const getFinanceSummary = async (req, res) => {
       { 
         $match: { 
           month: monthNum, 
-          year: yearNum, 
-          paid: true 
+          year: yearNum,
+          $or: [{ paid: true }, { paid: 1 }, { paid: 'true' }] 
         } 
       },
       { 
@@ -244,8 +252,8 @@ export const getFinanceSummary = async (req, res) => {
       { 
         $match: { 
           month: monthNum, 
-          year: yearNum, 
-          paid: false 
+          year: yearNum,
+          $or: [{ paid: false }, { paid: 0 }, { paid: 'false' }] 
         } 
       },
       { 
@@ -313,8 +321,8 @@ export const getYearlyFinanceBreakdown = async (req, res) => {
     const monthlyFees = await Fee.aggregate([
       { 
         $match: { 
-          year: yearNum, 
-          paid: true 
+          year: yearNum,
+          $or: [{ paid: true }, { paid: 1 }, { paid: 'true' }] 
         } 
       },
       { 
@@ -360,8 +368,8 @@ export const getYearlyFinanceBreakdown = async (req, res) => {
     const monthlyUnpaidFees = await Fee.aggregate([
       { 
         $match: { 
-          year: yearNum, 
-          paid: false 
+          year: yearNum,
+          $or: [{ paid: false }, { paid: 0 }, { paid: 'false' }] 
         } 
       },
       { 

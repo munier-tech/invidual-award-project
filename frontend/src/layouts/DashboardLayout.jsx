@@ -217,7 +217,7 @@ function DashboardLayout({ children }) {
   		  </div>
 <div className='grid'>
             <span className="text-lg font-black tracking-tight text-white">مؤسسة</span>
-            <span className="text-lg font-black tracking-tight text-violet-200">الفُرْقَنِ</span>
+            <span className="text-lg font-black tracking-tight text-violet-200">الفُرْقَانِ</span>
 </div>
         </div>
         <button
