@@ -27,6 +27,7 @@ import {
   CalendarCheck,
   Wallet,
   List,
+  Sparkles,
 } from 'lucide-react';
 import { Transition } from '@headlessui/react';
 import useAuthStore from '../store/authStore';
@@ -180,6 +181,96 @@ function useClickOutside(ref, handler) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Live clock (header)                                                 */
+/* ------------------------------------------------------------------ */
+function LiveClock() {
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const time = now.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+
+  const date = now.toLocaleDateString('en-US', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
+  return (
+    <div className="flex items-center gap-2.5 rounded-xl border border-violet-100 bg-gradient-to-br from-violet-50 to-indigo-50 px-3 py-1.5">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md shadow-violet-500/30">
+        <Clock className="h-4 w-4" />
+      </div>
+      <div className="leading-tight">
+        <p className="text-sm font-bold tabular-nums text-slate-800">{time}</p>
+        <p className="hidden text-[11px] text-slate-500 md:block">{date}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Teacher notice banner (top of page content)                         */
+/* ------------------------------------------------------------------ */
+function TeacherNotice({ onClose, role }) {
+  const message =
+    role === 'teacher'
+      ? 'Macalin, ardaydu way ku sugayan — fadlan shaqada bilow'
+      : role === 'admin'
+        ? 'Maamule, so dhawow — ardaydu way ku sugayan'
+        : role === 'super_admin' || role === 'superAdmin'
+          ? 'Maamule, so dhawow'
+          : '';
+
+  if (!message) return null;
+
+  return (
+    <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-r from-violet-700 via-indigo-700 to-purple-800 p-5 shadow-xl shadow-violet-900/20 sm:p-6">
+      {/* Decorative glows */}
+      <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-fuchsia-400/20 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-12 left-1/3 h-40 w-40 rounded-full bg-sky-400/20 blur-3xl" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.12),transparent_55%)]" />
+
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close notice"
+        className="absolute right-3 top-3 rounded-lg p-1.5 text-white/60 transition hover:bg-white/10 hover:text-white"
+      >
+        <X className="h-4 w-4" />
+      </button>
+
+      <div className="relative flex items-center gap-4 sm:gap-5">
+        <div className="relative shrink-0">
+          <span className="absolute inset-0 animate-ping rounded-2xl bg-white/20" />
+          <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-amber-200 ring-1 ring-white/30 backdrop-blur sm:h-14 sm:w-14">
+            <Sparkles className="h-6 w-6 sm:h-7 sm:w-7" />
+          </div>
+        </div>
+
+        <div className="min-w-0 pr-6">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-violet-200/90">
+            Ogeysiis
+          </p>
+          <h2 className="bg-gradient-to-r from-amber-200 via-white to-violet-200 bg-clip-text text-xl font-extrabold leading-snug tracking-tight text-transparent drop-shadow-sm sm:text-2xl lg:text-3xl">
+            {message}
+          </h2>
+          <div className="mt-3 h-1 w-24 rounded-full bg-gradient-to-r from-amber-300 to-fuchsia-400" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Sidebar                                                             */
 /* ------------------------------------------------------------------ */
 function SidebarContent({
@@ -192,6 +283,10 @@ function SidebarContent({
   onItemClick,
   onClose,
 }) {
+  const profileImage = user?.profilePicture && user.profilePicture !== 'lama keenin sawir'
+    ? user.profilePicture
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}&background=random`;
+
   return (
     <div className="flex h-full flex-col bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-slate-100">
       {/* Brand */}
@@ -308,9 +403,11 @@ function SidebarContent({
       {/* User card */}
       <div className="shrink-0 border-t border-white/10 p-3">
         <div className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-bold text-white">
-            {user?.username?.charAt(0).toUpperCase() || ''}
-          </div>
+          <img
+            src={profileImage}
+            alt={user?.username || 'User profile'}
+            className="h-9 w-9 shrink-0 rounded-full object-cover ring-2 ring-white/10"
+          />
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-slate-100">
               {user?.username || ''}
@@ -331,10 +428,13 @@ function DashboardLayout({ children }) {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [activeParent, setActiveParent] = useState(null);
+  const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
+  const [showTeacherNotice, setShowTeacherNotice] = useState(true);
+  const [profileForm, setProfileForm] = useState({ username: '', email: '', profilePicture: '' });
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout, isAuthenticated } = useAuthStore();
+  const { user, logout, isAuthenticated, updateUser } = useAuthStore();
 
   const childrenContainerRef = useRef(null);
   const notificationsRef = useRef(null);
@@ -344,6 +444,14 @@ function DashboardLayout({ children }) {
   useClickOutside(profileRef, () => setProfileDropdownOpen(false));
 
   useEffect(() => {
+    if (user) {
+      setProfileForm({
+        username: user.username || '',
+        email: user.email || '',
+        profilePicture: user.profilePicture || '',
+      });
+    }
+
     setSidebarOpen(false);
     setNotificationsOpen(false);
     setProfileDropdownOpen(false);
@@ -374,6 +482,50 @@ function DashboardLayout({ children }) {
     navigate('/login');
     setProfileDropdownOpen(false);
   };
+
+  const handleProfileImageChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setProfileForm((prev) => ({ ...prev, profilePicture: reader.result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleProfileSave = async (event) => {
+    event.preventDefault();
+
+    if (!user?._id) return;
+
+    const username = profileForm.username.trim();
+    const email = profileForm.email.trim();
+
+    if (!username || !email) {
+      return;
+    }
+
+    const hasNewProfileImage =
+      typeof profileForm.profilePicture === 'string' &&
+      profileForm.profilePicture.startsWith('data:image/');
+
+    const result = await updateUser(user._id, {
+      username,
+      email,
+      profilePicture: hasNewProfileImage ? profileForm.profilePicture : undefined,
+      role: user.role,
+    });
+
+    if (result?.success) {
+      setIsProfileEditOpen(false);
+      setProfileDropdownOpen(false);
+    }
+  };
+
+  const profileImage = user?.profilePicture && user.profilePicture !== 'lama dhigin sawir'
+    ? user.profilePicture
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}&background=random`;
 
   const filteredMenuItems = menuItems
     .map((item) => ({
@@ -449,6 +601,109 @@ function DashboardLayout({ children }) {
 
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        {/* Edit profile modal */}
+        <Transition
+          show={isProfileEditOpen}
+          enter="transition ease-out duration-200"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="transition ease-in duration-150"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          {(ref) => (
+            <div
+              ref={ref}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+            >
+              <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl ring-1 ring-slate-200">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">Edit profile</h3>
+                    <p className="text-sm text-slate-500">Update your profile details</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsProfileEditOpen(false)}
+                    className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleProfileSave} className="space-y-4">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative">
+                      <img
+                        src={
+                          profileForm.profilePicture &&
+                          profileForm.profilePicture !== 'lama keenin sawir'
+                            ? profileForm.profilePicture
+                            : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                profileForm.username || user?.username || 'User'
+                              )}&background=random`
+                        }
+                        alt="Profile preview"
+                        className="h-20 w-20 rounded-full object-cover ring-4 ring-violet-100"
+                      />
+                    </div>
+
+                    <label className="cursor-pointer rounded-lg border border-dashed border-violet-300 bg-violet-50 px-3 py-2 text-sm font-medium text-violet-700 transition hover:bg-violet-100">
+                      Change photo
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleProfileImageChange}
+                      />
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">Username</label>
+                    <input
+                      type="text"
+                      value={profileForm.username}
+                      onChange={(event) =>
+                        setProfileForm((prev) => ({ ...prev, username: event.target.value }))
+                      }
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
+                    <input
+                      type="email"
+                      value={profileForm.email}
+                      onChange={(event) =>
+                        setProfileForm((prev) => ({ ...prev, email: event.target.value }))
+                      }
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsProfileEditOpen(false)}
+                      className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-md shadow-violet-500/20 transition hover:from-violet-700 hover:to-indigo-700"
+                    >
+                      Save changes
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </Transition>
+
         {/* Header */}
         <header className="relative z-30 flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white/80 px-4 backdrop-blur sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
@@ -475,6 +730,8 @@ function DashboardLayout({ children }) {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            <LiveClock />
+
             {/* Notifications */}
             <div className="relative" ref={notificationsRef}>
               <button
@@ -560,9 +817,11 @@ function DashboardLayout({ children }) {
                   setNotificationsOpen(false);
                 }}
               >
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-bold text-white shadow-md shadow-violet-500/30">
-                  {user?.username?.charAt(0).toUpperCase() || ''}
-                </div>
+                <img
+                  src={profileImage}
+                  alt={user?.username || 'User profile'}
+                  className="h-9 w-9 rounded-full object-cover shadow-md shadow-violet-500/30 ring-2 ring-violet-100"
+                />
                 <div className="hidden text-left sm:block">
                   <p className="text-sm font-semibold leading-tight text-slate-800">
                     {user?.username || ''}
@@ -593,9 +852,11 @@ function DashboardLayout({ children }) {
                     className="absolute right-0 z-50 mt-2 w-64 origin-top-right overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-slate-900/10"
                   >
                     <div className="flex items-center gap-3 bg-gradient-to-br from-violet-50 to-indigo-50 px-4 py-4">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-base font-bold text-white">
-                        {user?.username?.charAt(0).toUpperCase() || ''}
-                      </div>
+                      <img
+                        src={profileImage}
+                        alt={user?.username || 'User profile'}
+                        className="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-violet-100"
+                      />
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-slate-900">
                           {user?.username || ''}
@@ -609,8 +870,22 @@ function DashboardLayout({ children }) {
 
                     <div className="border-t border-slate-100 p-1.5">
                       <button
+                        onClick={() => {
+                          setProfileForm({
+                            username: user?.username || '',
+                            email: user?.email || '',
+                            profilePicture: user?.profilePicture || '',
+                          });
+                          setIsProfileEditOpen(true);
+                        }}
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-violet-50 hover:text-violet-600"
+                      >
+                        <UserCog className="h-4 w-4" />
+                        Edit profile
+                      </button>
+                      <button
                         onClick={handleLogout}
-                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-rose-50 hover:text-rose-600"
+                        className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-rose-50 hover:text-rose-600"
                       >
                         <LogOut className="h-4 w-4" />
                         Sign out
@@ -629,7 +904,12 @@ function DashboardLayout({ children }) {
             ref={childrenContainerRef}
             className="custom-scrollbar flex h-full flex-col overflow-y-auto p-4 sm:p-6"
           >
-            <div className="mx-auto w-full max-w-7xl flex-1">{children}</div>
+            <div className="mx-auto w-full max-w-7xl flex-1">
+              {showTeacherNotice && user && ['teacher', 'admin', 'super_admin', 'superAdmin'].includes(user.role) && (
+                <TeacherNotice role={user.role} onClose={() => setShowTeacherNotice(false)} />
+              )}
+              {children}
+            </div>
 
             <footer className="mx-auto mt-10 w-full max-w-7xl border-t border-slate-200 pt-5 text-center text-sm text-slate-500">
               <p className="font-medium text-slate-600">

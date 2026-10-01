@@ -38,39 +38,45 @@ const useTeacherAttendanceStore = create((set) => ({
     }
   },
 
-  getAttendanceByDate: async (date, teacherId = null) => {
-  set({ loading: true, error: null });
-  try {
-    // Validate date
-    if (!date) {
-      throw new Error('Date is required');
+  getAttendanceByDate: async (input = {}, teacherId = null) => {
+    set({ loading: true, error: null });
+    try {
+      const filter = typeof input === 'string' ? { date: input, teacherId } : input || {};
+      const { date, from, to, teacherId: selectedTeacherId } = filter;
+
+      if (!date && !(from && to)) {
+        throw new Error('Date or date range is required');
+      }
+
+      const params = {};
+      if (date) params.date = date;
+      if (from) params.from = from;
+      if (to) params.to = to;
+      if (selectedTeacherId || teacherId) params.teacherId = selectedTeacherId || teacherId;
+
+      const response = await axios.get('/teachersAttendance/get', { params });
+
+      set({
+        attendanceRecords: response.data.data || [],
+        currentDate: date || from,
+        loading: false,
+        error: null
+      });
+
+      return response.data;
+    } catch (error) {
+      const errorMessage = error.response?.data?.message ||
+        error.message ||
+        'Failed to fetch attendance';
+
+      toast.error(errorMessage);
+      set({
+        error: errorMessage,
+        loading: false
+      });
+      throw error;
     }
-
-    const params = { date };
-    if (teacherId) params.teacherId = teacherId;
-
-    const response = await axios.get('/teachersAttendance/get', { date ,  params });
-    
-    set({ 
-      attendanceRecords: response.data.data,
-      currentDate: date,
-      loading: false 
-    });
-
-    return response.data;
-  } catch (error) {
-    const errorMessage = error.response?.data?.message || 
-                        error.message || 
-                        'Failed to fetch attendance';
-    
-    toast.error(errorMessage);
-    set({ 
-      error: errorMessage,
-      loading: false 
-    });
-    throw error;
-  }
-},
+  },
 
   updateAttendance: async (id, data) => {
     try {

@@ -5,6 +5,7 @@ import { generateTokens, setCookies } from "../helpers/authentication.js";
 import { sendPasswordResetEmail } from "../lib/mailer.js";
 import User from "../models/userModel.js";
 import Teachers from "../models/teachersModel.js";
+import { shouldUploadProfilePicture } from "../utils/profilePictureUtils.js";
 
 export const SignUp = async (req, res) => {
   try {
@@ -32,7 +33,7 @@ export const SignUp = async (req, res) => {
     
     let cloudinaryResponse = null;
 
-    if (profilePicture) {
+    if (shouldUploadProfilePicture(profilePicture)) {
       const uploadResponse = await cloudinary.uploader.upload(profilePicture);
       cloudinaryResponse = uploadResponse.secure_url;
     }
@@ -42,7 +43,7 @@ export const SignUp = async (req, res) => {
       password,
       email: normalizedEmail,
       role,
-      profilePicture: cloudinaryResponse || "lama keenin sawir",
+      profilePicture: cloudinaryResponse || (typeof profilePicture === 'string' && profilePicture.trim() && profilePicture !== 'lama keenin sawir' ? profilePicture : 'lama keenin sawir'),
     });
 
     const { accessToken } = generateTokens(newUser._id);
@@ -221,7 +222,7 @@ export const updateUser = async (req, res) => {
 
     let cloudinaryResponse = null;
 
-    if (profilePicture) {
+    if (shouldUploadProfilePicture(profilePicture)) {
       const uploadResponse = await cloudinary.uploader.upload(profilePicture);
       cloudinaryResponse = uploadResponse.secure_url;
     }
@@ -229,7 +230,7 @@ export const updateUser = async (req, res) => {
     user.username = username;
     user.email = email;
     user.role = role;
-    user.profilePicture = cloudinaryResponse || user.profilePicture;
+    user.profilePicture = cloudinaryResponse || (typeof profilePicture === 'string' && profilePicture.trim() && profilePicture !== 'lama keenin sawir' ? profilePicture : user.profilePicture);
 
     await user.save();
 
