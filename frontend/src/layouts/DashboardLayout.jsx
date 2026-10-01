@@ -10,6 +10,7 @@ import {
   DollarSign,
   LogOut,
   ChevronDown,
+  ChevronRight,
   Bell,
   UserCog,
   User2,
@@ -25,7 +26,6 @@ import {
   Gavel,
   CalendarCheck,
   Wallet,
-  UserCircle,
   List,
 } from 'lucide-react';
 import { Transition } from '@headlessui/react';
@@ -33,6 +33,9 @@ import useAuthStore from '../store/authStore';
 
 const isSuperAdminRole = (role) => role === 'super_admin' || role === 'superAdmin';
 const isAdminAccessRole = (role) => isSuperAdminRole(role) || role === 'admin';
+
+const formatRole = (role) =>
+  role ? role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : '';
 
 const menuItems = [
   {
@@ -161,6 +164,168 @@ const menuItems = [
   },
 ];
 
+/* Closes a dropdown when the user clicks outside of it */
+function useClickOutside(ref, handler) {
+  const handlerRef = useRef(handler);
+  handlerRef.current = handler;
+
+  useEffect(() => {
+    const listener = (event) => {
+      if (!ref.current || ref.current.contains(event.target)) return;
+      handlerRef.current();
+    };
+    document.addEventListener('mousedown', listener);
+    return () => document.removeEventListener('mousedown', listener);
+  }, [ref]);
+}
+
+/* ------------------------------------------------------------------ */
+/* Sidebar                                                             */
+/* ------------------------------------------------------------------ */
+function SidebarContent({
+  items,
+  user,
+  pathname,
+  activeParent,
+  setActiveParent,
+  navigate,
+  onItemClick,
+  onClose,
+}) {
+  return (
+    <div className="flex h-full flex-col bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-slate-100">
+      {/* Brand */}
+      <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-5">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 p-1.5 shadow-lg shadow-violet-950/50 ring-1 ring-white/20">
+            <img
+              src="/hello.jpg"
+              alt="Logo"
+              className="h-8 w-8 rounded-lg object-cover"
+            />
+          </div>
+          <div className="flex flex-col leading-tight">
+            <span className="text-sm font-bold text-white">مؤسسة</span>
+            <span className="text-base font-extrabold text-violet-300">الفُرْقَانِ</span>
+          </div>
+        </div>
+
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-white/10 hover:text-white focus:outline-none lg:hidden"
+            aria-label="Close menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <nav className="custom-scrollbar flex-1 space-y-1 overflow-y-auto px-3 py-5">
+        <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+          Menu
+        </p>
+
+        {items.map((item) => {
+          const Icon = item.icon;
+          const hasSub = item.subItems?.length > 0;
+          const isActive =
+            pathname.startsWith(item.path) ||
+            item.subItems?.some((sub) => pathname === sub.path);
+          const isOpen = activeParent === item.text;
+
+          return (
+            <div key={item.text}>
+              <button
+                onClick={() => {
+                  if (hasSub) {
+                    setActiveParent(isOpen ? null : item.text);
+                  } else {
+                    navigate(item.path);
+                    onItemClick?.();
+                  }
+                }}
+                className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-all duration-200 ${
+                  isActive
+                    ? 'bg-gradient-to-r from-violet-600 to-indigo-600 font-semibold text-white shadow-lg shadow-violet-950/40'
+                    : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                }`}
+              >
+                <span
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition ${
+                    isActive
+                      ? 'bg-white/20'
+                      : 'bg-white/5 group-hover:bg-white/10'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span className="flex-1 truncate">{item.text}</span>
+                {hasSub && (
+                  <ChevronDown
+                    className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
+                      isOpen ? 'rotate-180' : ''
+                    } ${isActive ? 'text-white/80' : 'text-slate-500'}`}
+                  />
+                )}
+              </button>
+
+              {hasSub && isOpen && (
+                <div className="ml-7 mt-1 space-y-0.5 border-l border-white/10 pl-3">
+                  {item.subItems.map((sub) => {
+                    const SubIcon = sub.icon;
+                    const isSubActive = pathname === sub.path;
+                    return (
+                      <button
+                        key={sub.text}
+                        onClick={() => {
+                          navigate(sub.path);
+                          onItemClick?.();
+                        }}
+                        className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[13px] transition-all duration-200 ${
+                          isSubActive
+                            ? 'bg-violet-500/20 font-medium text-violet-200'
+                            : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                        }`}
+                      >
+                        <SubIcon
+                          className={`h-3.5 w-3.5 shrink-0 ${
+                            isSubActive ? 'text-violet-300' : ''
+                          }`}
+                        />
+                        <span className="truncate">{sub.text}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </nav>
+
+      {/* User card */}
+      <div className="shrink-0 border-t border-white/10 p-3">
+        <div className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-bold text-white">
+            {user?.username?.charAt(0).toUpperCase() || ''}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-slate-100">
+              {user?.username || ''}
+            </p>
+            <p className="truncate text-xs text-slate-400">{formatRole(user?.role)}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Layout                                                              */
+/* ------------------------------------------------------------------ */
 function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -171,22 +336,26 @@ function DashboardLayout({ children }) {
   const location = useLocation();
   const { user, logout, isAuthenticated } = useAuthStore();
 
-  const mainContentRef = useRef(null);
   const childrenContainerRef = useRef(null);
+  const notificationsRef = useRef(null);
+  const profileRef = useRef(null);
+
+  useClickOutside(notificationsRef, () => setNotificationsOpen(false));
+  useClickOutside(profileRef, () => setProfileDropdownOpen(false));
 
   useEffect(() => {
     setSidebarOpen(false);
+    setNotificationsOpen(false);
+    setProfileDropdownOpen(false);
 
     if (childrenContainerRef.current) {
-      childrenContainerRef.current.scrollTo({
-        top: 0,
-        behavior: 'smooth',
-      });
+      childrenContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    const currentParent = menuItems.find(item =>
-      location.pathname.startsWith(item.path) ||
-      item.subItems?.some(subItem => location.pathname === subItem.path)
+    const currentParent = menuItems.find(
+      (item) =>
+        location.pathname.startsWith(item.path) ||
+        item.subItems?.some((subItem) => location.pathname === subItem.path)
     );
 
     if (currentParent && currentParent.subItems) {
@@ -207,120 +376,40 @@ function DashboardLayout({ children }) {
   };
 
   const filteredMenuItems = menuItems
-    .map(item => ({
+    .map((item) => ({
       ...item,
-      subItems: item.subItems?.filter(subItem => {
+      subItems: item.subItems?.filter((subItem) => {
         if (subItem.superAdminOnly && !isSuperAdminRole(user?.role)) return false;
         if (subItem.adminOnly && !isAdminAccessRole(user?.role)) return false;
         return true;
       }),
     }))
-    .filter(item => {
+    .filter((item) => {
       if (item.superAdminOnly && !isSuperAdminRole(user?.role)) return false;
       if (item.adminOnly && !isAdminAccessRole(user?.role)) return false;
       if (item.subItems && item.subItems.length === 0) return false;
       return true;
     });
 
-  const SidebarContent = ({ onItemClick }) => (
-    <div className="flex flex-col h-full bg-gray-900 text-gray-100">
-      <div className="flex items-center justify-between h-16 px-4 border-b border-gray-700">
-        <div className="flex items-center space-x-3">
-          <div className="rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 p-2 shadow-lg shadow-violet-950/40">
-            <img src="/hello.jpg" alt="Logo" className="h-8 w-8 rounded-full border border-white/30" />
-          </div>
-          <div className="grid">
-            <span className="text-lg font-black tracking-tight text-white">مؤسسة</span>
-            <span className="text-lg font-black tracking-tight text-violet-200">الفُرْقَانِ</span>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setSidebarOpen(false)}
-          className="lg:hidden text-gray-400 hover:text-white focus:outline-none"
-        >
-          <X className="h-6 w-6" />
-        </button>
-      </div>
-
-      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto custom-scrollbar">
-        {filteredMenuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive =
-            location.pathname.startsWith(item.path) ||
-            item.subItems?.some(subItem => location.pathname === subItem.path);
-          const isParentActive = activeParent === item.text;
-
-          return (
-            <div key={item.text}>
-              <button
-                onClick={() => {
-                  if (item.subItems?.length > 0) {
-                    setActiveParent(isParentActive ? null : item.text);
-                  } else {
-                    navigate(item.path);
-                    if (onItemClick) onItemClick();
-                  }
-                }}
-                className={`w-full flex items-center px-4 py-2.5 text-left rounded-lg transition-all duration-200 ${
-                  isActive
-                    ? 'bg-purple-600 text-white font-semibold'
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                }`}
-              >
-                <Icon className="w-5 h-5 mr-3" />
-                <span className="text-sm">{item.text}</span>
-                {item.subItems?.length > 0 && (
-                  <ChevronDown
-                    className={`w-4 h-4 ml-auto transition-transform duration-200 ${
-                      isParentActive ? 'rotate-180' : ''
-                    }`}
-                  />
-                )}
-              </button>
-
-              {item.subItems?.length > 0 && isParentActive && (
-                <div className="ml-6 space-y-1 mt-1">
-                  {item.subItems.map((subItem) => {
-                    const SubIcon = subItem.icon;
-                    const isSubItemActive = location.pathname === subItem.path;
-                    return (
-                      <button
-                        key={subItem.text}
-                        onClick={() => {
-                          navigate(subItem.path);
-                          if (onItemClick) onItemClick();
-                        }}
-                        className={`w-full flex items-center px-3 py-2 text-left text-sm rounded-lg transition-all duration-200 ${
-                          isSubItemActive
-                            ? 'bg-purple-700 text-white font-medium'
-                            : 'text-gray-400 hover:bg-gray-700 hover:text-white'
-                        }`}
-                      >
-                        <SubIcon className="w-4 h-4 mr-3" />
-                        {subItem.text}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </nav>
-
-      <div className="px-4 py-3 border-t border-gray-700 flex items-center space-x-3">
-        <UserCircle className="w-8 h-8 text-gray-400" />
-        <div className="text-left">
-          <p className="text-sm font-medium text-gray-200">{user?.username || ''}</p>
-          <p className="text-xs text-gray-400 capitalize">{user?.role || ''}</p>
-        </div>
-      </div>
-    </div>
+  const currentItem = menuItems.find(
+    (item) =>
+      location.pathname.startsWith(item.path) ||
+      item.subItems?.some((sub) => location.pathname === sub.path)
   );
+  const currentSub = currentItem?.subItems?.find((sub) => location.pathname === sub.path);
+
+  const sidebarProps = {
+    items: filteredMenuItems,
+    user,
+    pathname: location.pathname,
+    activeParent,
+    setActiveParent,
+    navigate,
+  };
 
   return (
-    <div className="h-screen flex bg-gray-100 antialiased">
+    <div className="flex h-screen bg-slate-50 antialiased">
+      {/* Mobile sidebar */}
       <Transition
         show={sidebarOpen}
         enter="transition-transform ease-out duration-300"
@@ -331,8 +420,15 @@ function DashboardLayout({ children }) {
         leaveTo="-translate-x-full"
       >
         {(ref) => (
-          <div ref={ref} className="fixed inset-y-0 left-0 z-50 w-64 bg-gray-900 shadow-xl lg:hidden">
-            <SidebarContent onItemClick={() => setSidebarOpen(false)} />
+          <div
+            ref={ref}
+            className="fixed inset-y-0 left-0 z-50 w-72 shadow-2xl lg:hidden"
+          >
+            <SidebarContent
+              {...sidebarProps}
+              onItemClick={() => setSidebarOpen(false)}
+              onClose={() => setSidebarOpen(false)}
+            />
           </div>
         )}
       </Transition>
@@ -340,39 +436,59 @@ function DashboardLayout({ children }) {
       {sidebarOpen && (
         <div
           onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 z-40 bg-gray-900 bg-opacity-50 lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden"
         />
       )}
 
-      <div className="hidden lg:flex lg:flex-shrink-0">
-        <div className="flex flex-col w-64">
-          <SidebarContent />
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex lg:shrink-0">
+        <div className="flex w-72 flex-col border-r border-slate-800">
+          <SidebarContent {...sidebarProps} />
         </div>
-      </div>
+      </aside>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="flex items-center justify-between h-16 bg-white border-b border-gray-200 px-6">
-          <div className="flex items-center">
+      {/* Main column */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        {/* Header */}
+        <header className="relative z-30 flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white/80 px-4 backdrop-blur sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
             <button
-              className="lg:hidden text-gray-500 hover:text-gray-700 mr-4"
+              className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 lg:hidden"
               onClick={() => setSidebarOpen(true)}
+              aria-label="Open menu"
             >
-              <Menu className="h-6 w-6" />
+              <Menu className="h-5 w-5" />
             </button>
-            <h1 className="text-lg font-semibold text-gray-900">
-              {menuItems.find(item => location.pathname.startsWith(item.path))?.text || 'Dashboard'}
-            </h1>
+
+            <div className="min-w-0">
+              <h1 className="truncate text-lg font-bold text-slate-900">
+                {currentItem?.text || 'Dashboard'}
+              </h1>
+              {currentSub && (
+                <p className="flex items-center gap-1 truncate text-xs text-slate-500">
+                  <span>{currentItem.text}</span>
+                  <ChevronRight className="h-3 w-3" />
+                  <span className="font-medium text-violet-600">{currentSub.text}</span>
+                </p>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center space-x-4">
-            <div className="relative">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Notifications */}
+            <div className="relative" ref={notificationsRef}>
               <button
-                onClick={() => setNotificationsOpen(!notificationsOpen)}
-                className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 relative"
+                onClick={() => {
+                  setNotificationsOpen(!notificationsOpen);
+                  setProfileDropdownOpen(false);
+                }}
+                className="relative rounded-xl p-2.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Notifications"
               >
                 <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                <span className="absolute right-2 top-2 h-2 w-2 animate-pulse rounded-full bg-rose-500 ring-2 ring-white" />
               </button>
+
               <Transition
                 show={notificationsOpen}
                 enter="transition ease-out duration-100"
@@ -385,47 +501,83 @@ function DashboardLayout({ children }) {
                 {(ref) => (
                   <div
                     ref={ref}
-                    className="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                    className="absolute right-0 z-50 mt-2 w-80 origin-top-right overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-slate-900/10"
                   >
-                    <div className="py-1">
-                      <div className="px-4 py-2 text-sm font-medium text-gray-900 border-b border-gray-100">
-                        Notification
+                    <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                      <span className="text-sm font-semibold text-slate-900">
+                        Notifications
+                      </span>
+                      <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-700">
+                        2 new
+                      </span>
+                    </div>
+
+                    <div className="divide-y divide-slate-100">
+                      <div className="flex cursor-pointer gap-3 px-4 py-3 transition hover:bg-slate-50">
+                        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                          <ClipboardList className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-slate-900">New exam scheduled</p>
+                          <p className="mt-0.5 text-xs text-slate-500">Math final exam on Friday</p>
+                          <p className="mt-1 text-[11px] text-slate-400">2 hours ago</p>
+                        </div>
                       </div>
-                      <div className="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
-                        <p className="text-sm font-medium text-gray-900">New exam scheduled</p>
-                        <p className="text-xs text-gray-500 mt-1">Math final exam on Friday</p>
-                        <p className="text-xs text-gray-400 mt-1">2 hours ago</p>
+
+                      <div className="flex cursor-pointer gap-3 px-4 py-3 transition hover:bg-slate-50">
+                        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                          <Users className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-slate-900">New student registered</p>
+                          <p className="mt-0.5 text-xs text-slate-500">Ahmed Mohamed joined Class 10</p>
+                          <p className="mt-1 text-[11px] text-slate-400">5 hours ago</p>
+                        </div>
                       </div>
-                      <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer">
-                        <p className="text-sm font-medium text-gray-900">New student registered</p>
-                        <p className="text-xs text-gray-500 mt-1">Ahmed Mohamed joined Class 10</p>
-                        <p className="text-xs text-gray-400 mt-1">5 hours ago</p>
-                      </div>
-                      <div className="border-t border-gray-100 px-4 py-2 bg-gray-50 text-center">
-                        <a href="#" className="text-xs font-medium text-purple-600 hover:text-purple-800">
-                          View all
-                        </a>
-                      </div>
+                    </div>
+
+                    <div className="border-t border-slate-100 bg-slate-50 px-4 py-2.5 text-center">
+                      <a
+                        href="#"
+                        className="text-xs font-semibold text-violet-600 transition hover:text-violet-800"
+                      >
+                        View all
+                      </a>
                     </div>
                   </div>
                 )}
               </Transition>
             </div>
 
-            <div className="relative">
+            <div className="hidden h-6 w-px bg-slate-200 sm:block" />
+
+            {/* Profile */}
+            <div className="relative" ref={profileRef}>
               <button
-                className="flex items-center space-x-2 p-1 rounded-full hover:bg-gray-100 focus:outline-none"
-                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                className="flex items-center gap-2 rounded-xl py-1 pl-1 pr-2 transition hover:bg-slate-100 focus:outline-none"
+                onClick={() => {
+                  setProfileDropdownOpen(!profileDropdownOpen);
+                  setNotificationsOpen(false);
+                }}
               >
-                <div className="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-bold text-white shadow-md shadow-violet-500/30">
                   {user?.username?.charAt(0).toUpperCase() || ''}
                 </div>
+                <div className="hidden text-left sm:block">
+                  <p className="text-sm font-semibold leading-tight text-slate-800">
+                    {user?.username || ''}
+                  </p>
+                  <p className="text-[11px] leading-tight text-slate-500">
+                    {formatRole(user?.role)}
+                  </p>
+                </div>
                 <ChevronDown
-                  className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+                  className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${
                     profileDropdownOpen ? 'rotate-180' : ''
                   }`}
                 />
               </button>
+
               <Transition
                 show={profileDropdownOpen}
                 enter="transition ease-out duration-100"
@@ -438,26 +590,31 @@ function DashboardLayout({ children }) {
                 {(ref) => (
                   <div
                     ref={ref}
-                    className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                    className="absolute right-0 z-50 mt-2 w-64 origin-top-right overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-slate-900/10"
                   >
-                    <div className="py-1">
-                      <div className="px-4 py-3">
-                        <p className="text-sm font-medium text-gray-900">{user?.username || ''}</p>
-                        <p className="text-xs text-gray-500 truncate">{user?.email || ''}</p>
-                        <p className="text-xs border px-2 font-bold py-1 w-fit rounded-xl my-1 bg-violet-800 text-white truncate">
-                          {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || ''}
+                    <div className="flex items-center gap-3 bg-gradient-to-br from-violet-50 to-indigo-50 px-4 py-4">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-base font-bold text-white">
+                        {user?.username?.charAt(0).toUpperCase() || ''}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-900">
+                          {user?.username || ''}
                         </p>
+                        <p className="truncate text-xs text-slate-500">{user?.email || ''}</p>
+                        <span className="mt-1.5 inline-block rounded-full bg-violet-700 px-2.5 py-0.5 text-[11px] font-semibold text-white">
+                          {formatRole(user?.role)}
+                        </span>
                       </div>
-                      <div className="border-t border-gray-100" />
-                      <div className="border-t border-gray-100">
-                        <button
-                          onClick={handleLogout}
-                          className="w-full flex items-center px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 hover:text-red-600"
-                        >
-                          <LogOut className="w-4 h-4 mr-3" />
-                          Sign out
-                        </button>
-                      </div>
+                    </div>
+
+                    <div className="border-t border-slate-100 p-1.5">
+                      <button
+                        onClick={handleLogout}
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-rose-50 hover:text-rose-600"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Sign out
+                      </button>
                     </div>
                   </div>
                 )}
@@ -466,12 +623,19 @@ function DashboardLayout({ children }) {
           </div>
         </header>
 
-        <div ref={mainContentRef} className="flex-1 overflow-hidden">
-          <main ref={childrenContainerRef} className="h-full overflow-y-auto p-6 custom-scrollbar">
-            <div className="max-w-7xl mx-auto">{children}</div>
-            <footer className="mt-8 text-center text-sm text-gray-500">
-              <p>AL-FURQAAN Management System © {new Date().getFullYear()}</p>
-              <p className="mt-1">Version 1.0.0 - Designed with passion for education</p>
+        {/* Content */}
+        <div className="flex-1 overflow-hidden">
+          <main
+            ref={childrenContainerRef}
+            className="custom-scrollbar flex h-full flex-col overflow-y-auto p-4 sm:p-6"
+          >
+            <div className="mx-auto w-full max-w-7xl flex-1">{children}</div>
+
+            <footer className="mx-auto mt-10 w-full max-w-7xl border-t border-slate-200 pt-5 text-center text-sm text-slate-500">
+              <p className="font-medium text-slate-600">
+                AL-FURQAAN Management System © {new Date().getFullYear()}
+              </p>
+              <p className="mt-1 text-xs">Version 1.0.0 · Designed with passion for education</p>
             </footer>
           </main>
         </div>

@@ -1,677 +1,887 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FiCalendar, FiUsers, FiBook, FiEye, FiSearch,
-  FiFilter, FiDownload, FiPrinter, FiRefreshCw,
-  FiChevronDown, FiClock, FiUserCheck,
-  FiUserX, FiUserMinus, FiAward, FiStar, FiTrendingUp,
-  FiBarChart2, FiGrid, FiList
+  FiCalendar, FiUsers, FiBook, FiSearch, FiDownload, FiPrinter,
+  FiRefreshCw, FiChevronDown, FiUserCheck, FiUserX, FiUserMinus,
+  FiGrid, FiList, FiAlertCircle, FiX, FiClock
 } from 'react-icons/fi';
 import { useDailyQuranStore } from '../../store/dailyQuranStore';
 import useClassesStore from '../../store/classesStore';
 import { toast } from 'react-hot-toast';
 
+/* ------------------------------------------------------------------ */
+/* Static data                                                         */
+/* ------------------------------------------------------------------ */
+
 const translations = {
-  heading: "Eeg Casharrada Quraanka Maalinle",
-  subtitle: "Maamul oo la soco horumarka ardayda ee casharrada Quraanka maalinle",
-  selectClass: "Dooro Fasalka",
-  selectDate: "Dooro Taariikhda",
-  searchRecords: "Raadi diiwaanka...",
-  noRecords: "Ma jiro diiwaan la heli karo",
-  loading: "Soo dejineyn...",
-  refresh: "Cusboonaysii",
-  printReport: "Daabac Warbixinta",
-  downloadReport: "Soo dejiso Warbixinta",
-  totalSessions: "Wadarta Casharrada",
-  totalStudents: "Wadarta Ardayda",
-  date: "Taariikhda",
-  class: "Fasalka",
-  student: "Ardayga",
-  status: "Heerka",
-  notes: "Qoraal",
-  createdBy: "Loo abuuray",
-  actions: "Tallaabooyin",
-  viewDetails: "Eeg Faahfaahin",
-  filterByStatus: "Shaandhee heerka",
-  allStatuses: "Dhammaan heerarka",
-  noClassSelected: "Fadlan dooro fasal si aad u aragto diiwaanka",
-  noDateSelected: "Fadlan dooro taariikh si aad u aragto diiwaanka",
-  attendanceRate: "Heerka Ka qaybgalka",
-  comprehensionRate: "Heerka Fahamka",
-  quickStats: "Tirakoob Degdeg ah",
-  today: "Maanta",
-  thisWeek: "Usbuucan",
-  thisMonth: "Bishan",
-  exportData: "Soo Deji Xogta",
-  share: "La wadaag",
-  gartay: "Gartay",
-  garanWaayay: "Garan Waayay",
-  majoogo: "Majoogo"
+  heading: 'Eeg Casharrada Quraanka Maalinle',
+  subtitle: 'Maamul oo la soco horumarka ardayda ee casharrada Quraanka maalinle',
+  selectClass: 'Dooro Fasalka',
+  selectDate: 'Dooro Taariikhda',
+  searchLabel: 'Raadi arday',
+  searchRecords: 'Magac ama ID...',
+  noRecords: 'Ma jiro diiwaan la heli karo',
+  noMatches: 'Ma jiro arday ku habboon raadintaada',
+  clearFilters: 'Tirtir shaandhada',
+  loading: 'Soo dejinaya...',
+  loadError: 'Khalad ayaa dhacay markii la soo dejinayay diiwaanka',
+  retry: 'Isku day mar kale',
+  refresh: 'Cusboonaysii',
+  print: 'Daabac',
+  exportShort: 'Soo deji',
+  totalSessions: 'Wadarta Casharrada',
+  totalStudents: 'Wadarta Ardayda',
+  date: 'Taariikhda',
+  class: 'Fasalka',
+  student: 'Ardayga',
+  lesson: 'Casharka',
+  status: 'Heerka',
+  notes: 'Qoraal',
+  createdBy: 'Laga abuuray',
+  actions: 'Tallaabooyin',
+  viewDetails: 'Eeg Faahfaahin',
+  all: 'Dhammaan',
+  filterByStatus: 'Shaandhee heerka',
+  noClassSelected: 'Fadlan dooro fasal si aad u aragto diiwaanka',
+  noDateSelected: 'Fadlan dooro taariikh si aad u aragto diiwaanka',
+  attendanceRate: 'Ka qaybgalka',
+  comprehensionRate: 'Fahamka',
+  lessonDetails: 'Faahfaahin Casharka',
+  extraDetails: 'Qoraal dheeraad ah',
+  surah: 'Suurada',
+  verses: 'Aayadaha',
+  none: 'Ma jiro',
+  createdAt: 'La abuuray',
+  updatedAt: 'La cusboonaysiiyay',
+  noData: 'Ma jiro xog la soo dejin karo',
+  exported: 'Xogta si guul leh ayaa loo soo dejiyay',
+  unknownStudent: 'Arday aan la aqoon'
 };
 
 const statusConfig = {
   gartay: {
-    label: "Gartay",
+    label: 'Gartay',
     icon: FiUserCheck,
-    color: "green",
-    bgLight: "bg-green-50",
-    bgDark: "bg-green-600",
-    textLight: "text-green-700",
-    textDark: "text-white",
-    border: "border-green-200",
-    gradient: "from-green-400 to-emerald-500"
+    badge: 'bg-green-50 text-green-700 border-green-200',
+    soft: 'bg-green-50 text-green-700',
+    tile: 'bg-green-50 border-green-200 text-green-700',
+    accent: 'border-l-green-500',
+    bar: 'bg-green-500'
   },
   'garan waayay': {
-    label: "Garan Waayay",
+    label: 'Garan Waayay',
     icon: FiUserX,
-    color: "red",
-    bgLight: "bg-red-50",
-    bgDark: "bg-red-600",
-    textLight: "text-red-700",
-    textDark: "text-white",
-    border: "border-red-200",
-    gradient: "from-red-400 to-rose-500"
+    badge: 'bg-red-50 text-red-700 border-red-200',
+    soft: 'bg-red-50 text-red-700',
+    tile: 'bg-red-50 border-red-200 text-red-700',
+    accent: 'border-l-red-500',
+    bar: 'bg-red-500'
   },
   majoogo: {
-    label: "Majoogo",
+    label: 'Majoogo',
     icon: FiUserMinus,
-    color: "yellow",
-    bgLight: "bg-yellow-50",
-    bgDark: "bg-yellow-600",
-    textLight: "text-yellow-700",
-    textDark: "text-white",
-    border: "border-yellow-200",
-    gradient: "from-yellow-400 to-orange-500"
+    badge: 'bg-yellow-50 text-yellow-800 border-yellow-200',
+    soft: 'bg-yellow-50 text-yellow-800',
+    tile: 'bg-yellow-50 border-yellow-200 text-yellow-800',
+    accent: 'border-l-yellow-500',
+    bar: 'bg-yellow-500'
   }
 };
 
+const fallbackStatus = {
+  label: '-',
+  icon: FiUserMinus,
+  badge: 'bg-gray-50 text-gray-700 border-gray-200',
+  soft: 'bg-gray-100 text-gray-600',
+  tile: 'bg-gray-50 border-gray-200 text-gray-700',
+  accent: 'border-l-gray-300',
+  bar: 'bg-gray-400'
+};
+
+const STATUS_KEYS = ['gartay', 'garan waayay', 'majoogo'];
+
+/* ------------------------------------------------------------------ */
+/* Pure helpers                                                        */
+/* ------------------------------------------------------------------ */
+
+const getStatusConfig = (status) =>
+  statusConfig[status] || { ...fallbackStatus, label: status || '-' };
+
+// Local date (not UTC) so the default "today" is right after midnight too
+const todayLocal = () => {
+  const d = new Date();
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().split('T')[0];
+};
+
+const isEmpty = (v) => v === undefined || v === null || v === '';
+
+const getRecordValue = (record, key, fallback = '') => {
+  if (!isEmpty(record?.[key])) return record[key];
+  if (!isEmpty(record?.session?.[key])) return record.session[key];
+  return fallback;
+};
+
+const formatDate = (dateString) => {
+  try {
+    return new Date(dateString).toLocaleDateString('so-SO', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  } catch {
+    return dateString || '-';
+  }
+};
+
+const formatDateTime = (dateString) => {
+  if (!dateString) return '-';
+  try {
+    return new Date(dateString).toLocaleString('so-SO', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch {
+    return dateString || '-';
+  }
+};
+
+const versesText = (record) => {
+  const from = getRecordValue(record, 'fromVerse', '');
+  const to = getRecordValue(record, 'toVerse', '');
+  if (isEmpty(from) && isEmpty(to)) return '-';
+  return `${isEmpty(from) ? '-' : from} – ${isEmpty(to) ? '-' : to}`;
+};
+
+const convertToCSV = (data) => {
+  const headers = Object.keys(data[0] || {});
+  return [
+    headers.join(','),
+    ...data.map((row) => headers.map((h) => JSON.stringify(row[h] ?? '')).join(','))
+  ].join('\n');
+};
+
+/* ------------------------------------------------------------------ */
+/* Small presentational components (defined OUTSIDE the page so they   */
+/* are not re-created on every render)                                 */
+/* ------------------------------------------------------------------ */
+
+const StatusBadge = ({ status }) => {
+  const config = getStatusConfig(status);
+  const Icon = config.icon;
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold ${config.badge}`}
+    >
+      <Icon className="h-3 w-3" aria-hidden="true" />
+      {config.label}
+    </span>
+  );
+};
+
+const StatusAvatar = ({ status }) => {
+  const config = getStatusConfig(status);
+  const Icon = config.icon;
+  return (
+    <div
+      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${config.soft}`}
+    >
+      <Icon className="h-5 w-5" aria-hidden="true" />
+    </div>
+  );
+};
+
+const CountTile = ({ status, value }) => {
+  const config = getStatusConfig(status);
+  const Icon = config.icon;
+  return (
+    <div className={`rounded-xl border p-3 ${config.tile}`}>
+      <div className="flex items-center gap-1.5 text-xs font-medium">
+        <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <span className="truncate">{config.label}</span>
+      </div>
+      <p className="mt-1 text-2xl font-bold leading-none">{value}</p>
+    </div>
+  );
+};
+
+const RateTile = ({ label, value, barClass, textClass }) => (
+  <div className="rounded-xl border border-gray-200 bg-white p-3">
+    <div className="flex items-baseline justify-between gap-2">
+      <span className="truncate text-xs font-medium text-gray-600">{label}</span>
+      <span className={`text-lg font-bold ${textClass}`}>{value}%</span>
+    </div>
+    <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-100">
+      <div
+        className={`h-full rounded-full ${barClass}`}
+        style={{ width: `${Math.min(100, Math.max(0, Number(value)))}%` }}
+      />
+    </div>
+  </div>
+);
+
+const DetailList = ({ title, icon: Icon, iconClass, rows }) => (
+  <div>
+    <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900">
+      <Icon className={`h-4 w-4 ${iconClass}`} aria-hidden="true" />
+      {title}
+    </h4>
+    <dl className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-3 gap-y-2 text-sm">
+      {rows.map(([label, value]) => (
+        <React.Fragment key={label}>
+          <dt className="text-gray-500">{label}</dt>
+          <dd className="break-words font-medium text-gray-900">{value}</dd>
+        </React.Fragment>
+      ))}
+    </dl>
+  </div>
+);
+
+const RecordDetails = ({ record }) => (
+  <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+    <DetailList
+      title={translations.lessonDetails}
+      icon={FiBook}
+      iconClass="text-green-600"
+      rows={[
+        [translations.date, formatDate(record.date)],
+        [translations.class, record.class?.name || 'N/A'],
+        [translations.surah, getRecordValue(record, 'surah', 'N/A')],
+        [translations.verses, versesText(record)]
+      ]}
+    />
+    <DetailList
+      title={translations.extraDetails}
+      icon={FiClock}
+      iconClass="text-blue-600"
+      rows={[
+        [translations.notes, record.notes || translations.none],
+        [translations.createdBy, record.createdBy?.username || '-'],
+        [translations.createdAt, formatDateTime(record.createdAt)],
+        [translations.updatedAt, formatDateTime(record.updatedAt)]
+      ]}
+    />
+  </div>
+);
+
+const Expandable = ({ open, children }) => (
+  <AnimatePresence initial={false}>
+    {open && (
+      <motion.div
+        initial={{ height: 0, opacity: 0 }}
+        animate={{ height: 'auto', opacity: 1 }}
+        exit={{ height: 0, opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        className="overflow-hidden"
+      >
+        {children}
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
+
+const RecordCard = ({ record, expanded, onToggle }) => {
+  const config = getStatusConfig(record.status);
+  const surah = getRecordValue(record, 'surah', '');
+
+  return (
+    <div
+      className={`overflow-hidden rounded-xl border border-l-4 border-gray-200 bg-white shadow-sm print:shadow-none ${config.accent}`}
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        className="flex w-full items-start gap-3 p-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 sm:p-4"
+      >
+        <StatusAvatar status={record.status} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="truncate font-semibold text-gray-900">
+                {record.student?.fullname || translations.unknownStudent}
+              </p>
+              <p className="truncate text-xs text-gray-500">
+                ID: {record.student?.studentId || 'N/A'}
+              </p>
+            </div>
+            <StatusBadge status={record.status} />
+          </div>
+
+          <p className="mt-2 flex items-center gap-1.5 text-sm text-gray-700">
+            <FiBook className="h-4 w-4 shrink-0 text-green-600" aria-hidden="true" />
+            <span className="truncate">
+              {surah || '-'}
+              {versesText(record) !== '-' && (
+                <span className="text-gray-500"> · {versesText(record)}</span>
+              )}
+            </span>
+          </p>
+
+          <div className="mt-1.5 flex items-center justify-between text-xs text-gray-500">
+            <span className="truncate">{record.createdBy?.username || '-'}</span>
+            <span className="flex items-center gap-1 font-medium text-blue-600">
+              {translations.viewDetails}
+              <FiChevronDown
+                className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`}
+                aria-hidden="true"
+              />
+            </span>
+          </div>
+        </div>
+      </button>
+
+      <Expandable open={expanded}>
+        <div className="border-t border-gray-100 bg-gray-50 p-3 sm:p-4">
+          <RecordDetails record={record} />
+        </div>
+      </Expandable>
+    </div>
+  );
+};
+
+const EmptyState = ({ icon: Icon, text, action }) => (
+  <div className="px-4 py-12 text-center sm:py-16">
+    <Icon className="mx-auto h-12 w-12 text-gray-300 sm:h-14 sm:w-14" aria-hidden="true" />
+    <p className="mx-auto mt-4 max-w-sm text-base text-gray-600">{text}</p>
+    {action}
+  </div>
+);
+
+/* ------------------------------------------------------------------ */
+/* Page                                                                */
+/* ------------------------------------------------------------------ */
+
 const ViewDailyQuranRecords = () => {
   const [selectedClassId, setSelectedClassId] = useState('');
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  });
+  const [selectedDate, setSelectedDate] = useState(todayLocal);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [expandedRecords, setExpandedRecords] = useState({});
-  const [viewMode, setViewMode] = useState('table');
+  const [viewMode, setViewMode] = useState('table'); // only affects screens >= md
 
-  const {
-    classSessionsByDate,
-    getClassSessionsByDate,
-    loading,
-    error
-  } = useDailyQuranStore();
-
+  const { classSessionsByDate, getClassSessionsByDate, loading, error } = useDailyQuranStore();
   const { classes, fetchClasses } = useClassesStore();
 
   useEffect(() => {
     fetchClasses();
   }, [fetchClasses]);
 
-  useEffect(() => {
-    if (selectedClassId && selectedDate) {
-      loadRecords();
-    }
-  }, [selectedClassId, selectedDate]);
-
-  const loadRecords = async () => {
+  const loadRecords = useCallback(async () => {
     if (!selectedClassId || !selectedDate) return;
-
     try {
       await getClassSessionsByDate(selectedClassId, selectedDate);
-    } catch (error) {
-      console.error('Error loading records:', error);
-      toast.error('Khalad ayaa dhacay markii la soo dejinayay diiwaanka');
+    } catch (err) {
+      console.error('Error loading records:', err);
+      toast.error(translations.loadError);
     }
-  };
+  }, [selectedClassId, selectedDate, getClassSessionsByDate]);
 
-  const getStatusConfig = (status) => {
-    return statusConfig[status] || statusConfig.gartay;
-  };
+  useEffect(() => {
+    loadRecords();
+  }, [loadRecords]);
 
-  const getStatusColor = (status) => {
-    const config = getStatusConfig(status);
-    return `${config.bgLight} ${config.textLight} border ${config.border}`;
-  };
+  // Collapse open rows whenever the data set changes
+  useEffect(() => {
+    setExpandedRecords({});
+  }, [selectedClassId, selectedDate]);
 
-  const getRecordValue = (record, key, fallback = '') => {
-    if (record?.[key] !== undefined && record?.[key] !== null && record?.[key] !== '') {
-      return record[key];
-    }
+  const records = useMemo(() => classSessionsByDate || [], [classSessionsByDate]);
 
-    if (record?.session?.[key] !== undefined && record?.session?.[key] !== null && record?.session?.[key] !== '') {
-      return record.session[key];
-    }
+  const filteredRecords = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return records.filter((record) => {
+      const matchesSearch =
+        !q ||
+        record.student?.fullname?.toLowerCase().includes(q) ||
+        record.student?.studentId?.toLowerCase().includes(q);
+      const matchesStatus = statusFilter === 'all' || record.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [records, searchQuery, statusFilter]);
 
-    return fallback;
-  };
-
-  const filteredRecords = (classSessionsByDate || []).filter(record => {
-    const matchesSearch = !searchQuery ||
-      record.student?.fullname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      record.student?.studentId?.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesStatus = statusFilter === 'all' || record.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  const toggleRecordExpansion = (recordId) => {
-    setExpandedRecords(prev => ({
-      ...prev,
-      [recordId]: !prev[recordId]
-    }));
-  };
-
-  const formatDate = (dateString) => {
-    try {
-      return new Date(dateString).toLocaleDateString('so-SO', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch {
-      return dateString || '-';
-    }
-  };
-
-  const formatDateTime = (dateString) => {
-    try {
-      return new Date(dateString).toLocaleString('so-SO', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch {
-      return dateString || '-';
-    }
-  };
-
-  const selectedClass = classes.find(cls => cls._id === selectedClassId);
-
-  const calculateStats = () => {
-    const total = filteredRecords.length;
-    const gartay = filteredRecords.filter(r => r.status === 'gartay').length;
-    const garanWaayay = filteredRecords.filter(r => r.status === 'garan waayay').length;
-    const majoogo = filteredRecords.filter(r => r.status === 'majoogo').length;
-    
+  // Stats describe the whole class/day, not just what the filters are showing
+  const stats = useMemo(() => {
+    const total = records.length;
+    const gartay = records.filter((r) => r.status === 'gartay').length;
+    const garanWaayay = records.filter((r) => r.status === 'garan waayay').length;
+    const majoogo = records.filter((r) => r.status === 'majoogo').length;
     return {
       total,
       gartay,
       garanWaayay,
       majoogo,
-      comprehensionRate: total > 0 ? ((gartay / total) * 100).toFixed(1) : 0,
-      attendanceRate: total > 0 ? (((gartay + garanWaayay) / total) * 100).toFixed(1) : 0
+      students: new Set(records.map((r) => r.student?._id)).size,
+      comprehensionRate: total > 0 ? ((gartay / total) * 100).toFixed(1) : '0.0',
+      attendanceRate: total > 0 ? (((gartay + garanWaayay) / total) * 100).toFixed(1) : '0.0'
     };
+  }, [records]);
+
+  const countByStatus = {
+    all: stats.total,
+    gartay: stats.gartay,
+    'garan waayay': stats.garanWaayay,
+    majoogo: stats.majoogo
   };
 
-  const stats = calculateStats();
+  const selectedClass = classes.find((cls) => cls._id === selectedClassId);
+  const hasActiveFilters = searchQuery.trim() !== '' || statusFilter !== 'all';
 
-  const handlePrint = () => {
-    window.print();
+  const toggleRecordExpansion = (id) =>
+    setExpandedRecords((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
   };
 
-  const convertToCSV = (data) => {
-    const headers = Object.keys(data[0] || {});
-    const csvRows = [
-      headers.join(','),
-      ...data.map(row => headers.map(header => JSON.stringify(row[header] || '')).join(','))
-    ];
-    return csvRows.join('\n');
-  };
+  const handlePrint = () => window.print();
 
   const handleExport = () => {
     if (filteredRecords.length === 0) {
-      toast.error('Ma jiro xog la soo dejin karo');
+      toast.error(translations.noData);
       return;
     }
 
-    const data = filteredRecords.map(record => ({
+    const data = filteredRecords.map((record) => ({
       'Student Name': record.student?.fullname,
       'Student ID': record.student?.studentId,
-      'Status': getStatusConfig(record.status).label,
-      'Date': formatDate(record.date),
-      'Class': record.class?.name,
-      'Surah': getRecordValue(record, 'surah', ''),
-      'From-To': `${getRecordValue(record, 'fromVerse', '-') || '-'} - ${getRecordValue(record, 'toVerse', '-') || '-'}`,
-      'Notes': getRecordValue(record, 'notes', ''),
+      Status: getStatusConfig(record.status).label,
+      Date: formatDate(record.date),
+      Class: record.class?.name,
+      Surah: getRecordValue(record, 'surah', ''),
+      'From-To': versesText(record),
+      Notes: getRecordValue(record, 'notes', ''),
       'Created By': record.createdBy?.username
     }));
-    
-    const csv = convertToCSV(data);
-    const blob = new Blob([csv], { type: 'text/csv' });
+
+    // BOM so Excel opens the UTF-8 file correctly
+    const blob = new Blob(['\uFEFF' + convertToCSV(data)], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `quran_records_${selectedDate}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
-    toast.success('Xogta si guul leh ayaa loo soo dejiyay');
+    toast.success(translations.exported);
   };
 
-  const StatusBadge = ({ status }) => {
-    const config = getStatusConfig(status);
-    const Icon = config.icon;
-    return (
-      <motion.span
-        initial={{ scale: 0.8 }}
-        animate={{ scale: 1 }}
-        className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full border ${config.bgLight} ${config.textLight} ${config.border}`}
-      >
-        <Icon className="w-3 h-3 mr-1" />
-        {config.label}
-      </motion.span>
-    );
-  };
+  const inputClass =
+    'w-full min-h-[44px] rounded-lg border border-gray-300 bg-white px-3 py-2 text-base text-gray-900 ' +
+    'focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm';
 
-  const StatCard = ({ icon: Icon, label, value, gradient }) => (
-    <motion.div
-      whileHover={{ scale: 1.02, y: -2 }}
-      className={`bg-gradient-to-br ${gradient} rounded-xl p-4 text-white shadow-lg`}
-    >
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs opacity-90 uppercase tracking-wider">{label}</p>
-          <p className="text-2xl font-bold mt-1">{value}</p>
+  const renderResults = () => {
+    if (loading) {
+      return (
+        <div className="px-4 py-12 text-center">
+          <FiRefreshCw className="mx-auto h-8 w-8 animate-spin text-blue-600" aria-hidden="true" />
+          <p className="mt-4 text-gray-600" role="status">{translations.loading}</p>
         </div>
-        <Icon className="w-8 h-8 opacity-80" />
-      </div>
-    </motion.div>
-  );
+      );
+    }
 
-  const RecordCard = ({ record, index }) => {
-    const config = getStatusConfig(record.status);
-    const Icon = config.icon;
-    const isExpanded = expandedRecords[record._id];
+    if (!selectedClassId) {
+      return <EmptyState icon={FiUsers} text={translations.noClassSelected} />;
+    }
 
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.05 }}
-        className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden"
-      >
-        <div className="p-4 cursor-pointer" onClick={() => toggleRecordExpansion(record._id)}>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center space-x-3">
-                <div className={`w-10 h-10 rounded-full ${config.bgLight} flex items-center justify-center`}>
-                  <Icon className={`w-5 h-5 ${config.textLight}`} />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">{record.student?.fullname || 'Unknown Student'}</h3>
-                  <p className="text-xs text-gray-500">ID: {record.student?.studentId || 'N/A'}</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <StatusBadge status={record.status} />
-              <motion.div
-                animate={{ rotate: isExpanded ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <FiChevronDown className="w-5 h-5 text-gray-400" />
-              </motion.div>
-            </div>
-          </div>
-          <div className="mt-3 flex items-center space-x-4 text-xs text-gray-500">
-            <span className="flex items-center">
-              <FiCalendar className="w-3 h-3 mr-1" />
-              {formatDate(record.date)}
-            </span>
-            <span className="flex items-center">
-              <FiUsers className="w-3 h-3 mr-1" />
-              {record.class?.name}
-            </span>
-            <span className="flex items-center">
-              <FiClock className="w-3 h-3 mr-1" />
-              {record.createdBy?.username || '-'}
-            </span>
-          </div>
-        </div>
+    if (!selectedDate) {
+      return <EmptyState icon={FiCalendar} text={translations.noDateSelected} />;
+    }
 
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="border-t border-gray-100 bg-gray-50"
+    if (error && records.length === 0) {
+      return (
+        <EmptyState
+          icon={FiAlertCircle}
+          text={typeof error === 'string' ? error : translations.loadError}
+          action={
+            <button
+              type="button"
+              onClick={loadRecords}
+              className="mt-4 min-h-[44px] rounded-lg bg-blue-600 px-5 text-sm font-medium text-white hover:bg-blue-700"
             >
-              <div className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-900 mb-2 flex items-center">
-                      <FiBook className="w-4 h-4 mr-1 text-green-600" />
-                      Faahfaahin Casharka
-                    </h4>
-                    <div className="space-y-2 text-sm">
-                      <p><span className="font-medium text-gray-700">{translations.date}:</span> <span className="text-gray-600">{formatDate(record.date)}</span></p>
-                      <p><span className="font-medium text-gray-700">{translations.class}:</span> <span className="text-gray-600">{record.class?.name || 'N/A'}</span></p>
-                      <p><span className="font-medium text-gray-700">Surah:</span> <span className="text-gray-600">{getRecordValue(record, 'surah', 'N/A')}</span></p>
-                      <p><span className="font-medium text-gray-700">From-To:</span> <span className="text-gray-600">{getRecordValue(record, 'fromVerse', '-') || '-'} - {getRecordValue(record, 'toVerse', '-') || '-'}</span></p>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-900 mb-2 flex items-center">
-                      <FiEye className="w-4 h-4 mr-1 text-blue-600" />
-                      Qoraal dheeraad ah
-                    </h4>
-                    <div className="space-y-2 text-sm">
-                      <p><span className="font-medium text-gray-700">{translations.notes}:</span> <span className="text-gray-600">{record.notes || 'Ma jiro'}</span></p>
-                      <p><span className="font-medium text-gray-700">La abuuray:</span> <span className="text-gray-600">{formatDateTime(record.createdAt)}</span></p>
-                      <p><span className="font-medium text-gray-700">La cusboonaysiiyay:</span> <span className="text-gray-600">{formatDateTime(record.updatedAt)}</span></p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+              {translations.retry}
+            </button>
+          }
+        />
+      );
+    }
+
+    if (records.length === 0) {
+      return <EmptyState icon={FiBook} text={translations.noRecords} />;
+    }
+
+    if (filteredRecords.length === 0) {
+      return (
+        <EmptyState
+          icon={FiSearch}
+          text={translations.noMatches}
+          action={
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="mt-4 min-h-[44px] rounded-lg border border-gray-300 px-5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              {translations.clearFilters}
+            </button>
+          }
+        />
+      );
+    }
+
+    const cards = (
+      <div
+        className={
+          viewMode === 'grid'
+            ? 'grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 sm:p-4 xl:grid-cols-3'
+            : 'space-y-3 p-3 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0 sm:p-4 md:hidden'
+        }
+      >
+        {filteredRecords.map((record) => (
+          <RecordCard
+            key={record._id}
+            record={record}
+            expanded={!!expandedRecords[record._id]}
+            onToggle={() => toggleRecordExpansion(record._id)}
+          />
+        ))}
+      </div>
+    );
+
+    if (viewMode === 'grid') return cards;
+
+    return (
+      <>
+        {/* Phones & small tablets: cards */}
+        {cards}
+
+        {/* md and up: table */}
+        <div className="hidden overflow-x-auto md:block">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                {[translations.student, translations.status, translations.lesson, translations.createdBy, translations.actions].map(
+                  (h) => (
+                    <th
+                      key={h}
+                      scope="col"
+                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 lg:px-6"
+                    >
+                      {h}
+                    </th>
+                  )
+                )}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 bg-white">
+              {filteredRecords.map((record) => {
+                const expanded = !!expandedRecords[record._id];
+                return (
+                  <React.Fragment key={record._id}>
+                    <tr
+                      className="cursor-pointer transition-colors hover:bg-gray-50"
+                      onClick={() => toggleRecordExpansion(record._id)}
+                    >
+                      <td className="px-4 py-3 lg:px-6">
+                        <div className="flex items-center gap-3">
+                          <StatusAvatar status={record.status} />
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-medium text-gray-900">
+                              {record.student?.fullname || translations.unknownStudent}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              ID: {record.student?.studentId || 'N/A'}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 lg:px-6">
+                        <StatusBadge status={record.status} />
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700 lg:px-6">
+                        <div className="font-medium">{getRecordValue(record, 'surah', '-')}</div>
+                        <div className="text-xs text-gray-500">{versesText(record)}</div>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600 lg:px-6">
+                        {record.createdBy?.username || 'System'}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm lg:px-6">
+                        <button
+                          type="button"
+                          aria-expanded={expanded}
+                          className="flex items-center gap-1 font-medium text-blue-600 hover:text-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                        >
+                          <FiChevronDown
+                            className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`}
+                            aria-hidden="true"
+                          />
+                          {translations.viewDetails}
+                        </button>
+                      </td>
+                    </tr>
+                    {expanded && (
+                      <tr>
+                        <td colSpan={5} className="bg-gray-50 px-4 py-4 lg:px-6">
+                          <RecordDetails record={record} />
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </>
     );
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent flex items-center">
-                  <FiBook className="mr-3 text-green-600" />
-                  {translations.heading}
-                </h1>
-                <p className="text-gray-600 mt-2 ml-1">{translations.subtitle}</p>
-              </div>
-              <div className="flex items-center space-x-2 bg-white rounded-lg shadow-sm p-1">
-                <button
-                  onClick={() => setViewMode('table')}
-                  className={`p-2 rounded-md transition-all ${viewMode === 'table' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-                >
-                  <FiList className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-                >
-                  <FiGrid className="w-5 h-5" />
-                </button>
-              </div>
+      <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-8">
+        {/* Header */}
+        <header className="mb-4 flex items-start justify-between gap-3 sm:mb-6">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-600 text-white sm:h-12 sm:w-12">
+              <FiBook className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
             </div>
-          </motion.div>
+            <div className="min-w-0">
+              <h1 className="text-xl font-bold leading-tight text-gray-900 sm:text-3xl">
+                {translations.heading}
+              </h1>
+              <p className="mt-1 text-sm text-gray-600">{translations.subtitle}</p>
+            </div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white rounded-2xl shadow-xl p-6 mb-8 border border-gray-100"
+          <div
+            className="hidden shrink-0 items-center gap-1 rounded-lg bg-white p-1 shadow-sm md:flex print:hidden"
+            role="group"
+            aria-label="View mode"
           >
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">{translations.selectClass}</label>
-                <select
-                  value={selectedClassId}
-                  onChange={(e) => setSelectedClassId(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                >
-                  <option value="">{translations.selectClass}</option>
-                  {classes.map(cls => (
-                    <option key={cls._id} value={cls._id}>{cls.name} - {cls.subject}</option>
-                  ))}
-                </select>
-              </div>
+            {[
+              ['table', FiList, 'Table'],
+              ['grid', FiGrid, 'Grid']
+            ].map(([mode, Icon, label]) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setViewMode(mode)}
+                aria-label={label}
+                aria-pressed={viewMode === mode}
+                className={`rounded-md p-2 transition-colors ${
+                  viewMode === mode ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Icon className="h-5 w-5" />
+              </button>
+            ))}
+          </div>
+        </header>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">{translations.selectDate}</label>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+        {/* Filters */}
+        <section className="mb-4 rounded-2xl border border-gray-100 bg-white p-3 shadow-md sm:mb-6 sm:p-5 print:hidden">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label htmlFor="class-select" className="mb-1.5 block text-sm font-semibold text-gray-700">
+                {translations.selectClass}
+              </label>
+              <select
+                id="class-select"
+                value={selectedClassId}
+                onChange={(e) => setSelectedClassId(e.target.value)}
+                className={inputClass}
+              >
+                <option value="">{translations.selectClass}</option>
+                {classes.map((cls) => (
+                  <option key={cls._id} value={cls._id}>
+                    {cls.name} - {cls.subject}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="date-select" className="mb-1.5 block text-sm font-semibold text-gray-700">
+                {translations.selectDate}
+              </label>
+              <input
+                id="date-select"
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className={inputClass}
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label htmlFor="search-input" className="mb-1.5 block text-sm font-semibold text-gray-700">
+                {translations.searchLabel}
+              </label>
+              <div className="relative">
+                <FiSearch
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  aria-hidden="true"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">{translations.searchRecords}</label>
-                <div className="relative">
-                  <FiSearch className="absolute left-3 top-3 text-gray-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={translations.searchRecords}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">{translations.filterByStatus}</label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                >
-                  <option value="all">{translations.allStatuses}</option>
-                  <option value="gartay">{translations.gartay}</option>
-                  <option value="garan waayay">{translations.garanWaayay}</option>
-                  <option value="majoogo">{translations.majoogo}</option>
-                </select>
+                <input
+                  id="search-input"
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={translations.searchRecords}
+                  className={`${inputClass} pl-10 ${searchQuery ? 'pr-10' : ''}`}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    aria-label={translations.clearFilters}
+                    className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 hover:text-gray-600"
+                  >
+                    <FiX />
+                  </button>
+                )}
               </div>
             </div>
+          </div>
 
-            <div className="flex flex-wrap gap-3">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={loadRecords}
-                disabled={loading || !selectedClassId || !selectedDate}
-                className="px-5 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-md"
-              >
-                <FiRefreshCw className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
-                {translations.refresh}
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handlePrint}
-                className="px-5 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 flex items-center shadow-md"
-              >
-                <FiPrinter className="mr-2" />
-                {translations.printReport}
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleExport}
-                className="px-5 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 flex items-center shadow-md"
-              >
-                <FiDownload className="mr-2" />
-                {translations.exportData}
-              </motion.button>
-            </div>
-          </motion.div>
-
-          {selectedClass && filteredRecords.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 }}
-              className="mb-6"
+          <div className="mt-4 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:gap-3">
+            <button
+              type="button"
+              onClick={loadRecords}
+              disabled={loading || !selectedClassId || !selectedDate}
+              className="flex min-h-[48px] flex-col items-center justify-center gap-1 rounded-lg bg-blue-600 px-2 text-xs font-medium text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-row sm:gap-2 sm:px-5 sm:text-sm"
             >
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white shadow-xl">
-                <div className="flex items-center justify-between flex-wrap gap-4">
+              <FiRefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
+              {translations.refresh}
+            </button>
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="flex min-h-[48px] flex-col items-center justify-center gap-1 rounded-lg border border-gray-300 bg-white px-2 text-xs font-medium text-gray-700 hover:bg-gray-50 sm:flex-row sm:gap-2 sm:px-5 sm:text-sm"
+            >
+              <FiPrinter className="h-4 w-4" aria-hidden="true" />
+              {translations.print}
+            </button>
+            <button
+              type="button"
+              onClick={handleExport}
+              className="flex min-h-[48px] flex-col items-center justify-center gap-1 rounded-lg border border-gray-300 bg-white px-2 text-xs font-medium text-gray-700 hover:bg-gray-50 sm:flex-row sm:gap-2 sm:px-5 sm:text-sm"
+            >
+              <FiDownload className="h-4 w-4" aria-hidden="true" />
+              {translations.exportShort}
+            </button>
+          </div>
+        </section>
+
+        {/* Summary */}
+        {selectedClass && records.length > 0 && !loading && (
+          <section className="mb-4 space-y-3 sm:mb-6" aria-label="Summary">
+            <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white shadow-lg sm:p-6">
+              <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+                <div className="min-w-0">
+                  <h2 className="text-lg font-bold sm:text-xl">
+                    {selectedClass.name} - {selectedClass.subject}
+                  </h2>
+                  <p className="mt-1 flex items-center gap-2 text-sm text-blue-100">
+                    <FiCalendar aria-hidden="true" />
+                    {formatDate(selectedDate)}
+                  </p>
+                </div>
+                <div className="flex gap-6">
                   <div>
-                    <h3 className="text-xl font-bold mb-1">{selectedClass.name} - {selectedClass.subject}</h3>
-                    <p className="text-blue-100 flex items-center"><FiCalendar className="mr-2" />{formatDate(selectedDate)}</p>
+                    <p className="text-2xl font-bold leading-none">{stats.total}</p>
+                    <p className="mt-1 text-xs text-blue-100">{translations.totalSessions}</p>
                   </div>
-                  <div className="flex space-x-6">
-                    <div className="text-center">
-                      <p className="text-2xl font-bold">{stats.total}</p>
-                      <p className="text-xs text-blue-100">{translations.totalSessions}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold">{new Set(filteredRecords.map(r => r.student?._id)).size}</p>
-                      <p className="text-xs text-blue-100">{translations.totalStudents}</p>
-                    </div>
+                  <div>
+                    <p className="text-2xl font-bold leading-none">{stats.students}</p>
+                    <p className="mt-1 text-xs text-blue-100">{translations.totalStudents}</p>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
-                <StatCard icon={FiUserCheck} label="Wadarta Ardayda" value={stats.total} gradient="from-green-400 to-emerald-500" />
-                <StatCard icon={FiAward} label="Gartay" value={stats.gartay} gradient="from-blue-400 to-indigo-500" />
-                <StatCard icon={FiTrendingUp} label="Fahamka" value={`${stats.comprehensionRate}%`} gradient="from-purple-400 to-pink-500" />
-                <StatCard icon={FiBarChart2} label="Ka qaybgalka" value={`${stats.attendanceRate}%`} gradient="from-orange-400 to-red-500" />
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <CountTile status="gartay" value={stats.gartay} />
+              <CountTile status="garan waayay" value={stats.garanWaayay} />
+              <CountTile status="majoogo" value={stats.majoogo} />
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 min-[400px]:grid-cols-2 sm:gap-3">
+              <RateTile
+                label={translations.comprehensionRate}
+                value={stats.comprehensionRate}
+                barClass="bg-purple-500"
+                textClass="text-purple-700"
+              />
+              <RateTile
+                label={translations.attendanceRate}
+                value={stats.attendanceRate}
+                barClass="bg-blue-500"
+                textClass="text-blue-700"
+              />
+            </div>
+          </section>
+        )}
+
+        {/* Results */}
+        <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-md">
+          {selectedClassId && records.length > 0 && !loading && (
+            <div className="border-b border-gray-100 p-3 sm:px-5 print:hidden">
+              <div
+                className="-mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                role="group"
+                aria-label={translations.filterByStatus}
+              >
+                {['all', ...STATUS_KEYS].map((key) => {
+                  const active = statusFilter === key;
+                  const label = key === 'all' ? translations.all : getStatusConfig(key).label;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setStatusFilter(key)}
+                      aria-pressed={active}
+                      className={`flex min-h-[40px] shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors ${
+                        active
+                          ? 'border-blue-600 bg-blue-600 text-white'
+                          : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {label}
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs ${
+                          active ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        {countByStatus[key]}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-            </motion.div>
+
+              {hasActiveFilters && (
+                <div className="mt-2 flex items-center justify-between text-sm text-gray-600">
+                  <span>
+                    {filteredRecords.length} / {records.length}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="font-medium text-blue-600 hover:text-blue-800"
+                  >
+                    {translations.clearFilters}
+                  </button>
+                </div>
+              )}
+            </div>
           )}
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white rounded-2xl shadow-xl overflow-hidden"
-          >
-            {loading ? (
-              <div className="p-12 text-center">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                  className="inline-block"
-                >
-                  <FiRefreshCw className="w-8 h-8 text-blue-600" />
-                </motion.div>
-                <p className="mt-4 text-gray-600">{translations.loading}</p>
-              </div>
-            ) : !selectedClassId ? (
-              <div className="p-12 text-center">
-                <FiUsers className="mx-auto h-16 w-16 text-gray-300" />
-                <p className="mt-4 text-gray-500 text-lg">{translations.noClassSelected}</p>
-              </div>
-            ) : !selectedDate ? (
-              <div className="p-12 text-center">
-                <FiCalendar className="mx-auto h-16 w-16 text-gray-300" />
-                <p className="mt-4 text-gray-500 text-lg">{translations.noDateSelected}</p>
-              </div>
-            ) : filteredRecords.length === 0 ? (
-              <div className="p-12 text-center">
-                <FiBook className="mx-auto h-16 w-16 text-gray-300" />
-                <p className="mt-4 text-gray-500 text-lg">{translations.noRecords}</p>
-              </div>
-            ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
-                {filteredRecords.map((record, index) => (
-                  <RecordCard key={record._id} record={record} index={index} />
-                ))}
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{translations.student}</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{translations.status}</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{translations.createdBy}</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{translations.actions}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    <AnimatePresence>
-                      {filteredRecords.map((record, index) => {
-                        const config = getStatusConfig(record.status);
-                        const Icon = config.icon;
-                        const isExpanded = expandedRecords[record._id];
-
-                        return (
-                          <React.Fragment key={record._id}>
-                            <motion.tr
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: index * 0.03 }}
-                              className="hover:bg-gray-50 transition-colors cursor-pointer"
-                              onClick={() => toggleRecordExpansion(record._id)}
-                            >
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="flex items-center">
-                                  <div className={`w-10 h-10 rounded-full ${config.bgLight} flex items-center justify-center mr-3`}>
-                                    <Icon className={`w-5 h-5 ${config.textLight}`} />
-                                  </div>
-                                  <div>
-                                    <div className="text-sm font-medium text-gray-900">{record.student?.fullname || 'Unknown Student'}</div>
-                                    <div className="text-xs text-gray-500">ID: {record.student?.studentId || 'N/A'}</div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap"><StatusBadge status={record.status} /></td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                <div className="flex items-center"><FiClock className="w-3 h-3 mr-1 text-gray-400" />{record.createdBy?.username || 'System'}</div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                <motion.button whileHover={{ x: 3 }} className="text-blue-600 hover:text-blue-800 flex items-center font-medium">
-                                  <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}><FiChevronDown className="mr-1" /></motion.div>
-                                  {translations.viewDetails}
-                                </motion.button>
-                              </td>
-                            </motion.tr>
-                            <AnimatePresence>
-                              {isExpanded && (
-                                <motion.tr initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3 }}>
-                                  <td colSpan="4" className="px-6 py-4 bg-gradient-to-r from-blue-50 to-purple-50">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                      <div>
-                                        <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center"><FiBook className="w-4 h-4 mr-2 text-green-600" />Faahfaahin Casharka</h4>
-                                        <div className="space-y-2 text-sm">
-                                          <div className="flex items-center"><span className="font-medium text-gray-700 w-24">{translations.date}:</span><span className="text-gray-600">{formatDate(record.date)}</span></div>
-                                          <div className="flex items-center"><span className="font-medium text-gray-700 w-24">{translations.class}:</span><span className="text-gray-600">{record.class?.name || 'N/A'}</span></div>
-                                          <div className="flex items-center"><span className="font-medium text-gray-700 w-24">Surah:</span><span className="text-gray-600">{getRecordValue(record, 'surah', 'N/A')}</span></div>
-                                          <div className="flex items-center"><span className="font-medium text-gray-700 w-24">From-To:</span><span className="text-gray-600">{getRecordValue(record, 'fromVerse', '-') || '-'} - {getRecordValue(record, 'toVerse', '-') || '-'}</span></div>
-                                        </div>
-                                      </div>
-                                      <div>
-                                        <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center"><FiEye className="w-4 h-4 mr-2 text-blue-600" />Qoraal dheeraad ah</h4>
-                                        <div className="space-y-2 text-sm">
-                                          <div className="flex items-start"><span className="font-medium text-gray-700 w-24">{translations.notes}:</span><span className="text-gray-600 flex-1">{record.notes || 'Ma jiro'}</span></div>
-                                          <div className="flex items-center"><span className="font-medium text-gray-700 w-24">La abuuray:</span><span className="text-gray-600">{formatDateTime(record.createdAt)}</span></div>
-                                          <div className="flex items-center"><span className="font-medium text-gray-700 w-24">La cusboonaysiiyay:</span><span className="text-gray-600">{formatDateTime(record.updatedAt)}</span></div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </td>
-                                </motion.tr>
-                              )}
-                            </AnimatePresence>
-                          </React.Fragment>
-                        );
-                      })}
-                    </AnimatePresence>
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </motion.div>
-        </div>
+          {renderResults()}
+        </section>
       </div>
-
-      <style jsx global>{`
-        @media print {
-          .container { margin: 0; padding: 0; }
-          button, .shadow-xl, .shadow-md { box-shadow: none !important; }
-          .bg-gradient-to-r, .bg-gradient-to-br { background: white !important; color: black !important; }
-        }
-      `}</style>
     </div>
   );
 };

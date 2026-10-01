@@ -1,1861 +1,1363 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  FiCalendar, FiCheck, FiX, FiClock, 
-  FiUsers, FiBook, FiEye, FiPrinter, FiSave,
-  FiChevronDown, FiCheckCircle, FiRotateCw,
-  FiDownload, FiLoader, FiSearch, FiInfo, FiAlertCircle
-} from 'react-icons/fi';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  FiCalendar, FiCheck, FiX, FiClock, FiUsers, FiBook, FiEye, FiPrinter,
+  FiSave, FiChevronDown, FiChevronLeft, FiChevronRight, FiRotateCw,
+  FiDownload, FiLoader, FiSearch, FiInfo, FiAlertCircle, FiPhone
+} from 'react-icons/fi';
 import useClassesStore from '../../store/classesStore';
 import useStudentsStore from '../../store/studentsStore';
 import { useDailyQuranStore } from '../../store/dailyQuranStore';
 import { toast } from 'react-hot-toast';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+
+/* ------------------------------------------------------------------ */
+/* Text                                                                */
+/* ------------------------------------------------------------------ */
 
 const translations = {
-  heading: "Abuur Cashar Quraan Maalinle",
-  selectClass: "Dooro Fasalka",
-  searchClass: "Raadi fasalka...",
-  selectDate: "Dooro Taariikhda",
-  studentName: "Magaca Ardayga",
-  studentId: "Lambarka Ardayga",
-  phone: "Taleefoonka",
-  status: "Heerka Casharka",
-  gartay: "Gartay",
-  garanWaayay: "Garan Waayay",
-  majoogo: "Majoogo",
-  submitAll: "Diiwaan Geli Dhammaan",
-  submitSingle: "Diiwaan Geli",
-  loading: "Soo dejineyn...",
-  saving: "Keydinaya...",
-  noClasses: "Ma jiro fasallo la heli karo",
-  noStudents: "Fasalkan ma laha arday",
-  success: "Casharka maalinle si guul leh ayaa loo diiwaangeliyay",
-  error: "Qalad ayaa dhacay",
-  creating: "Diiwaangelinta...",
-  statistics: "Tirakoobka",
-  totalStudents: "Wadarta Ardayda",
-  passed: "Gartay",
-  failed: "Garan Waayay",
-  absent: "Majoogo",
-  refresh: "Cusboonaysii",
-  selectAll: "Dooro Dhammaan",
-  updateStatus: "Cusboonaysii Heerka",
-  viewSessions: "Eeg Casharrada",
-  printReport: "Daabac Warbixinta",
-  reportTitle: "Warbixinta Casharrada Quraanka Maalinle",
-  class: "Fasalka",
-  date: "Taariikhda",
-  summary: "Wadarta",
-  generatedOn: "Lagu sameeyay",
-  downloadPDF: "Soo dejiso PDF",
-  print: "Daabac",
-  loadDateSessions: "Soo deji casharrada taariikhdan",
-  dateInfo: "Waxaad diiwaan gelin kartaa casharro taariikho kala duwan",
-  noSessionsForDate: "Ma jiro casharro diiwaan gashan taariikhdan",
-  selectNewDate: "Dooro taariikh kale si aad u diiwaan geliso cashar cusub",
-  loadingDateData: "Soo dejineyn xogta taariikhdan..."
+  heading: 'Abuur Cashar Quraan Maalinle',
+  subheading: 'Deji casharrada quraanka maalinle ee ardayda fasalka',
+  selectClass: 'Dooro Fasalka',
+  searchClass: 'Raadi fasalka...',
+  selectDate: 'Dooro Taariikhda',
+  studentName: 'Magaca Ardayga',
+  studentId: 'Lambarka Ardayga',
+  phone: 'Taleefoonka',
+  status: 'Heerka Casharka',
+  gartay: 'Gartay',
+  garanWaayay: 'Garan Waayay',
+  majoogo: 'Majoogo',
+  submitAll: 'Diiwaan Geli Dhammaan',
+  submitSingle: 'Diiwaan Geli',
+  loading: 'Soo dejinaya...',
+  saving: 'Keydinaya...',
+  noClasses: 'Ma jiro fasallo la heli karo',
+  noClassesHint: 'Fadlan hubi in aad leedahay fasallo ama internet-kaaga iska hubi.',
+  noStudents: 'Fasalkan ma laha arday',
+  noStudentsHint: 'Fasalkan ma laha arday diiwaan gashan.',
+  error: 'Qalad ayaa dhacay',
+  creating: 'Diiwaangeli...',
+  totalStudents: 'Wadarta Ardayda',
+  passed: 'Gartay',
+  failed: 'Garan Waayay',
+  absent: 'Majoogo',
+  alreadySaved: 'Hore u diiwaan gashan',
+  refresh: 'Cusboonaysii',
+  selectAll: 'Dooro Dhammaan',
+  viewSessions: 'Eeg Casharrada',
+  printReport: 'Daabac Warbixinta',
+  reportTitle: 'Warbixinta Casharrada Quraanka Maalinle',
+  class: 'Fasalka',
+  date: 'Taariikhda',
+  generatedOn: 'Lagu sameeyay',
+  downloadPDF: 'Soo dejiso PDF',
+  print: 'Daabac',
+  close: 'Xidh',
+  success: 'Guul',
+  lesson: 'Casharka',
+  lessonTitle: 'Faahfaahin Casharka Quraanka',
+  lessonHint: 'Waxaa loo isticmaali doonaa ardayda aan lahayn qoraal u gaar ah.',
+  surah: 'Suura',
+  from: 'Laga bilaabo',
+  to: 'Ilaa',
+  notes: 'Qoraal dheeraad ah',
+  unsaved: 'isbeddel aan la keydin',
+  savedBadge: 'La keydiyay',
+  unsavedBadge: 'Aan la keydin',
+  noSessionsForDate: 'Ma jiro casharro diiwaan gashan taariikhdan',
+  loadingDateData: 'Soo dejineynaa xogta taariikhdan...',
+  loadFailed: 'Khalad ayaa dhacay markii la soo dejinayay casharrada',
+  retry: 'Isku day mar kale',
+  discardConfirm: 'Isbeddelada aan la keydin waa la tirtiri doonaa. Sii wad?',
+  popupBlocked: 'Fadlan oggolow daaqadaha furmaya (pop-ups) si aad u daabacdo',
+  noData: 'Ma jiro xog la daabici karo'
 };
+
+const STATUS_KEYS = ['gartay', 'garan waayay', 'majoogo'];
+
+const STATUS = {
+  gartay: {
+    label: translations.gartay,
+    icon: FiCheck,
+    text: 'text-green-700',
+    accent: 'border-l-green-500',
+    active: 'bg-green-600 border-green-600 text-white',
+    idle: 'bg-white border-gray-300 text-gray-700 hover:bg-green-50 active:bg-green-100',
+    rpt: 'g'
+  },
+  'garan waayay': {
+    label: translations.garanWaayay,
+    icon: FiX,
+    text: 'text-red-700',
+    accent: 'border-l-red-500',
+    active: 'bg-red-600 border-red-600 text-white',
+    idle: 'bg-white border-gray-300 text-gray-700 hover:bg-red-50 active:bg-red-100',
+    rpt: 'r'
+  },
+  majoogo: {
+    label: translations.majoogo,
+    icon: FiClock,
+    text: 'text-yellow-700',
+    accent: 'border-l-yellow-500',
+    active: 'bg-yellow-500 border-yellow-500 text-white',
+    idle: 'bg-white border-gray-300 text-gray-700 hover:bg-yellow-50 active:bg-yellow-100',
+    rpt: 'y'
+  }
+};
+
+/* ------------------------------------------------------------------ */
+/* Helpers                                                             */
+/* ------------------------------------------------------------------ */
+
+const toLocalISO = (d) =>
+  new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+
+const todayLocal = () => toLocalISO(new Date());
+
+const shiftDate = (iso, days) => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return toLocalISO(new Date(y, m - 1, d + days));
+};
+
+// Returns YYYY-MM-DD for any date value coming from the form or the API
+const normalizeDate = (value) => {
+  if (!value) return '';
+  if (
+    typeof value === 'string' &&
+    (/^\d{4}-\d{2}-\d{2}$/.test(value) || /^\d{4}-\d{2}-\d{2}T00:00:00(\.000)?Z$/.test(value))
+  ) {
+    return value.slice(0, 10);
+  }
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? '' : toLocalISO(d);
+};
+
+const formatDateForDisplay = (value) => {
+  const n = normalizeDate(value);
+  if (!n) return value || '-';
+  const [y, m, d] = n.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('so-SO', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+const esc = (s) =>
+  String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const REPORT_CSS = `
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.rpt{font-family:Arial,sans-serif;color:#111827;font-size:12px;line-height:1.4}
+.rpt h1{font-size:22px;color:#1a56db;margin:0 0 4px}
+.rpt .sub{color:#4b5563;font-size:14px;margin:0}
+.rpt .head{text-align:center;border-bottom:2px solid #111827;padding-bottom:14px;margin-bottom:18px}
+.rpt .meta{display:flex;justify-content:space-between;gap:16px;background:#f9fafb;border-radius:8px;padding:12px;margin-bottom:18px}
+.rpt .meta div div{margin:3px 0}
+.rpt .meta b{color:#374151;margin-right:6px}
+.rpt .stats{display:flex;gap:10px;margin-bottom:18px}
+.rpt .stat{flex:1;text-align:center;border-radius:8px;padding:10px;border:1px solid}
+.rpt .stat strong{display:block;font-size:22px}
+.rpt .g{background:#d1fae5;border-color:#10b981}
+.rpt .r{background:#fee2e2;border-color:#ef4444}
+.rpt .y{background:#fef3c7;border-color:#f59e0b}
+.rpt .b{background:#dbeafe;border-color:#3b82f6}
+.rpt table{width:100%;border-collapse:collapse}
+.rpt th{background:#f3f4f6;text-align:left}
+.rpt th,.rpt td{border:1px solid #d1d5db;padding:7px 8px;vertical-align:top}
+.rpt tr:nth-child(even) td{background:#f9fafb}
+.rpt .tag{font-weight:bold;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.rpt .tag.g{color:#065f46}.rpt .tag.r{color:#991b1b}.rpt .tag.y{color:#92400e}
+.rpt .foot{margin-top:24px;padding-top:12px;border-top:1px solid #d1d5db;text-align:center;color:#6b7280;font-size:11px}
+`;
+
+const inputCls =
+  'w-full min-h-[44px] rounded-lg border border-gray-300 bg-white px-3 py-2 text-base text-gray-900 ' +
+  'focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm';
+
+const cellInputCls =
+  'w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
+
+/* ------------------------------------------------------------------ */
+/* Small components (outside the page so they are not re-created)      */
+/* ------------------------------------------------------------------ */
+
+const Field = ({ label, className = '', children }) => (
+  <label className={`block ${className}`}>
+    <span className="mb-1 block text-xs font-medium text-gray-600">{label}</span>
+    {children}
+  </label>
+);
+
+const Stat = ({ label, value, tone, className = '' }) => (
+  <div className={`rounded-lg border p-3 ${tone} ${className}`}>
+    <div className="text-xs font-medium">{label}</div>
+    <div className="text-xl font-bold">{value}</div>
+  </div>
+);
+
+const StatusSegmented = ({ value, onChange, compact = false }) => (
+  <div role="radiogroup" aria-label={translations.status} className="grid grid-cols-3 gap-1.5">
+    {STATUS_KEYS.map((key) => {
+      const cfg = STATUS[key];
+      const Icon = cfg.icon;
+      const active = value === key;
+      return (
+        <button
+          key={key}
+          type="button"
+          role="radio"
+          aria-checked={active}
+          onClick={() => onChange(key)}
+          className={`flex items-center justify-center rounded-lg border font-medium transition-colors ${
+            compact
+              ? 'min-h-[36px] gap-1 px-2 text-xs'
+              : 'min-h-[48px] flex-col gap-0.5 px-1 text-xs min-[400px]:flex-row min-[400px]:gap-1.5 sm:text-sm'
+          } ${active ? cfg.active : cfg.idle}`}
+        >
+          <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="truncate">{cfg.label}</span>
+        </button>
+      );
+    })}
+  </div>
+);
+
+const SaveBadge = ({ record }) =>
+  record.dirty ? (
+    <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+      {translations.unsavedBadge}
+    </span>
+  ) : record.sessionId ? (
+    <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+      {translations.savedBadge}
+    </span>
+  ) : null;
+
+const StudentCard = ({ record, index, lesson, onStatus, onField, onSave, saving }) => {
+  const [open, setOpen] = useState(() =>
+    Boolean(record.surah || record.fromVerse || record.toVerse || record.notes)
+  );
+  const cfg = STATUS[record.status] || STATUS.majoogo;
+
+  return (
+    <div className={`rounded-xl border border-l-4 border-gray-200 bg-white p-3 shadow-sm ${cfg.accent}`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate font-semibold text-gray-900">
+            <span className="mr-1.5 text-gray-400">{index + 1}.</span>
+            {record.name}
+          </p>
+          <p className="text-xs text-gray-500">ID: {record.studentId || '-'}</p>
+          {record.phone && (
+            <a
+              href={`tel:${record.phone}`}
+              className="mt-0.5 inline-flex items-center gap-1 text-xs text-blue-600"
+            >
+              <FiPhone className="h-3 w-3" aria-hidden="true" />
+              {record.phone}
+            </a>
+          )}
+        </div>
+        <SaveBadge record={record} />
+      </div>
+
+      <div className="mt-3">
+        <StatusSegmented value={record.status} onChange={onStatus} />
+      </div>
+
+      <div className="mt-3 flex gap-2">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          className="flex min-h-[44px] flex-1 items-center justify-center gap-1 rounded-lg border border-gray-300 bg-white text-sm text-gray-700 active:bg-gray-100"
+        >
+          {translations.lesson}
+          <FiChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={saving}
+          className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-lg bg-blue-600 text-sm font-medium text-white hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50"
+        >
+          {saving ? <FiLoader className="h-4 w-4 animate-spin" /> : <FiSave className="h-4 w-4" />}
+          {saving ? translations.saving : translations.submitSingle}
+        </button>
+      </div>
+
+      {open && (
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <Field label={translations.surah} className="col-span-2">
+            <input
+              type="text"
+              value={record.surah}
+              onChange={(e) => onField('surah', e.target.value)}
+              placeholder={lesson.surah || translations.surah}
+              className={inputCls}
+            />
+          </Field>
+          <Field label={translations.from}>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={record.fromVerse}
+              onChange={(e) => onField('fromVerse', e.target.value)}
+              placeholder={lesson.fromVerse || '1'}
+              className={inputCls}
+            />
+          </Field>
+          <Field label={translations.to}>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={record.toVerse}
+              onChange={(e) => onField('toVerse', e.target.value)}
+              placeholder={lesson.toVerse || '7'}
+              className={inputCls}
+            />
+          </Field>
+          <Field label={translations.notes} className="col-span-2">
+            <input
+              type="text"
+              value={record.notes}
+              onChange={(e) => onField('notes', e.target.value)}
+              placeholder={lesson.notes || translations.notes}
+              className={inputCls}
+            />
+          </Field>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const StudentRow = ({ record, index, lesson, onStatus, onField, onSave, saving }) => (
+  <tr className={record.sessionId && !record.dirty ? 'bg-blue-50/50' : 'bg-white'}>
+    <td className="py-3 pl-4 pr-2 text-sm font-medium text-gray-500">{index + 1}</td>
+    <td className="px-3 py-3">
+      <div className="text-sm font-medium text-gray-900">{record.name}</div>
+      <div className="text-xs text-gray-500">
+        {record.studentId}
+        {record.phone ? ` · ${record.phone}` : ''}
+      </div>
+      <div className="mt-1">
+        <SaveBadge record={record} />
+      </div>
+    </td>
+    <td className="px-3 py-3">
+      <input
+        type="text"
+        value={record.surah}
+        onChange={(e) => onField('surah', e.target.value)}
+        placeholder={lesson.surah || translations.surah}
+        className={`${cellInputCls} min-w-[120px]`}
+      />
+    </td>
+    <td className="px-3 py-3">
+      <div className="flex items-center gap-1">
+        <input
+          type="text"
+          inputMode="numeric"
+          value={record.fromVerse}
+          onChange={(e) => onField('fromVerse', e.target.value)}
+          placeholder={lesson.fromVerse || '1'}
+          className={`${cellInputCls} w-16`}
+        />
+        <span className="text-gray-400">–</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={record.toVerse}
+          onChange={(e) => onField('toVerse', e.target.value)}
+          placeholder={lesson.toVerse || '7'}
+          className={`${cellInputCls} w-16`}
+        />
+      </div>
+    </td>
+    <td className="px-3 py-3">
+      <input
+        type="text"
+        value={record.notes}
+        onChange={(e) => onField('notes', e.target.value)}
+        placeholder={lesson.notes || translations.notes}
+        className={`${cellInputCls} min-w-[140px]`}
+      />
+    </td>
+    <td className="px-3 py-3" style={{ minWidth: 300 }}>
+      <StatusSegmented value={record.status} onChange={onStatus} compact />
+    </td>
+    <td className="py-3 pl-3 pr-4">
+      <button
+        type="button"
+        onClick={onSave}
+        disabled={saving}
+        aria-label={translations.submitSingle}
+        className="flex min-h-[36px] items-center gap-1.5 rounded-md bg-blue-600 px-3 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+      >
+        {saving ? <FiLoader className="h-3.5 w-3.5 animate-spin" /> : <FiSave className="h-3.5 w-3.5" />}
+        {translations.submitSingle}
+      </button>
+    </td>
+  </tr>
+);
+
+/* ------------------------------------------------------------------ */
+/* Page                                                                */
+/* ------------------------------------------------------------------ */
 
 const CreateDailyQuranSession = () => {
   const [selectedClassId, setSelectedClassId] = useState('');
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  });
+  const [selectedDate, setSelectedDate] = useState(todayLocal);
+  const [lesson, setLesson] = useState({ surah: '', fromVerse: '', toVerse: '', notes: '' });
   const [quranRecords, setQuranRecords] = useState([]);
+  const [loadedClassId, setLoadedClassId] = useState('');
   const [loadingStudents, setLoadingStudents] = useState(false);
-  const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false);
-  const [showPrintModal, setShowPrintModal] = useState(false);
   const [loadingClasses, setLoadingClasses] = useState(false);
+  const [dateStatus, setDateStatus] = useState('idle'); // idle | loading | ok | error
+  const [savingId, setSavingId] = useState(null);
+  const [savingAll, setSavingAll] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoadingDateSessions, setIsLoadingDateSessions] = useState(false);
-  const [dateInfo, setDateInfo] = useState('');
-  const [hasExistingSessions, setHasExistingSessions] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [currentSurah, setCurrentSurah] = useState('');
-  const [currentFromVerse, setCurrentFromVerse] = useState('');
-  const [currentToVerse, setCurrentToVerse] = useState('');
-  const [notes, setNotes] = useState('');
-  const [showHistory, setShowHistory] = useState(false);
-  const classDropdownRef = useRef(null);
-  const searchInputRef = useRef(null);
-  const printRef = useRef();
+  const [showPrintModal, setShowPrintModal] = useState(false);
 
-  // Using stores
+  const dropdownRef = useRef(null);
+  const searchRef = useRef(null);
+  const sessionsReq = useRef(0);
+  const studentsReq = useRef(0);
+
   const { classes, fetchClasses } = useClassesStore();
   const { students, fetchStudentsByClass } = useStudentsStore();
-  const { 
+  const {
     createDailyQuran,
     createBulkDailyQuran,
     updateDailyQuran,
     getClassSessionsByDate,
-    todaySessions,
     classSessionsByDate,
-    loading,
-    error,
-    clearError,
     resetForNewDate
   } = useDailyQuranStore();
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (classDropdownRef.current && !classDropdownRef.current.contains(event.target)) {
-        setIsClassDropdownOpen(false);
-      }
-    };
+  /* ---------- classes ---------- */
 
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
-    
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-    };
-  }, []);
-
-  // Focus search input when dropdown opens
   useEffect(() => {
-    if (isClassDropdownOpen && searchInputRef.current) {
-      setTimeout(() => {
-        searchInputRef.current?.focus();
-      }, 100);
-    }
-  }, [isClassDropdownOpen]);
-
-  // Fetch classes on mount
-  useEffect(() => {
-    const loadClasses = async () => {
+    let active = true;
+    (async () => {
       setLoadingClasses(true);
       try {
         await fetchClasses();
-      } catch (error) {
-        console.error('Error loading classes:', error);
-        toast.error('Khalad ayaa dhacay markii la soo dejini fasallada');
+      } catch (err) {
+        console.error('Error loading classes:', err);
+        toast.error('Khalad ayaa dhacay markii la soo dejinayay fasallada');
       } finally {
-        setLoadingClasses(false);
+        if (active) setLoadingClasses(false);
       }
+    })();
+    return () => {
+      active = false;
     };
-    
-    loadClasses();
   }, [fetchClasses]);
 
-  // Filter classes based on search query
-  const filteredClasses = classes.filter(cls => 
-    cls.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (cls.level && cls.level.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  useEffect(() => {
+    if (!isClassDropdownOpen) return undefined;
+    const onPointer = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setIsClassDropdownOpen(false);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') setIsClassDropdownOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointer);
+    document.addEventListener('keydown', onKey);
+    // Only auto-focus on desktop, so the phone keyboard does not cover the list
+    if (window.matchMedia?.('(pointer: fine)').matches) searchRef.current?.focus();
+    return () => {
+      document.removeEventListener('pointerdown', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [isClassDropdownOpen]);
 
-  // Format date for display
-  const formatDateForDisplay = (dateString) => {
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return dateString;
-      
-      return date.toLocaleDateString('so-SO', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch (error) {
-      return dateString;
-    }
-  };
+  useEffect(() => {
+    if (!showPrintModal) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [showPrintModal]);
 
-  // Normalize date for comparison
-  const normalizeDate = (dateString) => {
-    try {
-      const date = new Date(dateString);
-      date.setHours(0, 0, 0, 0);
-      return date.toISOString().split('T')[0];
-    } catch (error) {
-      return dateString;
-    }
-  };
+  const filteredClasses = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return classes.filter(
+      (cls) => !q || cls.name?.toLowerCase().includes(q) || cls.level?.toLowerCase().includes(q)
+    );
+  }, [classes, searchQuery]);
 
-  // Load students for selected class
-  const loadClassStudents = useCallback(async (classId) => {
-    if (!classId) {
-      setQuranRecords([]);
-      return;
-    }
+  const selectedClass = classes.find((c) => c._id === selectedClassId);
 
+  /* ---------- students + sessions loading ---------- */
+
+  const loadStudents = useCallback(async () => {
+    if (!selectedClassId) return;
+    const id = ++studentsReq.current;
     setLoadingStudents(true);
+    setLoadedClassId('');
     try {
-      await fetchStudentsByClass(classId);
-    } catch (error) {
-      console.error('Error loading students:', error);
+      await fetchStudentsByClass(selectedClassId);
+      if (id === studentsReq.current) setLoadedClassId(selectedClassId);
+    } catch (err) {
+      console.error('Error loading students:', err);
       toast.error('Khalad ayaa dhacay markii laga soo saaray ardayda');
     } finally {
-      setLoadingStudents(false);
+      if (id === studentsReq.current) setLoadingStudents(false);
     }
-  }, [fetchStudentsByClass]);
+  }, [selectedClassId, fetchStudentsByClass]);
 
-  // Load sessions for specific date - FIXED VERSION
-  const loadDateSessions = useCallback(async (classId, date) => {
-    if (!classId || !date) {
-      console.log('Missing classId or date:', { classId, date });
+  const fetchSessions = useCallback(
+    async (silent = false) => {
+      if (!selectedClassId || !selectedDate) return;
+      const id = ++sessionsReq.current;
+      if (!silent) {
+        setDateStatus('loading');
+        resetForNewDate();
+      }
+      try {
+        const result = await getClassSessionsByDate(selectedClassId, selectedDate);
+        if (id !== sessionsReq.current) return; // a newer request replaced this one
+        if (result?.success) {
+          setDateStatus('ok');
+        } else {
+          setDateStatus('error');
+          toast.error(result?.error || translations.error);
+        }
+      } catch (err) {
+        if (id !== sessionsReq.current) return;
+        console.error('Error loading date sessions:', err);
+        setDateStatus('error');
+        toast.error(translations.loadFailed);
+      }
+    },
+    [selectedClassId, selectedDate, getClassSessionsByDate, resetForNewDate]
+  );
+
+  useEffect(() => {
+    if (!selectedClassId) {
+      setLoadedClassId('');
       return;
     }
-    
-    console.log('Loading sessions for:', { classId, date });
-    setIsLoadingDateSessions(true);
-    setDateInfo(translations.loadingDateData);
-    
-    try {
-      // Clear previous sessions first
-      resetForNewDate();
-      
-      const result = await getClassSessionsByDate(classId, date);
-      
-      if (result.success) {
-        const sessions = result.data || [];
-        const sessionCount = sessions.length;
-        setHasExistingSessions(sessionCount > 0);
-        
-        console.log('Sessions loaded:', {
-          count: sessionCount,
-          sessions: sessions.map(s => ({
-            id: s._id,
-            student: s.student?._id || s.student,
-            date: s.date,
-            status: s.status
-          }))
-        });
-        
-        if (sessionCount > 0) {
-          setDateInfo(`${sessionCount} arday ayaa hore u cashar helay taariikhdan`);
-          toast.success(`Lagu helay ${sessionCount} cashar taariikhda ${formatDateForDisplay(date)}`);
-        } else {
-          setDateInfo(translations.noSessionsForDate);
-          // FIXED: Use toast with custom styling instead of toast.info()
-          toast(translations.selectNewDate, {
-            icon: 'ℹ️',
-            style: {
-              background: '#3b82f6',
-              color: 'white',
-            },
-          });
-        }
-      } else {
-        setDateInfo('Khalad ayaa dhacay');
-        toast.error(result.error || translations.error);
-      }
-    } catch (error) {
-      console.error('Error loading date sessions:', error);
-      setDateInfo('Khalad ayaa dhacay');
-      toast.error('Khalad ayaa dhacay markii laga soo dejinin casharrada');
-    } finally {
-      setIsLoadingDateSessions(false);
-    }
-  }, [getClassSessionsByDate, resetForNewDate]);
+    loadStudents();
+  }, [selectedClassId, loadStudents]);
 
-  // Handle class selection
-  const handleClassSelect = async (classId) => {
-    console.log('Class selected:', classId);
-    setSelectedClassId(classId);
-    setIsClassDropdownOpen(false);
-    setSearchQuery('');
-    
-    // Clear previous data
-    setQuranRecords([]);
-    setHasExistingSessions(false);
-    setDateInfo('');
-    resetForNewDate();
-    
-    if (classId) {
-      setIsInitialLoad(true);
-      try {
-        await Promise.all([
-          loadClassStudents(classId),
-          loadDateSessions(classId, selectedDate)
-        ]);
-      } catch (error) {
-        console.error('Error loading class data:', error);
-      } finally {
-        setIsInitialLoad(false);
-      }
-    }
-  };
-
-  // Handle date change - FIXED VERSION
-  const handleDateChange = async (newDate) => {
-    console.log('Date changed from', selectedDate, 'to', newDate);
-    
-    if (newDate === selectedDate) return;
-    
-    setSelectedDate(newDate);
-    
-    // Clear ALL previous data immediately
-    setQuranRecords([]);
-    setHasExistingSessions(false);
-    setDateInfo('');
-    resetForNewDate();
-    
-    if (selectedClassId) {
-      setIsLoadingDateSessions(true);
-      try {
-        // Load sessions for the new date
-        await loadDateSessions(selectedClassId, newDate);
-      } catch (error) {
-        console.error('Error changing date:', error);
-      } finally {
-        setIsLoadingDateSessions(false);
-      }
-    }
-  };
-
-  // Quick date buttons
-  const handleQuickDate = (daysOffset) => {
-    const date = new Date();
-    date.setDate(date.getDate() + daysOffset);
-    const dateString = date.toISOString().split('T')[0];
-    handleDateChange(dateString);
-  };
-
-  // Update records when students or sessions change - FIXED VERSION
   useEffect(() => {
-    console.log('Building records:', {
-      selectedClassId,
-      studentsCount: students?.length,
-      classSessionsCount: classSessionsByDate?.length,
-      todaySessionsCount: todaySessions?.length,
-      selectedDate,
-      hasExistingSessions
+    if (!selectedClassId) {
+      setDateStatus('idle');
+      return;
+    }
+    fetchSessions(false);
+  }, [selectedClassId, fetchSessions]);
+
+  /* ---------- build editable records ----------
+     NOTE: the shared lesson fields are intentionally NOT a dependency here,
+     so typing in them no longer wipes the statuses you already marked.       */
+
+  useEffect(() => {
+    if (!selectedClassId || loadedClassId !== selectedClassId || dateStatus !== 'ok') {
+      setQuranRecords([]);
+      return;
+    }
+
+    const day = normalizeDate(selectedDate);
+    const byStudent = new Map();
+    (classSessionsByDate || []).forEach((s) => {
+      if (normalizeDate(s.date) === day) byStudent.set(s.student?._id || s.student, s);
     });
 
-    if (selectedClassId && students && students.length > 0) {
-      // Always use classSessionsByDate for date-specific sessions
-      const sessionsToUse = classSessionsByDate || [];
-      const normalizedSelectedDate = normalizeDate(selectedDate);
-      
-      console.log('Using sessions:', sessionsToUse.map(s => ({
-        id: s._id,
-        studentId: s.student?._id || s.student,
-        date: s.date,
-        normalizedDate: normalizeDate(s.date),
-        status: s.status
-      })));
-
-      const initialRecords = students.map(student => {
-        // Find session for this student that matches the selected date
-        let existingSession = null;
-        let isSessionForThisDate = false;
-        
-        for (const session of sessionsToUse) {
-          const sessionStudentId = session.student?._id || session.student;
-          const sessionDate = session.date ? normalizeDate(session.date) : null;
-          
-          if (sessionStudentId === student._id) {
-            existingSession = session;
-            isSessionForThisDate = sessionDate === normalizedSelectedDate;
-            if (isSessionForThisDate) break;
-          }
-        }
-        
+    setQuranRecords((prev) =>
+      (students || []).map((student) => {
+        const old = prev.find((r) => r.student === student._id);
+        if (old?.dirty) return old; // keep unsaved edits when data reloads
+        const s = byStudent.get(student._id);
         return {
           student: student._id,
-          status: (isSessionForThisDate && existingSession?.status) || 'majoogo',
           name: student.fullname,
           studentId: student.studentId,
-          phone: student.motherNumber || student.fatherNumber || '-',
-          hasExistingSession: isSessionForThisDate,
-          sessionId: isSessionForThisDate ? existingSession?._id : null,
-          sessionDate: existingSession?.date,
-          updatedAt: existingSession?.updatedAt,
-          isForSelectedDate: isSessionForThisDate,
-          surah: (isSessionForThisDate && existingSession?.surah) || currentSurah,
-          fromVerse: (isSessionForThisDate && existingSession?.fromVerse) || currentFromVerse,
-          toVerse: (isSessionForThisDate && existingSession?.toVerse) || currentToVerse,
-          notes: (isSessionForThisDate && existingSession?.notes) || notes
+          phone: student.motherNumber || student.fatherNumber || '',
+          status: s?.status || 'majoogo',
+          sessionId: s?._id || null,
+          surah: s?.surah || '',
+          fromVerse: s?.fromVerse || '',
+          toVerse: s?.toVerse || '',
+          notes: s?.notes || '',
+          dirty: false
         };
-      });
-
-      setQuranRecords(initialRecords);
-    } else {
-      setQuranRecords([]);
-    }
-  }, [selectedClassId, students, classSessionsByDate, todaySessions, selectedDate, currentSurah, currentFromVerse, currentToVerse, notes]);
-
-  const handleStatusChange = (studentId, status) => {
-    setQuranRecords(prev =>
-      prev.map(record =>
-        record.student === studentId ? { 
-          ...record, 
-          status,
-          updatedAt: new Date().toISOString(),
-          hasExistingSession: record.hasExistingSession && record.status === status
-        } : record
-      )
+      })
     );
+  }, [selectedClassId, loadedClassId, dateStatus, students, classSessionsByDate, selectedDate]);
+
+  /* ---------- derived ---------- */
+
+  const statistics = useMemo(() => {
+    const total = quranRecords.length;
+    const count = (s) => quranRecords.filter((r) => r.status === s).length;
+    const gartay = count('gartay');
+    return {
+      total,
+      gartay,
+      garanWaayay: count('garan waayay'),
+      majoogo: count('majoogo'),
+      existing: quranRecords.filter((r) => r.sessionId).length,
+      unsaved: quranRecords.filter((r) => r.dirty).length,
+      successRate: total > 0 ? ((gartay / total) * 100).toFixed(1) : '0.0'
+    };
+  }, [quranRecords]);
+
+  const ready = Boolean(selectedClassId) && dateStatus === 'ok' && quranRecords.length > 0;
+  const busy = Boolean(selectedClassId) && (loadingStudents || dateStatus === 'loading');
+  const noStudents =
+    Boolean(selectedClassId) &&
+    !loadingStudents &&
+    loadedClassId === selectedClassId &&
+    dateStatus === 'ok' &&
+    (students || []).length === 0;
+
+  const lessonOf = (r) => ({
+    surah: r.surah || lesson.surah,
+    fromVerse: r.fromVerse || lesson.fromVerse,
+    toVerse: r.toVerse || lesson.toVerse,
+    notes: r.notes || lesson.notes
+  });
+
+  const lessonText = (r) => {
+    const l = lessonOf(r);
+    const verses = l.fromVerse || l.toVerse ? `${l.fromVerse || '-'} – ${l.toVerse || '-'}` : '';
+    return [l.surah, verses].filter(Boolean).join(' · ') || '-';
   };
 
-  const handleRecordMetaChange = (studentId, field, value) => {
-    setQuranRecords(prev =>
-      prev.map(record =>
-        record.student === studentId ? {
-          ...record,
-          [field]: value,
-          updatedAt: new Date().toISOString()
-        } : record
-      )
+  /* ---------- handlers ---------- */
+
+  const confirmDiscard = () => statistics.unsaved === 0 || window.confirm(translations.discardConfirm);
+
+  const selectClass = (id) => {
+    setIsClassDropdownOpen(false);
+    setSearchQuery('');
+    if (id === selectedClassId) return;
+    if (!confirmDiscard()) return;
+    setSelectedClassId(id);
+  };
+
+  const changeDate = (value) => {
+    if (!value || value === selectedDate) return;
+    if (!confirmDiscard()) return;
+    setSelectedDate(value);
+  };
+
+  const handleRefresh = async () => {
+    if (!selectedClassId) return;
+    if (!confirmDiscard()) return;
+    await Promise.all([loadStudents(), fetchSessions(false)]);
+    toast.success('Xogta waa la cusboonaysiiyay');
+  };
+
+  const setStatus = (studentId, status) =>
+    setQuranRecords((prev) =>
+      prev.map((r) => (r.student === studentId && r.status !== status ? { ...r, status, dirty: true } : r))
     );
+
+  const setField = (studentId, field, value) =>
+    setQuranRecords((prev) =>
+      prev.map((r) => (r.student === studentId ? { ...r, [field]: value, dirty: true } : r))
+    );
+
+  const setAll = (status) => {
+    setQuranRecords((prev) => prev.map((r) => (r.status === status ? r : { ...r, status, dirty: true })));
+    toast.success(`Dhammaan ardayda: ${STATUS[status].label}`);
   };
 
-  // Handle select all with a specific status
-  const handleSelectAll = (status) => {
-    const updatedRecords = quranRecords.map(record => ({
-      ...record,
-      status,
-      updatedAt: new Date().toISOString(),
-      hasExistingSession: record.hasExistingSession && record.status === status
-    }));
-    setQuranRecords(updatedRecords);
-    toast.success(`Dhammaan ardayda waa la dooray ${status === 'gartay' ? 'gartay' : status === 'garan waayay' ? 'garan waayay' : 'majoogo'}`);
-  };
+  const handleSaveSingle = async (studentId) => {
+    const record = quranRecords.find((r) => r.student === studentId);
+    if (!selectedClassId || !record) return;
 
-  // Save single session with specific date
-  const handleSaveSingleSession = async (studentId, status) => {
-    if (!selectedClassId || !studentId) {
-      toast.error('Fadlan dooro fasalka iyo arday');
-      return;
-    }
-    
+    setSavingId(studentId);
     try {
-      const record = quranRecords.find(r => r.student === studentId);
-      
-      if (record?.hasExistingSession && record?.sessionId) {
-        // Update existing session
-        const result = await updateDailyQuran(record.sessionId, { 
-          status,
-          date: selectedDate,
-          surah: record.surah || currentSurah,
-          fromVerse: record.fromVerse || currentFromVerse,
-          toVerse: record.toVerse || currentToVerse,
-          notes: record.notes || notes
-        });
-        
-        if (result.success) {
-          toast.success('Casharka maalinle waa la cusboonaysiiyay');
-          await loadDateSessions(selectedClassId, selectedDate);
-        } else {
-          toast.error(result.error || translations.error);
-        }
+      const payload = { status: record.status, date: selectedDate, ...lessonOf(record) };
+      const result = record.sessionId
+        ? await updateDailyQuran(record.sessionId, payload)
+        : await createDailyQuran({ student: studentId, class: selectedClassId, ...payload });
+
+      if (result?.success) {
+        toast.success(record.sessionId ? 'Casharka maalinle waa la cusboonaysiiyay' : 'Casharka maalinle waa lagu daray');
+        setQuranRecords((prev) => prev.map((r) => (r.student === studentId ? { ...r, dirty: false } : r)));
+        await fetchSessions(true); // silent: other unsaved rows keep their edits
       } else {
-        // Create new session
-        const result = await createDailyQuran({
-          student: studentId,
-          status,
-          class: selectedClassId,
-          date: selectedDate,
-          surah: currentSurah,
-          fromVerse: currentFromVerse,
-          toVerse: currentToVerse,
-          notes
-        });
-        
-        if (result.success) {
-          toast.success('Casharka maalinle waa lagu daray');
-          await loadDateSessions(selectedClassId, selectedDate);
-        } else {
-          toast.error(result.error || translations.error);
-        }
+        toast.error(result?.error || translations.error);
       }
-    } catch (error) {
-      toast.error(error.message || translations.error);
+    } catch (err) {
+      toast.error(err?.message || translations.error);
+    } finally {
+      setSavingId(null);
     }
   };
 
-  // Save all sessions with specific date
-  const handleSaveAllSessions = async () => {
+  const handleSaveAll = async () => {
     if (!selectedClassId || quranRecords.length === 0) {
       toast.error('Fadlan buuxi dhammaan goobaha loo baahan yahay');
       return;
     }
 
+    setSavingAll(true);
     try {
-      const studentsToSave = quranRecords.map(record => ({
-        studentId: record.student,
-        status: record.status,
-        surah: record.surah || currentSurah,
-        fromVerse: record.fromVerse || currentFromVerse,
-        toVerse: record.toVerse || currentToVerse,
-        notes: record.notes || notes
-      }));
-
       const result = await createBulkDailyQuran({
         classId: selectedClassId,
         date: selectedDate,
-        students: studentsToSave
+        students: quranRecords.map((r) => ({ studentId: r.student, status: r.status, ...lessonOf(r) }))
       });
-      
-      if (result.success) {
-        const message = result.message || `${studentsToSave.length} arday ayaa loo diiwaangeliyay`;
-        toast.success(message);
-        await loadDateSessions(selectedClassId, selectedDate);
+
+      if (result?.success) {
+        toast.success(result.message || `${quranRecords.length} arday ayaa loo diiwaangeliyay`);
+        setQuranRecords((prev) => prev.map((r) => ({ ...r, dirty: false })));
+        await fetchSessions(true);
       } else {
-        toast.error(result.error || translations.error);
+        toast.error(result?.error || translations.error);
       }
-    } catch (error) {
-      console.error('Bulk save error:', error);
-      toast.error(error.message || translations.error);
+    } catch (err) {
+      console.error('Bulk save error:', err);
+      toast.error(err?.message || translations.error);
+    } finally {
+      setSavingAll(false);
     }
   };
 
-  // Refresh data for current date
-  const handleRefresh = async () => {
-    if (selectedClassId) {
-      try {
-        setLoadingStudents(true);
-        await Promise.all([
-          loadClassStudents(selectedClassId),
-          loadDateSessions(selectedClassId, selectedDate)
-        ]);
-        toast.success('Xogta waa la cusboonaysiiyay');
-      } catch (error) {
-        toast.error('Khalad ayaa dhacay markii laga cusboonaysiinayay xogta');
-      } finally {
-        setLoadingStudents(false);
-      }
-    }
+  /* ---------- report (one template used by preview, print and PDF) ---------- */
+
+  const buildReportBody = () => {
+    const rows = quranRecords
+      .map(
+        (r, i) => `<tr>
+          <td>${i + 1}</td>
+          <td>${esc(r.name)}</td>
+          <td>${esc(r.studentId)}</td>
+          <td>${esc(r.phone || '-')}</td>
+          <td>${esc(lessonText(r))}</td>
+          <td><span class="tag ${STATUS[r.status]?.rpt || 'y'}">${esc(STATUS[r.status]?.label)}</span></td>
+        </tr>`
+      )
+      .join('');
+
+    return `<div class="rpt">
+      <div class="head">
+        <h1>${esc(translations.reportTitle)}</h1>
+        <p class="sub">${esc(selectedClass?.name || 'Fasalka')} | ${esc(formatDateForDisplay(selectedDate))}</p>
+      </div>
+      <div class="meta">
+        <div>
+          <div><b>${translations.class}:</b>${esc(selectedClass?.name || '-')}</div>
+          <div><b>${translations.date}:</b>${esc(formatDateForDisplay(selectedDate))}</div>
+        </div>
+        <div>
+          <div><b>${translations.generatedOn}:</b>${new Date().toLocaleDateString('so-SO')}</div>
+          <div><b>${translations.totalStudents}:</b>${statistics.total}</div>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat g"><strong>${statistics.gartay}</strong>${translations.passed}</div>
+        <div class="stat r"><strong>${statistics.garanWaayay}</strong>${translations.failed}</div>
+        <div class="stat y"><strong>${statistics.majoogo}</strong>${translations.absent}</div>
+        <div class="stat b"><strong>${statistics.successRate}%</strong>${translations.success}</div>
+      </div>
+      <table>
+        <thead><tr>
+          <th>#</th><th>${translations.studentName}</th><th>${translations.studentId}</th>
+          <th>${translations.phone}</th><th>${translations.lesson}</th><th>${translations.status}</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="foot">Warbixinta ayaa lagu sameeyay ${new Date().toLocaleString('so-SO')}</div>
+    </div>`;
   };
 
-  // Load sessions for specific date
-  const handleLoadDateSessions = async () => {
-    if (!selectedClassId) {
-      toast.error('Fadlan dooro fasalka marka hore');
+  const handlePrint = () => {
+    if (quranRecords.length === 0) {
+      toast.error(translations.noData);
       return;
     }
-    
-    await loadDateSessions(selectedClassId, selectedDate);
-  };
-
-  // Get statistics
-  const statistics = {
-    total: quranRecords.length,
-    gartay: quranRecords.filter(r => r.status === 'gartay').length,
-    garanWaayay: quranRecords.filter(r => r.status === 'garan waayay').length,
-    majoogo: quranRecords.filter(r => r.status === 'majoogo').length,
-    existing: quranRecords.filter(r => r.hasExistingSession).length,
-    new: quranRecords.filter(r => !r.hasExistingSession).length
-  };
-
-  // Get status button style
-  const getStatusStyle = (status, currentStatus) => {
-    const isActive = status === currentStatus;
-    const baseClasses = "px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm flex-1 sm:flex-initial flex items-center justify-center min-h-[36px] transition-all duration-200";
-    
-    switch(status) {
-      case 'gartay':
-        return `${baseClasses} ${
-          isActive 
-            ? 'bg-green-100 text-green-800 border-2 border-green-500' 
-            : 'bg-gray-100 text-gray-800 hover:bg-green-50 active:bg-green-200'
-        }`;
-      case 'garan waayay':
-        return `${baseClasses} ${
-          isActive 
-            ? 'bg-red-100 text-red-800 border-2 border-red-500' 
-            : 'bg-gray-100 text-gray-800 hover:bg-red-50 active:bg-red-200'
-        }`;
-      case 'majoogo':
-        return `${baseClasses} ${
-          isActive 
-            ? 'bg-yellow-100 text-yellow-800 border-2 border-yellow-500' 
-            : 'bg-gray-100 text-gray-800 hover:bg-yellow-50 active:bg-yellow-200'
-        }`;
-      default:
-        return baseClasses;
+    const w = window.open('', '_blank');
+    if (!w) {
+      toast.error(translations.popupBlocked);
+      return;
     }
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>${esc(translations.reportTitle)}</title>
+      <style>@page{margin:15mm}body{margin:0;padding:16px}${REPORT_CSS}</style></head>
+      <body>${buildReportBody()}
+      <script>window.onafterprint=function(){window.close()};window.onload=function(){window.print()};<\/script>
+      </body></html>`);
+    w.document.close();
   };
 
-  // Generate PDF Report
   const generatePDF = async () => {
-    if (!selectedClassId || quranRecords.length === 0) {
-      toast.error('Ma jiro xog la daabici karo');
+    if (quranRecords.length === 0) {
+      toast.error(translations.noData);
       return;
     }
+
+    setPdfBusy(true);
+    const holder = document.createElement('div');
+    holder.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;padding:24px;background:#fff';
+    holder.innerHTML = `<style>${REPORT_CSS}</style>${buildReportBody()}`;
+    document.body.appendChild(holder);
 
     try {
-      const printContent = document.createElement('div');
-      printContent.style.position = 'absolute';
-      printContent.style.left = '-9999px';
-      printContent.style.top = '0';
-      printContent.style.width = '794px';
-      printContent.style.padding = '20px';
-      printContent.style.backgroundColor = 'white';
-      printContent.style.fontFamily = 'Arial, sans-serif';
-      
-      const cls = classes.find(c => c._id === selectedClassId);
-      const successRate = statistics.total > 0 ? ((statistics.gartay / statistics.total) * 100).toFixed(1) : 0;
-      
-      printContent.innerHTML = `
-        <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 20px;">
-          <h1 style="font-size: 24px; font-weight: bold; color: #1a56db; margin-bottom: 5px;">
-            ${translations.reportTitle}
-          </h1>
-          <p style="font-size: 16px; color: #4b5563;">
-            ${cls?.name || 'Fasalka'} | ${formatDateForDisplay(selectedDate)}
-          </p>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; margin-bottom: 30px; padding: 15px; background: #f9fafb; border-radius: 8px;">
-          <div>
-            <div style="margin-bottom: 10px;">
-              <span style="font-weight: bold; margin-right: 10px; color: #374151;">${translations.class}:</span>
-              <span style="color: #6b7280;">${cls?.name || '-'}</span>
-            </div>
-            <div style="margin-bottom: 10px;">
-              <span style="font-weight: bold; margin-right: 10px; color: #374151;">${translations.date}:</span>
-              <span style="color: #6b7280;">${formatDateForDisplay(selectedDate)}</span>
-            </div>
-          </div>
-          <div>
-            <div style="margin-bottom: 10px;">
-              <span style="font-weight: bold; margin-right: 10px; color: #374151;">${translations.generatedOn}:</span>
-              <span style="color: #6b7280;">${new Date().toLocaleDateString('so-SO')}</span>
-            </div>
-            <div style="margin-bottom: 10px;">
-              <span style="font-weight: bold; margin-right: 10px; color: #374151;">${translations.totalStudents}:</span>
-              <span style="color: #6b7280;">${statistics.total}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px;">
-          <div style="padding: 15px; border-radius: 8px; text-align: center; background: #d1fae5; border: 1px solid #10b981;">
-            <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">${statistics.gartay}</div>
-            <div style="font-size: 14px; color: #6b7280;">${translations.passed}</div>
-          </div>
-          <div style="padding: 15px; border-radius: 8px; text-align: center; background: #fee2e2; border: 1px solid #ef4444;">
-            <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">${statistics.garanWaayay}</div>
-            <div style="font-size: 14px; color: #6b7280;">${translations.failed}</div>
-          </div>
-          <div style="padding: 15px; border-radius: 8px; text-align: center; background: #fef3c7; border: 1px solid #f59e0b;">
-            <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">${statistics.majoogo}</div>
-            <div style="font-size: 14px; color: #6b7280;">${translations.absent}</div>
-          </div>
-          <div style="padding: 15px; border-radius: 8px; text-align: center; background: #dbeafe; border: 1px solid #3b82f6;">
-            <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">${successRate}%</div>
-            <div style="font-size: 14px; color: #6b7280;">Guul</div>
-          </div>
-        </div>
-        
-        <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px;">
-          <thead>
-            <tr>
-              <th style="background: #f3f4f6; border: 1px solid #d1d5db; padding: 12px; text-align: left; font-weight: bold; color: #374151;">#</th>
-              <th style="background: #f3f4f6; border: 1px solid #d1d5db; padding: 12px; text-align: left; font-weight: bold; color: #374151;">${translations.studentName}</th>
-              <th style="background: #f3f4f6; border: 1px solid #d1d5db; padding: 12px; text-align: left; font-weight: bold; color: #374151;">${translations.studentId}</th>
-              <th style="background: #f3f4f6; border: 1px solid #d1d5db; padding: 12px; text-align: left; font-weight: bold; color: #374151;">${translations.phone}</th>
-              <th style="background: #f3f4f6; border: 1px solid #d1d5db; padding: 12px; text-align: left; font-weight: bold; color: #374151;">${translations.status}</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${quranRecords.map((record, index) => `
-              <tr style="${index % 2 === 0 ? 'background: #f9fafb;' : ''}">
-                <td style="border: 1px solid #d1d5db; padding: 10px;">${index + 1}</td>
-                <td style="border: 1px solid #d1d5db; padding: 10px;">${record.name}</td>
-                <td style="border: 1px solid #d1d5db; padding: 10px;">${record.studentId}</td>
-                <td style="border: 1px solid #d1d5db; padding: 10px;">${record.phone}</td>
-                <td style="border: 1px solid #d1d5db; padding: 10px;">
-                  <span style="color: ${record.status === 'gartay' ? '#065f46' : record.status === 'garan waayay' ? '#991b1b' : '#92400e'}; 
-                        background: ${record.status === 'gartay' ? '#d1fae5' : record.status === 'garan waayay' ? '#fee2e2' : '#fef3c7'}; 
-                        padding: 4px 8px; border-radius: 4px; font-weight: bold;">
-                    ${record.status === 'gartay' ? translations.gartay : 
-                     record.status === 'garan waayay' ? translations.garanWaayay : 
-                     translations.majoogo}
-                  </span>
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        
-        <div style="margin-top: 40px; text-align: center; color: #6b7280; font-size: 12px; border-top: 1px solid #d1d5db; padding-top: 20px;">
-          <p>Warbixinta ayaa lagu sameeyay ${new Date().toLocaleString('so-SO')}</p>
-        </div>
-      `;
-      
-      document.body.appendChild(printContent);
-      
-      const canvas = await html2canvas(printContent, {
+      // Loaded only when needed, so the page itself opens faster on phones
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas'), import('jspdf')]);
+
+      const canvas = await html2canvas(holder, {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff',
-        width: printContent.offsetWidth,
-        height: printContent.scrollHeight
+        backgroundColor: '#ffffff'
       });
 
-      document.body.removeChild(printContent);
-
-      const imgData = canvas.toDataURL('image/png');
+      const img = canvas.toDataURL('image/jpeg', 0.92);
       const pdf = new jsPDF('p', 'mm', 'a4');
       const imgWidth = 190;
-      const pageHeight = 295;
+      const usable = 277; // 297mm page minus 10mm margin top and bottom
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
+
+      const drawPage = (position) => {
+        pdf.addImage(img, 'JPEG', 10, position, imgWidth, imgHeight);
+        pdf.setFillColor(255, 255, 255); // hide image overflow in the margins
+        pdf.rect(0, 0, 210, 10, 'F');
+        pdf.rect(0, 287, 210, 10, 'F');
+      };
+
       let heightLeft = imgHeight;
-      let position = 10;
-
-      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight + 10;
+      drawPage(10);
+      heightLeft -= usable;
+      while (heightLeft > 0) {
         pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+        drawPage(10 - (imgHeight - heightLeft));
+        heightLeft -= usable;
       }
 
-      const fileName = `Cashar_Maalinle_${cls?.name || 'Fasalka'}_${selectedDate}.pdf`;
-      
-      pdf.save(fileName);
+      pdf.save(`Cashar_Maalinle_${selectedClass?.name || 'Fasalka'}_${selectedDate}.pdf`);
       setShowPrintModal(false);
       toast.success('Warbixinta PDF ayaa la soo dejiyay');
-    } catch (error) {
-      console.error('PDF generation error:', error);
+    } catch (err) {
+      console.error('PDF generation error:', err);
       toast.error('Khalad ayaa dhacay markii la sameeyay PDF');
+    } finally {
+      holder.remove();
+      setPdfBusy(false);
     }
   };
 
-  // Direct print
-  const handlePrint = () => {
-    const cls = classes.find(c => c._id === selectedClassId);
-    const successRate = statistics.total > 0 ? ((statistics.gartay / statistics.total) * 100).toFixed(1) : 0;
-    
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>${translations.reportTitle}</title>
-        <style>
-          @media print {
-            @page {
-              margin: 20mm;
-            }
-            body {
-              font-family: Arial, sans-serif;
-              font-size: 12px;
-              line-height: 1.4;
-              color: #000;
-            }
-            .print-header {
-              text-align: center;
-              margin-bottom: 30px;
-              border-bottom: 2px solid #000;
-              padding-bottom: 20px;
-            }
-            .print-title {
-              font-size: 24px;
-              font-weight: bold;
-              color: #1a56db;
-              margin-bottom: 5px;
-            }
-            .print-subtitle {
-              font-size: 16px;
-              color: #4b5563;
-            }
-            .print-info {
-              display: flex;
-              justify-content: space-between;
-              margin-bottom: 30px;
-              padding: 15px;
-              background: #f9fafb;
-              border-radius: 8px;
-            }
-            .info-item {
-              margin-bottom: 10px;
-            }
-            .info-key {
-              font-weight: bold;
-              margin-right: 10px;
-              color: #374151;
-            }
-            .info-value {
-              color: #6b7280;
-            }
-            .stats-container {
-              display: grid;
-              grid-template-columns: repeat(4, 1fr);
-              gap: 15px;
-              margin-bottom: 30px;
-            }
-            .stat-card {
-              padding: 15px;
-              border-radius: 8px;
-              text-align: center;
-            }
-            .stat-card.green {
-              background: #d1fae5;
-              border: 1px solid #10b981;
-            }
-            .stat-card.red {
-              background: #fee2e2;
-              border: 1px solid #ef4444;
-            }
-            .stat-card.yellow {
-              background: #fef3c7;
-              border: 1px solid #f59e0b;
-            }
-            .stat-card.blue {
-              background: #dbeafe;
-              border: 1px solid #3b82f6;
-            }
-            .stat-number {
-              font-size: 24px;
-              font-weight: bold;
-              margin-bottom: 5px;
-            }
-            .stat-label {
-              font-size: 14px;
-              color: #6b7280;
-            }
-            .print-table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 20px;
-            }
-            .print-table th {
-              background: #f3f4f6;
-              border: 1px solid #d1d5db;
-              padding: 12px;
-              text-align: left;
-              font-weight: bold;
-              color: #374151;
-            }
-            .print-table td {
-              border: 1px solid #d1d5db;
-              padding: 10px;
-            }
-            .print-table tr:nth-child(even) {
-              background: #f9fafb;
-            }
-            .status-gartay {
-              color: #065f46;
-              background: #d1fae5;
-              padding: 4px 8px;
-              border-radius: 4px;
-              font-weight: bold;
-            }
-            .status-garanwaayay {
-              color: #991b1b;
-              background: #fee2e2;
-              padding: 4px 8px;
-              border-radius: 4px;
-              font-weight: bold;
-            }
-            .status-majoogo {
-              color: #92400e;
-              background: #fef3c7;
-              padding: 4px 8px;
-              border-radius: 4px;
-              font-weight: bold;
-            }
-            .footer {
-              margin-top: 40px;
-              text-align: center;
-              color: #6b7280;
-              font-size: 12px;
-              border-top: 1px solid #d1d5db;
-              padding-top: 20px;
-            }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="print-header">
-          <h1 class="print-title">${translations.reportTitle}</h1>
-          <p class="print-subtitle">
-            ${cls?.name || 'Fasalka'} | ${formatDateForDisplay(selectedDate)}
-          </p>
-        </div>
-        
-        <div class="print-info">
-          <div>
-            <div class="info-item">
-              <span class="info-key">${translations.class}:</span>
-              <span class="info-value">${cls?.name || '-'}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-key">${translations.date}:</span>
-              <span class="info-value">${formatDateForDisplay(selectedDate)}</span>
-            </div>
-          </div>
-          <div>
-            <div class="info-item">
-              <span class="info-key">${translations.generatedOn}:</span>
-              <span class="info-value">${new Date().toLocaleDateString('so-SO')}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-key">${translations.totalStudents}:</span>
-              <span class="info-value">${statistics.total}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="stats-container">
-          <div class="stat-card green">
-            <div class="stat-number">${statistics.gartay}</div>
-            <div class="stat-label">${translations.passed}</div>
-          </div>
-          <div class="stat-card red">
-            <div class="stat-number">${statistics.garanWaayay}</div>
-            <div class="stat-label">${translations.failed}</div>
-          </div>
-          <div class="stat-card yellow">
-            <div class="stat-number">${statistics.majoogo}</div>
-            <div class="stat-label">${translations.absent}</div>
-          </div>
-          <div class="stat-card blue">
-            <div class="stat-number">${successRate}%</div>
-            <div class="stat-label">Guul</div>
-          </div>
-        </div>
-        
-        <table class="print-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>${translations.studentName}</th>
-              <th>${translations.studentId}</th>
-              <th>${translations.phone}</th>
-              <th>${translations.status}</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${quranRecords.map((record, index) => `
-              <tr>
-                <td>${index + 1}</td>
-                <td>${record.name}</td>
-                <td>${record.studentId}</td>
-                <td>${record.phone}</td>
-                <td>
-                  <span class="status-${record.status.replace(/\s+/g, '')}">
-                    ${record.status === 'gartay' ? translations.gartay : 
-                     record.status === 'garan waayay' ? translations.garanWaayay : 
-                     translations.majoogo}
-                  </span>
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        
-        <div class="footer">
-          <p>Warbixinta ayaa lagu sameeyay ${new Date().toLocaleString('so-SO')}</p>
-        </div>
-        
-        <script>
-          window.onload = function() {
-            window.print();
-            setTimeout(function() {
-              window.close();
-            }, 500);
-          };
-        </script>
-      </body>
-      </html>
-    `);
-    printWindow.document.close();
-  };
+  /* ---------- render ---------- */
 
-  const selectedClass = classes.find(c => c._id === selectedClassId);
-  const successRate = statistics.total > 0 ? ((statistics.gartay / statistics.total) * 100).toFixed(1) : 0;
+  const quickDates = [
+    [0, 'Maanta'],
+    [-1, 'Shalay'],
+    [-2, '-2 maalin']
+  ];
 
   return (
-    <div className="max-w-7xl mx-auto p-3 sm:p-4 md:p-6">
-      <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+    <div className="mx-auto max-w-7xl p-3 sm:p-4 md:p-6">
+      {/* No overflow-hidden here: it would break the sticky save bar */}
+      <div className="rounded-xl border border-gray-200 bg-white shadow-md">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-4 sm:p-6 text-white">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold flex items-center">
-                <FiBook className="mr-2 flex-shrink-0" />
+        <div className="rounded-t-xl bg-gradient-to-r from-blue-600 to-indigo-700 p-4 text-white sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <h1 className="flex items-center text-xl font-bold sm:text-2xl">
+                <FiBook className="mr-2 shrink-0" aria-hidden="true" />
                 <span>{translations.heading}</span>
               </h1>
-              <p className="text-sm sm:text-base text-blue-100 mt-1">
-                Deji casharrada quraanka maalinle ee ardayda fasalka
-              </p>
+              <p className="mt-1 text-sm text-blue-100 sm:text-base">{translations.subheading}</p>
             </div>
-            
             <Link
               to="/daily-quran/records"
-              className="px-4 py-2 sm:py-3 bg-blue-800 hover:bg-blue-900 text-white rounded-lg flex items-center justify-center transition-colors w-full sm:w-auto min-h-[44px] text-sm sm:text-base"
+              className="flex min-h-[44px] w-full items-center justify-center rounded-lg bg-blue-800 px-4 text-sm text-white transition-colors hover:bg-blue-900 sm:w-auto sm:text-base"
             >
-              <FiEye className="mr-2 flex-shrink-0" />
-              <span>{translations.viewSessions}</span>
+              <FiEye className="mr-2 shrink-0" aria-hidden="true" />
+              {translations.viewSessions}
             </Link>
           </div>
         </div>
 
-        <div className="p-3 sm:p-4 md:p-6">
-          {/* Selection Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
-            {/* Class Selection */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 flex items-center">
-                <FiUsers className="mr-2 flex-shrink-0" /> {translations.selectClass} <span className="text-red-500 ml-1">*</span>
-              </label>
-              <div className="relative" ref={classDropdownRef}>
+        <div className="space-y-5 p-3 sm:p-4 md:p-6">
+          {/* Class + date */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+            {/* Class */}
+            <div>
+              <span className="mb-1.5 flex items-center text-sm font-medium text-gray-700">
+                <FiUsers className="mr-2 shrink-0" aria-hidden="true" />
+                {translations.selectClass}
+                <span className="ml-1 text-red-500">*</span>
+              </span>
+
+              <div className="relative" ref={dropdownRef}>
                 <button
                   type="button"
-                  onClick={() => !loadingClasses && setIsClassDropdownOpen(!isClassDropdownOpen)}
+                  aria-haspopup="listbox"
+                  aria-expanded={isClassDropdownOpen}
                   disabled={loadingClasses}
-                  className={`w-full flex justify-between items-center px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] ${
-                    loadingClasses 
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                      : 'bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100'
+                  onClick={() => setIsClassDropdownOpen((o) => !o)}
+                  className={`flex min-h-[48px] w-full items-center justify-between rounded-lg border border-gray-300 px-3 py-2 text-left text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm ${
+                    loadingClasses ? 'cursor-not-allowed bg-gray-100 text-gray-400' : 'bg-white text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  <div className="flex items-center truncate">
+                  <span className="flex min-w-0 items-center">
                     {loadingClasses ? (
                       <>
-                        <FiLoader className="animate-spin mr-2 flex-shrink-0" />
+                        <FiLoader className="mr-2 shrink-0 animate-spin" />
                         <span className="truncate">{translations.loading}</span>
                       </>
                     ) : selectedClass ? (
                       <>
-                        <FiUsers className="mr-2 flex-shrink-0" />
                         <span className="truncate">{selectedClass.name}</span>
                         {selectedClass.level && (
-                          <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full flex-shrink-0">
+                          <span className="ml-2 shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
                             {selectedClass.level}
                           </span>
                         )}
                       </>
                     ) : (
-                      <span className="truncate">{translations.selectClass}</span>
+                      <span className="truncate text-gray-500">{translations.selectClass}</span>
                     )}
-                  </div>
-                  <FiChevronDown className={`ml-2 transition-transform flex-shrink-0 ${isClassDropdownOpen ? 'rotate-180' : ''}`} />
+                  </span>
+                  <FiChevronDown
+                    className={`ml-2 shrink-0 transition-transform ${isClassDropdownOpen ? 'rotate-180' : ''}`}
+                    aria-hidden="true"
+                  />
                 </button>
-                
+
                 {isClassDropdownOpen && !loadingClasses && (
-                  <div className="absolute z-50 mt-1 w-full bg-white shadow-lg rounded-lg py-2 ring-1 ring-black ring-opacity-5 overflow-hidden">
-                    <div className="px-3 py-2 border-b border-gray-200">
+                  <div className="absolute left-0 right-0 z-40 mt-1 overflow-hidden rounded-lg bg-white shadow-lg ring-1 ring-black/5">
+                    <div className="border-b border-gray-200 p-2">
                       <div className="relative">
-                        <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                        <FiSearch
+                          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                          aria-hidden="true"
+                        />
                         <input
-                          ref={searchInputRef}
-                          type="text"
+                          ref={searchRef}
+                          type="search"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           placeholder={translations.searchClass}
-                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
-                          onClick={(e) => e.stopPropagation()}
+                          className={`${inputCls} pl-10`}
                         />
                       </div>
                     </div>
-                    
-                    <div className="max-h-60 overflow-y-auto touch-pan-y">
+
+                    <div role="listbox" className="max-h-60 overflow-y-auto overscroll-contain">
                       {filteredClasses.length === 0 ? (
-                        <div className="px-4 py-3 text-gray-500 text-center">
+                        <div className="px-4 py-4 text-center text-sm text-gray-500">
                           {searchQuery ? 'Lama helin fasalo' : translations.noClasses}
                         </div>
                       ) : (
                         filteredClasses.map((cls) => (
                           <button
                             key={cls._id}
-                            onClick={() => handleClassSelect(cls._id)}
-                            className={`w-full text-left px-4 py-3 hover:bg-blue-50 active:bg-blue-100 focus:outline-none focus:bg-blue-50 transition-colors min-h-[44px] ${
-                              selectedClassId === cls._id ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
+                            type="button"
+                            role="option"
+                            aria-selected={selectedClassId === cls._id}
+                            onClick={() => selectClass(cls._id)}
+                            className={`flex min-h-[48px] w-full flex-col justify-center px-4 py-2 text-left hover:bg-blue-50 active:bg-blue-100 ${
+                              selectedClassId === cls._id ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
                             }`}
                           >
-                            <div className="font-medium truncate">{cls.name}</div>
-                            {cls.level && (
-                              <div className="text-xs text-gray-500 mt-1">Darajo: {cls.level}</div>
-                            )}
+                            <span className="truncate font-medium">{cls.name}</span>
+                            {cls.level && <span className="text-xs text-gray-500">Darajo: {cls.level}</span>}
                           </button>
                         ))
                       )}
                     </div>
-                    
-                    {searchQuery && (
-                      <div className="border-t border-gray-200 px-3 py-2">
-                        <button
-                          onClick={() => setSearchQuery('')}
-                          className="w-full text-center text-sm text-blue-600 hover:text-blue-800 py-2 min-h-[44px]"
-                        >
-                          Nadiifinta raadinta
-                        </button>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
-              {loadingClasses && (
-                <p className="text-xs text-gray-500 mt-1 flex items-center">
-                  <FiLoader className="animate-spin mr-1 flex-shrink-0" />
-                  Soo dejineyn fasallada...
-                </p>
-              )}
             </div>
 
-            {/* Date Selection with Load Button */}
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <label className="text-sm font-medium text-gray-700 flex items-center">
-                  <FiCalendar className="mr-2 flex-shrink-0" /> {translations.selectDate} <span className="text-red-500 ml-1">*</span>
-                </label>
-                {selectedClassId && (
-                  <button
-                    onClick={handleLoadDateSessions}
-                    disabled={isLoadingDateSessions || !selectedClassId}
-                    className="text-sm text-blue-600 hover:text-blue-800 flex items-center disabled:opacity-50"
-                  >
-                    {isLoadingDateSessions ? (
-                      <FiLoader className="animate-spin mr-1 flex-shrink-0" />
-                    ) : (
-                      <FiRotateCw className="mr-1 flex-shrink-0" />
-                    )}
-                    <span className="hidden sm:inline">{translations.loadDateSessions}</span>
-                    <span className="sm:hidden">Soo deji</span>
-                  </button>
-                )}
+            {/* Date */}
+            <div>
+              <label htmlFor="session-date" className="mb-1.5 flex items-center text-sm font-medium text-gray-700">
+                <FiCalendar className="mr-2 shrink-0" aria-hidden="true" />
+                {translations.selectDate}
+                <span className="ml-1 text-red-500">*</span>
+              </label>
+
+              <div className="flex items-stretch gap-2">
+                <button
+                  type="button"
+                  aria-label="Maalinta hore"
+                  onClick={() => changeDate(shiftDate(selectedDate, -1))}
+                  className="flex min-h-[48px] w-12 shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white hover:bg-gray-50 active:bg-gray-100"
+                >
+                  <FiChevronLeft aria-hidden="true" />
+                </button>
+                <input
+                  id="session-date"
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => changeDate(e.target.value)}
+                  className={`${inputCls} min-w-0 flex-1`}
+                />
+                <button
+                  type="button"
+                  aria-label="Maalinta xigta"
+                  onClick={() => changeDate(shiftDate(selectedDate, 1))}
+                  className="flex min-h-[48px] w-12 shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white hover:bg-gray-50 active:bg-gray-100"
+                >
+                  <FiChevronRight aria-hidden="true" />
+                </button>
               </div>
-              
-              <div className="flex flex-col sm:flex-row gap-2">
-                <div className="relative flex-1">
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => handleDateChange(e.target.value)}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] text-sm"
-                    disabled={loading || loadingClasses}
-                  />
-                  <FiCalendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
-                </div>
-                
-                {/* Quick date buttons */}
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => handleQuickDate(0)}
-                    className="flex-1 px-2 sm:px-3 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200 min-h-[44px] whitespace-nowrap"
-                  >
-                    Maanta
-                  </button>
-                  <button
-                    onClick={() => handleQuickDate(-1)}
-                    className="flex-1 px-2 sm:px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 min-h-[44px] whitespace-nowrap"
-                  >
-                    Shalay
-                  </button>
-                  <button
-                    onClick={() => handleQuickDate(-2)}
-                    className="flex-1 px-2 sm:px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 min-h-[44px] whitespace-nowrap"
-                  >
-                    -2
-                  </button>
-                </div>
+
+              <div className="mt-2 flex gap-2">
+                {quickDates.map(([offset, label]) => {
+                  const value = shiftDate(todayLocal(), offset);
+                  const active = selectedDate === value;
+                  return (
+                    <button
+                      key={offset}
+                      type="button"
+                      onClick={() => changeDate(value)}
+                      aria-pressed={active}
+                      className={`min-h-[40px] flex-1 whitespace-nowrap rounded-lg px-2 text-sm ${
+                        active ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
-              
-              {dateInfo && (
-                <p className={`text-xs mt-1 flex items-start ${
-                  dateInfo.includes('Khalad') ? 'text-red-600' : 
-                  dateInfo.includes('hore u cashar') ? 'text-green-600' : 
-                  'text-blue-600'
-                }`}>
-                  {dateInfo.includes('Khalad') ? <FiAlertCircle className="mr-1 flex-shrink-0 mt-0.5" /> : <FiInfo className="mr-1 flex-shrink-0 mt-0.5" />}
-                  <span className="break-words">{dateInfo}</span>
-                </p>
-              )}
-              
-              {isLoadingDateSessions && (
-                <p className="text-xs text-blue-600 mt-1 flex items-center">
-                  <FiLoader className="animate-spin mr-1 flex-shrink-0" />
-                  {translations.loadingDateData}
-                </p>
-              )}
             </div>
           </div>
 
-          {/* Quran Lesson Details */}
-          {selectedClassId && (
-            <div className="mb-6 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
-              <h3 className="text-sm font-medium text-green-800 mb-3">Faahfaahin Casharka Quraanka</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="sm:col-span-2 md:col-span-1">
-                  <label className="block text-xs font-medium text-green-700 mb-1">Suura</label>
-                  <input
-                    type="text"
-                    value={currentSurah}
-                    onChange={(e) => setCurrentSurah(e.target.value)}
-                    placeholder="Tusaale: Al-Fatiha"
-                    className="w-full px-3 py-2 border border-green-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-green-700 mb-1">From</label>
-                  <input
-                    type="text"
-                    value={currentFromVerse}
-                    onChange={(e) => setCurrentFromVerse(e.target.value)}
-                    placeholder="Tusaale: 1"
-                    className="w-full min-h-[44px] px-3 py-2 border border-green-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-green-700 mb-1">To</label>
-                  <input
-                    type="text"
-                    value={currentToVerse}
-                    onChange={(e) => setCurrentToVerse(e.target.value)}
-                    placeholder="Tusaale: 7"
-                    className="w-full min-h-[44px] px-3 py-2 border border-green-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                  />
-                </div>
-                <div className="sm:col-span-2 md:col-span-1">
-                  <label className="block text-xs font-medium text-green-700 mb-1">Qoraal dheeraad ah</label>
-                  <input
-                    type="text"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Qoraal dheeraad ah..."
-                    className="w-full px-3 py-2 border border-green-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Display message when no classes */}
+          {/* No classes */}
           {!loadingClasses && classes.length === 0 && (
-            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-yellow-700 flex items-center">
-                <FiUsers className="mr-2 flex-shrink-0" />
+            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+              <p className="flex items-center text-yellow-800">
+                <FiUsers className="mr-2 shrink-0" aria-hidden="true" />
                 {translations.noClasses}
               </p>
-              <p className="text-sm text-yellow-600 mt-1">
-                Fadlan hubi in aad leedahay fasallo ama internet-kaaga iska hubi.
-              </p>
+              <p className="mt-1 text-sm text-yellow-700">{translations.noClassesHint}</p>
             </div>
           )}
 
-          {/* Date Information */}
+          {/* Shared lesson details */}
           {selectedClassId && (
-            <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-700 flex items-start">
-                <FiInfo className="mr-2 flex-shrink-0 mt-0.5" />
-                <span className="break-words">
-                  Waxaad diiwaan gelin kartaa casharro taariikhda <strong>{formatDateForDisplay(selectedDate)}</strong>.
-                  Hadii casharro hore u jiraan taariikhdan, waxaa la cusboonaysiin doonaa.
-                </span>
+            <section className="rounded-lg border border-green-200 bg-green-50 p-3 sm:p-4">
+              <h3 className="text-sm font-semibold text-green-800">{translations.lessonTitle}</h3>
+              <p className="mb-3 mt-0.5 text-xs text-green-700">{translations.lessonHint}</p>
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <Field label={translations.surah} className="col-span-2 md:col-span-1">
+                  <input
+                    type="text"
+                    value={lesson.surah}
+                    onChange={(e) => setLesson((l) => ({ ...l, surah: e.target.value }))}
+                    placeholder="Tusaale: Al-Fatiha"
+                    className={`${inputCls} border-green-300 focus:ring-green-500`}
+                  />
+                </Field>
+                <Field label={translations.from}>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={lesson.fromVerse}
+                    onChange={(e) => setLesson((l) => ({ ...l, fromVerse: e.target.value }))}
+                    placeholder="1"
+                    className={`${inputCls} border-green-300 focus:ring-green-500`}
+                  />
+                </Field>
+                <Field label={translations.to}>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={lesson.toVerse}
+                    onChange={(e) => setLesson((l) => ({ ...l, toVerse: e.target.value }))}
+                    placeholder="7"
+                    className={`${inputCls} border-green-300 focus:ring-green-500`}
+                  />
+                </Field>
+                <Field label={translations.notes} className="col-span-2 md:col-span-1">
+                  <input
+                    type="text"
+                    value={lesson.notes}
+                    onChange={(e) => setLesson((l) => ({ ...l, notes: e.target.value }))}
+                    placeholder={`${translations.notes}...`}
+                    className={`${inputCls} border-green-300 focus:ring-green-500`}
+                  />
+                </Field>
+              </div>
+            </section>
+          )}
+
+          {/* Loading */}
+          {busy && (
+            <div className="py-12 text-center" role="status">
+              <FiLoader className="mx-auto h-10 w-10 animate-spin text-blue-600" aria-hidden="true" />
+              <p className="mt-4 text-gray-600">
+                {dateStatus === 'loading' ? translations.loadingDateData : 'Soo dejineyn ardayda fasalka...'}
               </p>
             </div>
           )}
 
-          {/* Statistics */}
-          {selectedClassId && quranRecords.length > 0 && (
+          {/* Error */}
+          {selectedClassId && dateStatus === 'error' && !busy && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
+              <p className="flex items-center justify-center gap-2 text-sm text-red-700">
+                <FiAlertCircle className="shrink-0" aria-hidden="true" />
+                {translations.loadFailed}
+              </p>
+              <button
+                type="button"
+                onClick={() => fetchSessions(false)}
+                className="mt-3 min-h-[44px] rounded-lg bg-red-600 px-5 text-sm font-medium text-white hover:bg-red-700"
+              >
+                {translations.retry}
+              </button>
+            </div>
+          )}
+
+          {/* No students */}
+          {noStudents && (
+            <div className="py-12 text-center">
+              <FiUsers className="mx-auto mb-4 h-12 w-12 text-gray-400" aria-hidden="true" />
+              <h3 className="mb-1 text-lg font-medium text-gray-900">{translations.noStudents}</h3>
+              <p className="text-gray-600">{translations.noStudentsHint}</p>
+            </div>
+          )}
+
+          {/* Main content */}
+          {ready && !busy && (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                  <div className="text-xs text-blue-600 font-medium">{translations.totalStudents}</div>
-                  <div className="text-xl font-bold text-blue-700">{statistics.total}</div>
-                </div>
-                <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                  <div className="text-xs text-green-600 font-medium">{translations.passed}</div>
-                  <div className="text-xl font-bold text-green-700">{statistics.gartay}</div>
-                </div>
-                <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-                  <div className="text-xs text-red-600 font-medium">{translations.failed}</div>
-                  <div className="text-xl font-bold text-red-700">{statistics.garanWaayay}</div>
-                </div>
-                <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                  <div className="text-xs text-yellow-600 font-medium">{translations.absent}</div>
-                  <div className="text-xl font-bold text-yellow-700">{statistics.majoogo}</div>
-                </div>
-                <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
-                  <div className="text-xs text-purple-600 font-medium">Hore u diiwaan gashan</div>
-                  <div className="text-xl font-bold text-purple-700">{statistics.existing}</div>
-                </div>
+              {/* Stats */}
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                <Stat
+                  label={translations.totalStudents}
+                  value={statistics.total}
+                  tone="border-blue-200 bg-blue-50 text-blue-700"
+                  className="col-span-2 sm:col-span-1"
+                />
+                <Stat label={translations.passed} value={statistics.gartay} tone="border-green-200 bg-green-50 text-green-700" />
+                <Stat label={translations.failed} value={statistics.garanWaayay} tone="border-red-200 bg-red-50 text-red-700" />
+                <Stat label={translations.absent} value={statistics.majoogo} tone="border-yellow-200 bg-yellow-50 text-yellow-800" />
+                <Stat
+                  label={translations.alreadySaved}
+                  value={statistics.existing}
+                  tone="border-purple-200 bg-purple-50 text-purple-700"
+                  className="col-span-2 sm:col-span-1"
+                />
               </div>
 
-              {/* Print Button */}
-              <div className="flex justify-end mb-6">
+              <div className="flex justify-end">
                 <button
+                  type="button"
                   onClick={() => setShowPrintModal(true)}
-                  className="px-4 py-3 bg-blue-600 text-white rounded-lg flex items-center justify-center hover:bg-blue-700 active:bg-blue-800 min-h-[44px] w-full sm:w-auto"
+                  className="flex min-h-[44px] w-full items-center justify-center rounded-lg bg-blue-600 px-4 text-white hover:bg-blue-700 active:bg-blue-800 sm:w-auto"
                 >
-                  <FiPrinter className="mr-2 flex-shrink-0" />
+                  <FiPrinter className="mr-2 shrink-0" aria-hidden="true" />
                   {translations.printReport}
                 </button>
               </div>
-            </>
-          )}
 
-          {/* Bulk Actions */}
-          {selectedClassId && quranRecords.length > 0 && (
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <div className="flex flex-col gap-3">
-                <span className="text-sm font-medium text-gray-700">{translations.selectAll}:</span>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <button
-                    onClick={() => handleSelectAll('gartay')}
-                    className="px-3 py-2 bg-green-100 text-green-700 rounded-md text-sm hover:bg-green-200 active:bg-green-300 flex-1 min-h-[44px] flex items-center justify-center"
-                  >
-                    <FiCheck className="mr-1 flex-shrink-0" />
-                    {translations.gartay} Dhammaan
-                  </button>
-                  <button
-                    onClick={() => handleSelectAll('garan waayay')}
-                    className="px-3 py-2 bg-red-100 text-red-700 rounded-md text-sm hover:bg-red-200 active:bg-red-300 flex-1 min-h-[44px] flex items-center justify-center"
-                  >
-                    <FiX className="mr-1 flex-shrink-0" />
-                    {translations.garanWaayay} Dhammaan
-                  </button>
-                  <button
-                    onClick={() => handleSelectAll('majoogo')}
-                    className="px-3 py-2 bg-yellow-100 text-yellow-700 rounded-md text-sm hover:bg-yellow-200 active:bg-yellow-300 flex-1 min-h-[44px] flex items-center justify-center"
-                  >
-                    <FiClock className="mr-1 flex-shrink-0" />
-                    {translations.majoogo} Dhammaan
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Loading State */}
-          {(loadingStudents || isLoadingDateSessions || isInitialLoad) && (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">
-                {isLoadingDateSessions ? 'Soo dejineyn casharrada taariikhdan...' : 
-                 isInitialLoad ? 'Soo dejineyn xogta...' : 
-                 'Soo dejineyn ardayda fasalka...'}
-              </p>
-            </div>
-          )}
-
-          {/* No Students Message */}
-          {selectedClassId && !loadingStudents && students && students.length === 0 && (
-            <div className="text-center py-12">
-              <FiUsers className="mx-auto text-gray-400 text-4xl mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">{translations.noStudents}</h3>
-              <p className="text-gray-600">Fasalkan ma laha arday diiwaan gashan.</p>
-            </div>
-          )}
-
-          {/* Students Table - Mobile Optimized */}
-          {quranRecords.length > 0 && !loadingStudents && !isLoadingDateSessions && !isInitialLoad && (
-            <div className="mb-8">
-              <h3 className="text-base sm:text-lg font-medium text-gray-800 mb-4 flex flex-wrap items-center gap-2">
-                <FiUsers className="mr-2 flex-shrink-0" />
-                Ardayda Fasalka ({quranRecords.length}) - {formatDateForDisplay(selectedDate)}
-                {hasExistingSessions && (
-                  <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded whitespace-nowrap">
-                    {statistics.existing} cashar hore
-                  </span>
-                )}
-              </h3>
-              
-              {/* Mobile Card View */}
-              <div className="block md:hidden space-y-4">
-                {quranRecords.map((record, index) => (
-                  <div key={record.student} className={`bg-white rounded-lg border ${record.hasExistingSession ? 'border-blue-300 bg-blue-50' : 'border-gray-200'} p-4 shadow-sm`}>
-                    {/* Header */}
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-gray-500">#{index + 1}</span>
-                        {record.hasExistingSession && (
-                          <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded" title="Hore u diiwaan gashan">
-                            Hore
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div className={`w-2 h-2 rounded-full ${
-                          record.status === 'gartay' ? 'bg-green-500' :
-                          record.status === 'garan waayay' ? 'bg-red-500' : 'bg-yellow-500'
-                        }`}></div>
-                        <span className={`text-sm font-medium ${
-                          record.status === 'gartay' ? 'text-green-700' :
-                          record.status === 'garan waayay' ? 'text-red-700' : 'text-yellow-700'
-                        }`}>
-                          {record.status === 'gartay' ? translations.gartay :
-                           record.status === 'garan waayay' ? translations.garanWaayay :
-                           translations.majoogo}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    {/* Student Info */}
-                    <div className="space-y-2 mb-3">
-                      <div>
-                        <span className="text-xs text-gray-500 block">{translations.studentName}</span>
-                        <p className="font-medium text-gray-900">{record.name}</p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <span className="text-xs text-gray-500 block">{translations.studentId}</span>
-                          <p className="text-sm text-gray-700">{record.studentId}</p>
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-500 block">{translations.phone}</span>
-                          <p className="text-sm text-gray-700">{record.phone}</p>
-                        </div>
-                      </div>
-                      
-                      {/* Quran Details */}
-                      <div className="grid grid-cols-1 gap-3">
-                        <div>
-                          <label className="text-xs text-gray-500 block">Suura</label>
-                          <input
-                            type="text"
-                            value={record.surah || ''}
-                            onChange={(e) => handleRecordMetaChange(record.student, 'surah', e.target.value)}
-                            placeholder="Suura"
-                            className="w-full min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs text-gray-500 block mb-1">From-To</label>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <label className="sr-only">From</label>
-                              <input
-                                type="text"
-                                value={record.fromVerse || ''}
-                                onChange={(e) => handleRecordMetaChange(record.student, 'fromVerse', e.target.value)}
-                                placeholder="From"
-                                className="w-full min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                              />
-                            </div>
-                            <div>
-                              <label className="sr-only">To</label>
-                              <input
-                                type="text"
-                                value={record.toVerse || ''}
-                                onChange={(e) => handleRecordMetaChange(record.student, 'toVerse', e.target.value)}
-                                placeholder="To"
-                                className="w-full min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500 block">Qoraal</label>
-                        <input
-                          type="text"
-                          value={record.notes || ''}
-                          onChange={(e) => handleRecordMetaChange(record.student, 'notes', e.target.value)}
-                          placeholder="Qoraal dheeraad ah..."
-                          className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* Action Buttons */}
-                    <div className="space-y-2">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleStatusChange(record.student, 'gartay')}
-                          className={`flex-1 px-2 py-2 rounded-md text-xs font-medium flex items-center justify-center gap-1 ${getStatusStyle('gartay', record.status)}`}
-                        >
-                          <FiCheck className="flex-shrink-0" size={14} />
-                          {translations.gartay}
-                        </button>
-                        <button
-                          onClick={() => handleStatusChange(record.student, 'garan waayay')}
-                          className={`flex-1 px-2 py-2 rounded-md text-xs font-medium flex items-center justify-center gap-1 ${getStatusStyle('garan waayay', record.status)}`}
-                        >
-                          <FiX className="flex-shrink-0" size={14} />
-                          {translations.garanWaayay}
-                        </button>
-                        <button
-                          onClick={() => handleStatusChange(record.student, 'majoogo')}
-                          className={`flex-1 px-2 py-2 rounded-md text-xs font-medium flex items-center justify-center gap-1 ${getStatusStyle('majoogo', record.status)}`}
-                        >
-                          <FiClock className="flex-shrink-0" size={14} />
-                          {translations.majoogo}
-                        </button>
-                      </div>
+              {/* Bulk actions */}
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 sm:p-4">
+                <span className="mb-2 block text-sm font-medium text-gray-700">{translations.selectAll}:</span>
+                <div className="grid grid-cols-3 gap-2">
+                  {STATUS_KEYS.map((key) => {
+                    const cfg = STATUS[key];
+                    const Icon = cfg.icon;
+                    return (
                       <button
-                        onClick={() => handleSaveSingleSession(record.student, record.status)}
-                        disabled={loading}
-                        className="w-full px-3 py-2 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200 active:bg-blue-300 disabled:opacity-50 flex items-center justify-center gap-1 min-h-[40px]"
+                        key={key}
+                        type="button"
+                        onClick={() => setAll(key)}
+                        className={`flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-lg border px-1 text-xs font-medium sm:flex-row sm:gap-1.5 sm:text-sm ${cfg.idle}`}
                       >
-                        {loading ? (
-                          <>
-                            <FiLoader className="animate-spin flex-shrink-0" size={14} />
-                            {translations.saving}
-                          </>
-                        ) : (
-                          <>
-                            <FiSave className="flex-shrink-0" size={14} />
-                            {translations.submitSingle}
-                          </>
-                        )}
+                        <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                        <span className="truncate">{cfg.label}</span>
                       </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Desktop Table View */}
-              <div className="hidden md:block overflow-x-auto -mx-2">
-                <div className="inline-block min-w-full align-middle">
-                  <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
-                    <table className="min-w-full divide-y divide-gray-300">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">#</th>
-                          <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                            {translations.studentName}
-                          </th>
-                          <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                            {translations.studentId}
-                          </th>
-                          <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                            Suura
-                          </th>
-                          <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                            From-To
-                          </th>
-                          <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                            Qoraal
-                          </th>
-                          <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                            {translations.status}
-                          </th>
-                          <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                            {translations.updateStatus}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200 bg-white">
-                        {quranRecords.map((record, index) => (
-                          <tr key={record.student} className={`hover:bg-gray-50 ${record.hasExistingSession ? 'bg-blue-50' : ''}`}>
-                            <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                              {index + 1}
-                              {record.hasExistingSession && (
-                                <span className="ml-2 text-xs text-blue-600" title="Hore u diiwaan gashan">
-                                  ✓
-                                </span>
-                              )}
-                            </td>
-                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900 font-medium">
-                              {record.name}
-                            </td>
-                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                              {record.studentId}
-                            </td>
-                            <td className="px-3 py-3 text-sm text-gray-900">
-                              <input
-                                type="text"
-                                value={record.surah || ''}
-                                onChange={(e) => handleRecordMetaChange(record.student, 'surah', e.target.value)}
-                                placeholder="Suura"
-                                className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                              />
-                            </td>
-                            <td className="px-3 py-3 text-sm text-gray-900">
-                              <div className="flex gap-1">
-                                <input
-                                  type="text"
-                                  value={record.fromVerse || ''}
-                                  onChange={(e) => handleRecordMetaChange(record.student, 'fromVerse', e.target.value)}
-                                  placeholder="From"
-                                  className="w-16 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                />
-                                <span>-</span>
-                                <input
-                                  type="text"
-                                  value={record.toVerse || ''}
-                                  onChange={(e) => handleRecordMetaChange(record.student, 'toVerse', e.target.value)}
-                                  placeholder="To"
-                                  className="w-16 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                />
-                              </div>
-                            </td>
-                            <td className="px-3 py-3 text-sm text-gray-900">
-                              <input
-                                type="text"
-                                value={record.notes || ''}
-                                onChange={(e) => handleRecordMetaChange(record.student, 'notes', e.target.value)}
-                                placeholder="Qoraal"
-                                className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                              />
-                            </td>
-                            <td className="whitespace-nowrap px-3 py-4 text-sm">
-                              <div className="flex items-center">
-                                <div className={`w-2 h-2 rounded-full mr-2 ${
-                                  record.status === 'gartay' ? 'bg-green-500' :
-                                  record.status === 'garan waayay' ? 'bg-red-500' : 'bg-yellow-500'
-                                }`}></div>
-                                <span className={`font-medium ${
-                                  record.status === 'gartay' ? 'text-green-700' :
-                                  record.status === 'garan waayay' ? 'text-red-700' : 'text-yellow-700'
-                                }`}>
-                                  {record.status === 'gartay' ? translations.gartay :
-                                   record.status === 'garan waayay' ? translations.garanWaayay :
-                                   translations.majoogo}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="whitespace-nowrap px-3 py-4 text-sm">
-                              <div className="flex flex-wrap gap-1">
-                                <button
-                                  onClick={() => handleStatusChange(record.student, 'gartay')}
-                                  className={`px-2 py-1 rounded-md text-xs flex items-center justify-center gap-1 ${getStatusStyle('gartay', record.status)}`}
-                                >
-                                  <FiCheck size={12} />
-                                  {translations.gartay}
-                                </button>
-                                <button
-                                  onClick={() => handleStatusChange(record.student, 'garan waayay')}
-                                  className={`px-2 py-1 rounded-md text-xs flex items-center justify-center gap-1 ${getStatusStyle('garan waayay', record.status)}`}
-                                >
-                                  <FiX size={12} />
-                                  {translations.garanWaayay}
-                                </button>
-                                <button
-                                  onClick={() => handleStatusChange(record.student, 'majoogo')}
-                                  className={`px-2 py-1 rounded-md text-xs flex items-center justify-center gap-1 ${getStatusStyle('majoogo', record.status)}`}
-                                >
-                                  <FiClock size={12} />
-                                  {translations.majoogo}
-                                </button>
-                                <button
-                                  onClick={() => handleSaveSingleSession(record.student, record.status)}
-                                  disabled={loading}
-                                  className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs hover:bg-blue-200 disabled:opacity-50 flex items-center justify-center gap-1"
-                                >
-                                  <FiSave size={12} />
-                                  {translations.submitSingle}
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
-            </div>
-          )}
 
-          {showHistory && (
-            <div className="mb-8 p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-800">Taariikhda Casharrada Diiwaangashan</h3>
-                <span className="text-xs sm:text-sm text-gray-600">{formatDateForDisplay(selectedDate)}</span>
-              </div>
+              {/* Students */}
+              <div>
+                <h3 className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-base font-medium text-gray-800 sm:text-lg">
+                  <FiUsers className="shrink-0" aria-hidden="true" />
+                  <span>Ardayda Fasalka ({quranRecords.length})</span>
+                  <span className="text-sm font-normal text-gray-500">{formatDateForDisplay(selectedDate)}</span>
+                </h3>
 
-              {classSessionsByDate && classSessionsByDate.length > 0 ? (
-                <div className="overflow-x-auto">
+                <p
+                  className={`mb-3 flex items-start gap-2 rounded-lg border p-3 text-sm ${
+                    statistics.existing > 0
+                      ? 'border-green-200 bg-green-50 text-green-800'
+                      : 'border-blue-200 bg-blue-50 text-blue-800'
+                  }`}
+                >
+                  <FiInfo className="mt-0.5 shrink-0" aria-hidden="true" />
+                  {statistics.existing > 0
+                    ? `${statistics.existing} arday ayaa hore u cashar helay taariikhdan. Haddii aad keydiso, waa la cusboonaysiin doonaa.`
+                    : translations.noSessionsForDate}
+                </p>
+
+                {/* Phones + tablets: cards */}
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:hidden">
+                  {quranRecords.map((record, index) => (
+                    <StudentCard
+                      key={record.student}
+                      record={record}
+                      index={index}
+                      lesson={lesson}
+                      saving={savingId === record.student}
+                      onStatus={(s) => setStatus(record.student, s)}
+                      onField={(f, v) => setField(record.student, f, v)}
+                      onSave={() => handleSaveSingle(record.student)}
+                    />
+                  ))}
+                </div>
+
+                {/* Desktop: table */}
+                <div className="hidden overflow-x-auto rounded-lg shadow ring-1 ring-black/5 lg:block">
                   <table className="min-w-full divide-y divide-gray-300">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">#</th>
-                        <th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">{translations.studentName}</th>
-                        <th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">{translations.studentId}</th>
-                        <th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">Suura</th>
-                        <th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">From-To</th>
-                        <th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">Qoraal</th>
-                        <th className="px-3 py-3 text-left text-sm font-semibold text-gray-900">{translations.status}</th>
+                        {['#', translations.studentName, translations.surah, `${translations.from} – ${translations.to}`, translations.notes, translations.status, ''].map(
+                          (h, i) => (
+                            <th
+                              key={`${h}-${i}`}
+                              scope="col"
+                              className="px-3 py-3 text-left text-sm font-semibold text-gray-900 first:pl-4"
+                            >
+                              {h}
+                            </th>
+                          )
+                        )}
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {classSessionsByDate.map((record, index) => (
-                        <tr key={`${record.student?._id || record.student}-${index}`} className="hover:bg-gray-50">
-                          <td className="px-3 py-3 text-sm text-gray-700">{index + 1}</td>
-                          <td className="px-3 py-3 text-sm text-gray-900">{record.student?.fullname || record.student?.name || '-'}</td>
-                          <td className="px-3 py-3 text-sm text-gray-700">{record.student?.studentId || '-'}</td>
-                          <td className="px-3 py-3 text-sm text-gray-700">{record.surah || '-'}</td>
-                          <td className="px-3 py-3 text-sm text-gray-700">{record.fromVerse || record.toVerse ? `${record.fromVerse || '-'} - ${record.toVerse || '-'}` : '-'}</td>
-                          <td className="px-3 py-3 text-sm text-gray-700">{record.notes || '-'}</td>
-                          <td className="px-3 py-3 text-sm text-gray-700">{record.status === 'gartay' ? translations.gartay : record.status === 'garan waayay' ? translations.garanWaayay : translations.majoogo}</td>
-                        </tr>
+                    <tbody className="divide-y divide-gray-200">
+                      {quranRecords.map((record, index) => (
+                        <StudentRow
+                          key={record.student}
+                          record={record}
+                          index={index}
+                          lesson={lesson}
+                          saving={savingId === record.student}
+                          onStatus={(s) => setStatus(record.student, s)}
+                          onField={(f, v) => setField(record.student, f, v)}
+                          onSave={() => handleSaveSingle(record.student)}
+                        />
                       ))}
                     </tbody>
                   </table>
                 </div>
-              ) : (
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">
-                  Ma jiro casharro la diiwaangeliyay taariikhdaas.
-                </div>
-              )}
-            </div>
+              </div>
+            </>
           )}
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8 pt-6 border-t border-gray-200">
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-              <button
-                onClick={handleRefresh}
-                disabled={loading || !selectedClassId}
-                className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg flex items-center justify-center hover:bg-gray-200 active:bg-gray-300 disabled:opacity-50 w-full sm:w-auto min-h-[44px]"
-              >
-                <FiRotateCw className="mr-2 flex-shrink-0" />
-                {translations.refresh}
-              </button>
-              
-              {selectedClassId && (
-                <button
-                  onClick={handleLoadDateSessions}
-                  disabled={isLoadingDateSessions || !selectedClassId}
-                  className="px-4 py-3 bg-blue-100 text-blue-700 rounded-lg flex items-center justify-center hover:bg-blue-200 active:bg-blue-300 disabled:opacity-50 w-full sm:w-auto min-h-[44px]"
-                >
-                  {isLoadingDateSessions ? (
-                    <>
-                      <FiLoader className="animate-spin mr-2 flex-shrink-0" />
-                      Soo dejineyn...
-                    </>
-                  ) : (
-                    <>
-                      <FiCalendar className="mr-2 flex-shrink-0" />
-                      Soo deji taariikhdan
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-            
-            {selectedClassId && quranRecords.length > 0 && (
-              <button
-                onClick={handleSaveAllSessions}
-                disabled={loading || !selectedClassId}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 flex items-center justify-center w-full sm:w-auto min-h-[44px]"
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3 flex-shrink-0"></div>
-                    {translations.creating}
-                  </>
-                ) : (
-                  <>
-                    <FiSave className="mr-2 flex-shrink-0" />
-                    {translations.submitAll} ({formatDateForDisplay(selectedDate)})
-                  </>
-                )}
-              </button>
-            )}
-          </div>
         </div>
+
+        {/* Sticky action bar */}
+        {ready && !busy && (
+          <div className="sticky bottom-0 z-30 flex items-center gap-2 rounded-b-xl border-t border-gray-200 bg-white/95 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur sm:px-6">
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={loadingStudents || dateStatus === 'loading'}
+              aria-label={translations.refresh}
+              className="flex min-h-[48px] items-center justify-center gap-2 rounded-lg bg-gray-100 px-4 text-gray-700 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-50"
+            >
+              <FiRotateCw aria-hidden="true" />
+              <span className="hidden sm:inline">{translations.refresh}</span>
+            </button>
+
+            <div className="hidden min-w-0 flex-1 text-sm text-amber-700 sm:block">
+              {statistics.unsaved > 0 && `${statistics.unsaved} ${translations.unsaved}`}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSaveAll}
+              disabled={savingAll}
+              className="flex min-h-[48px] flex-1 items-center justify-center rounded-lg bg-blue-600 px-4 font-medium text-white shadow-md hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 sm:flex-none sm:px-6"
+            >
+              {savingAll ? (
+                <>
+                  <FiLoader className="mr-2 shrink-0 animate-spin" />
+                  {translations.creating}
+                </>
+              ) : (
+                <>
+                  <FiSave className="mr-2 shrink-0" />
+                  <span className="truncate">{translations.submitAll}</span>
+                  {statistics.unsaved > 0 && (
+                    <span className="ml-2 rounded-full bg-white/25 px-2 text-xs">{statistics.unsaved}</span>
+                  )}
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Print Modal */}
+      {/* Print modal: bottom sheet on phones, centered dialog on larger screens */}
       {showPrintModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-5xl max-h-[90vh] overflow-hidden">
-            <div className="bg-blue-600 text-white p-4 flex justify-between items-center">
-              <h2 className="text-lg sm:text-xl font-bold">{translations.printReport}</h2>
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label={translations.printReport}
+        >
+          <div className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:max-w-4xl sm:rounded-2xl">
+            <div className="flex items-center justify-between bg-blue-600 px-4 py-3 text-white">
+              <h2 className="text-lg font-bold">{translations.printReport}</h2>
               <button
+                type="button"
                 onClick={() => setShowPrintModal(false)}
-                className="text-white hover:text-gray-200 p-2 -mr-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                aria-label={translations.close}
+                className="-mr-2 flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/10"
               >
                 <FiX size={24} />
               </button>
             </div>
 
-            <div className="p-4 sm:p-6 md:p-8 overflow-auto max-h-[70vh]">
-              <div className="text-center mb-6 sm:mb-8 border-b pb-4">
-                <h1 className="text-xl sm:text-2xl font-bold text-blue-700 mb-2">{translations.reportTitle}</h1>
-                <p className="text-sm sm:text-base text-gray-600">
-                  {selectedClass?.name || 'Fasalka'} | {formatDateForDisplay(selectedDate)}
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 mb-6 sm:mb-8">
-                <div>
-                  <p className="mb-2 text-sm sm:text-base"><strong className="text-gray-700">{translations.class}:</strong> {selectedClass?.name || '-'}</p>
-                  <p className="text-sm sm:text-base"><strong className="text-gray-700">{translations.date}:</strong> {formatDateForDisplay(selectedDate)}</p>
-                </div>
-                <div>
-                  <p className="mb-2 text-sm sm:text-base"><strong className="text-gray-700">{translations.generatedOn}:</strong> {new Date().toLocaleDateString('so-SO')}</p>
-                  <p className="text-sm sm:text-base"><strong className="text-gray-700">{translations.totalStudents}:</strong> {statistics.total}</p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-                <div className="bg-green-50 p-3 sm:p-4 rounded-lg border border-green-200 text-center">
-                  <div className="text-xl sm:text-2xl font-bold text-green-700">{statistics.gartay}</div>
-                  <div className="text-xs sm:text-sm text-green-600">{translations.passed}</div>
-                </div>
-                <div className="bg-red-50 p-3 sm:p-4 rounded-lg border border-red-200 text-center">
-                  <div className="text-xl sm:text-2xl font-bold text-red-700">{statistics.garanWaayay}</div>
-                  <div className="text-xs sm:text-sm text-red-600">{translations.failed}</div>
-                </div>
-                <div className="bg-yellow-50 p-3 sm:p-4 rounded-lg border border-yellow-200 text-center">
-                  <div className="text-xl sm:text-2xl font-bold text-yellow-700">{statistics.majoogo}</div>
-                  <div className="text-xs sm:text-sm text-yellow-600">{translations.absent}</div>
-                </div>
-                <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-200 text-center">
-                  <div className="text-xl sm:text-2xl font-bold text-blue-700">{successRate}%</div>
-                  <div className="text-xs sm:text-sm text-blue-600">Guul</div>
-                </div>
-              </div>
-              
+            <div className="flex-1 overflow-auto p-3 sm:p-6">
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse border border-gray-300 text-sm">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="border border-gray-300 p-2 sm:p-3 text-left">#</th>
-                      <th className="border border-gray-300 p-2 sm:p-3 text-left">{translations.studentName}</th>
-                      <th className="border border-gray-300 p-2 sm:p-3 text-left">{translations.studentId}</th>
-                      <th className="border border-gray-300 p-2 sm:p-3 text-left">{translations.phone}</th>
-                      <th className="border border-gray-300 p-2 sm:p-3 text-left">{translations.status}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {quranRecords.map((record, index) => (
-                      <tr key={record.student} className="hover:bg-gray-50">
-                        <td className="border border-gray-300 p-2 sm:p-3">{index + 1}</td>
-                        <td className="border border-gray-300 p-2 sm:p-3 font-medium">{record.name}</td>
-                        <td className="border border-gray-300 p-2 sm:p-3">{record.studentId}</td>
-                        <td className="border border-gray-300 p-2 sm:p-3">{record.phone}</td>
-                        <td className="border border-gray-300 p-2 sm:p-3">
-                          <span className={`px-2 py-1 rounded text-xs sm:text-sm ${
-                            record.status === 'gartay' ? 'bg-green-100 text-green-800' :
-                            record.status === 'garan waayay' ? 'bg-red-100 text-red-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {record.status === 'gartay' ? translations.gartay :
-                             record.status === 'garan waayay' ? translations.garanWaayay :
-                             translations.majoogo}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              
-              <div className="mt-6 sm:mt-8 pt-4 border-t border-gray-300 text-center text-gray-600 text-xs sm:text-sm">
-                <p>Warbixinta ayaa lagu sameeyay {new Date().toLocaleString('so-SO')}</p>
+                <div
+                  className="min-w-[640px]"
+                  dangerouslySetInnerHTML={{ __html: `<style>${REPORT_CSS}</style>${buildReportBody()}` }}
+                />
               </div>
             </div>
 
-            <div className="bg-gray-50 p-4 flex flex-col sm:flex-row justify-end gap-3">
+            <div className="grid grid-cols-1 gap-2 border-t border-gray-200 bg-gray-50 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:flex sm:justify-end sm:gap-3 sm:px-6">
               <button
-                onClick={() => setShowPrintModal(false)}
-                className="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 active:bg-gray-400 w-full sm:w-auto min-h-[44px]"
+                type="button"
+                onClick={generatePDF}
+                disabled={pdfBusy}
+                className="flex min-h-[48px] items-center justify-center rounded-lg bg-green-600 px-4 text-white hover:bg-green-700 active:bg-green-800 disabled:opacity-50"
               >
-                Xidh
+                {pdfBusy ? <FiLoader className="mr-2 animate-spin" /> : <FiDownload className="mr-2 shrink-0" />}
+                {translations.downloadPDF}
               </button>
               <button
+                type="button"
                 onClick={handlePrint}
-                className="px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 active:bg-blue-300 flex items-center justify-center w-full sm:w-auto min-h-[44px]"
+                className="flex min-h-[48px] items-center justify-center rounded-lg bg-blue-100 px-4 text-blue-700 hover:bg-blue-200 active:bg-blue-300"
               >
-                <FiPrinter className="mr-2 flex-shrink-0" />
+                <FiPrinter className="mr-2 shrink-0" />
                 {translations.print}
               </button>
               <button
-                onClick={generatePDF}
-                className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 flex items-center justify-center w-full sm:w-auto min-h-[44px]"
+                type="button"
+                onClick={() => setShowPrintModal(false)}
+                className="min-h-[48px] rounded-lg bg-gray-200 px-4 text-gray-700 hover:bg-gray-300 active:bg-gray-400"
               >
-                <FiDownload className="mr-2 flex-shrink-0" />
-                {translations.downloadPDF}
+                {translations.close}
               </button>
             </div>
           </div>
