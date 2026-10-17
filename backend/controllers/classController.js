@@ -1,6 +1,7 @@
 import Attendance from "../models/attendanceModel.js";
 import Class from "../models/classModel.js";
 import Student from "../models/studentsModel.js";
+import { normalizeClassStudentIds } from "../utils/studentRoster.js";
 
 const verifyTeacherClassAccess = (req, classId) => {
   if (req.user?.role !== 'teacher') return true;
@@ -35,14 +36,28 @@ export const createClass = async (req, res) => {
 // ✅ Soo hel dhammaan fasalada
 export const getAllClasses = async (req, res) => {
   try {
+    let classes;
+
     if (req.user?.role === 'teacher') {
       const classIds = req.teacher?.assignedClasses?.map((cls) => cls._id) || [];
-      const classes = await Class.find({ _id: { $in: classIds } }).populate("students attendance");
-      return res.status(200).json({ classes });
+      classes = await Class.find({ _id: { $in: classIds } }).populate("students attendance");
+    } else {
+      classes = await Class.find().populate("students attendance");
     }
 
-    const classes = await Class.find().populate("students attendance");
-    res.status(200).json({ classes });
+    const normalizedClasses = await Promise.all(classes.map(async (cls) => {
+      const uniqueIds = normalizeClassStudentIds(cls.students || []);
+      if (uniqueIds.length !== (cls.students || []).length) {
+        cls.students = uniqueIds;
+        await cls.save();
+      }
+      return {
+        ...cls.toObject(),
+        students: uniqueIds
+      };
+    }));
+
+    return res.status(200).json({ classes: normalizedClasses });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -63,7 +78,13 @@ export const getClassById = async (req, res) => {
       return res.status(404).json({ message: "Fasalka lama helin" });
     }
 
-    res.status(200).json({ classData });
+    const uniqueIds = normalizeClassStudentIds(classData.students || []);
+    if (uniqueIds.length !== (classData.students || []).length) {
+      classData.students = uniqueIds;
+      await classData.save();
+    }
+
+    res.status(200).json({ classData: { ...classData.toObject(), students: uniqueIds } });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -208,6 +229,12 @@ export const getClassStudents = async (req, res) => {
 
     if (!classData) {
       return res.status(404).json({ message: "Fasalka lama helin" });
+    }
+
+    const uniqueIds = normalizeClassStudentIds(classData.students || []);
+    if (uniqueIds.length !== (classData.students || []).length) {
+      classData.students = uniqueIds;
+      await classData.save();
     }
 
     res.status(200).json({ students: classData.students });

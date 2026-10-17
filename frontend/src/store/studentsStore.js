@@ -2,6 +2,19 @@ import { create } from 'zustand'
 import axios from '../config/axios'
 import toast from 'react-hot-toast'
 
+const dedupeStudents = (students = []) => {
+  if (!Array.isArray(students)) return [];
+
+  const seen = new Set();
+  return students.filter((student) => {
+    const id = student?._id ? String(student._id) : student?.id ? String(student.id) : '';
+    if (!id) return true;
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+};
+
 const useStudentsStore = create((set, get) => ({
   students: [],
   selectedStudent: null,
@@ -15,7 +28,8 @@ const useStudentsStore = create((set, get) => ({
     set({ loading: true });
     try {
       const response = await axios.get('/students/getAll');
-      set({ students: response.data.students || [], loading: false });
+      const normalizedStudents = dedupeStudents(response.data.students || []);
+      set({ students: normalizedStudents, loading: false });
     } catch (error) {
       console.error('Error fetching students:', error);
       toast.error('Failed to fetch students');
@@ -27,7 +41,7 @@ const useStudentsStore = create((set, get) => ({
     set({ loading: true });
     try {
       const response = await axios.get(`/students/class/${classId}`);
-      const fetchedStudents = response.data.students || [];
+      const fetchedStudents = dedupeStudents(response.data.students || []);
       
       console.log('Fetched students for class:', classId, fetchedStudents); // Debug log
       

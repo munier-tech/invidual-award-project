@@ -13,12 +13,38 @@ const verifyTeacherClassAccess = (req, classId) => {
   return allowedIds.includes(String(classId));
 };
 
-// Helper function to normalize date (set to beginning of day)
-const normalizeDate = (date) => {
-  const normalized = new Date(date);
-  normalized.setHours(0, 0, 0, 0);
-  return normalized;
+// Normalize a date so YYYY-MM-DD stays on the same local calendar day instead of shifting
+// across time zones when parsed as UTC.
+export const normalizeDate = (date) => {
+  if (!date) return new Date();
+
+  if (date instanceof Date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+
+  if (typeof date === 'string') {
+    const trimmed = date.trim();
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      const [year, month, day] = trimmed.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    }
+
+    const parsed = new Date(trimmed);
+    if (!Number.isNaN(parsed.getTime())) {
+      return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+    }
+  }
+
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) {
+    return new Date();
+  }
+
+  return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
 };
+
+const nextLocalDay = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
 
 // Helper function to format date for display
 const formatDateForDisplay = (date) => {
@@ -76,13 +102,14 @@ export const createDailyQuran = async (req, res) => {
 
     // Use provided date or today's date
     const sessionDate = date ? normalizeDate(date) : normalizeDate(new Date());
+    const nextDay = nextLocalDay(sessionDate);
 
     // Check if session already exists for this student on this date
     const existingSession = await DailyQuran.findOne({
       student,
       date: {
         $gte: sessionDate,
-        $lt: new Date(sessionDate.getTime() + 24 * 60 * 60 * 1000) // Next day
+        $lt: nextDay
       }
     });
 
@@ -247,10 +274,10 @@ export const getStudentSessions = async (req, res) => {
     // Filter by date range
     if (startDate && endDate) {
       try {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
+        const start = normalizeDate(startDate);
+        const end = normalizeDate(endDate);
         
-        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
           return res.status(400).json({
             success: false,
             message: "Taariikhda aad gelisay waa khalad"
@@ -409,7 +436,7 @@ export const createBulkSessions = async (req, res) => {
 
     // Use provided date or today's date
     const sessionDate = date ? normalizeDate(date) : normalizeDate(new Date());
-    const nextDay = new Date(sessionDate.getTime() + 24 * 60 * 60 * 1000);
+    const nextDay = nextLocalDay(sessionDate);
 
     // Get all students from the class
     const classStudents = await Student.find({ class: classId }).select('_id');
@@ -629,8 +656,7 @@ export const getClassSessionsByDate = async (req, res) => {
       });
     }
 
-    const nextDay = new Date(sessionDate);
-    nextDay.setDate(nextDay.getDate() + 1);
+    const nextDay = nextLocalDay(sessionDate);
 
     console.log('Date range for query:', {
       sessionDate: sessionDate.toISOString(),
@@ -765,8 +791,7 @@ export const getClassSessions = async (req, res) => {
     // Filter by single date
     if (date) {
       const sessionDate = normalizeDate(date);
-      const nextDay = new Date(sessionDate);
-      nextDay.setDate(nextDay.getDate() + 1);
+      const nextDay = nextLocalDay(sessionDate);
       
       query.date = {
         $gte: sessionDate,

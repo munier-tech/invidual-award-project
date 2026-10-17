@@ -112,6 +112,18 @@ const STATUS = {
 const toLocalISO = (d) =>
   new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 
+const dedupeById = (items = []) => {
+  if (!Array.isArray(items)) return [];
+  const seen = new Set();
+  return items.filter((item) => {
+    const id = item?._id ? String(item._id) : item?.student ? String(item.student) : '';
+    if (!id) return true;
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+};
+
 const todayLocal = () => toLocalISO(new Date());
 
 const shiftDate = (iso, days) => {
@@ -567,6 +579,7 @@ const CreateDailyQuranSession = () => {
       return;
     }
 
+    const uniqueStudents = dedupeById(students || []);
     const day = normalizeDate(selectedDate);
     const byStudent = new Map();
     (classSessionsByDate || []).forEach((s) => {
@@ -574,7 +587,7 @@ const CreateDailyQuranSession = () => {
     });
 
     setQuranRecords((prev) =>
-      (students || []).map((student) => {
+      uniqueStudents.map((student) => {
         const old = prev.find((r) => r.student === student._id);
         if (old?.dirty) return old; // keep unsaved edits when data reloads
         const s = byStudent.get(student._id);

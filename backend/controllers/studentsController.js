@@ -2,6 +2,7 @@ import multer from 'multer';
 import XLSX from 'xlsx';
 import Student from "../models/studentsModel.js";
 import Class from "../models/classModel.js";
+import { dedupeStudents, normalizeClassStudentIds } from '../utils/studentRoster.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -284,11 +285,23 @@ export const getStudentsByClass = async (req, res) => {
   const { classId } = req.params;
 
   try {
-    const students = await Student.find({ class: classId }).populate('class', 'name level');
-    
+    const [students, classDoc] = await Promise.all([
+      Student.find({ class: classId }).populate('class', 'name level'),
+      Class.findById(classId).select('students')
+    ]);
+
+    const uniqueStudents = dedupeStudents(students);
+
+    if (classDoc) {
+      const uniqueStudentIds = normalizeClassStudentIds(classDoc.students || []);
+      if (uniqueStudentIds.length !== (classDoc.students || []).length) {
+        await Class.findByIdAndUpdate(classId, { students: uniqueStudentIds });
+      }
+    }
+
     res.status(200).json({
       success: true,
-      students,
+      students: uniqueStudents,
     });
   } catch (error) {
     console.error("Error fetching students by class:", error);

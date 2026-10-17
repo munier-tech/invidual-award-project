@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiCalendar, FiUsers, FiBook, FiSearch, FiDownload, FiPrinter,
@@ -55,7 +56,8 @@ const translations = {
   updatedAt: 'La cusboonaysiiyay',
   noData: 'Ma jiro xog la soo dejin karo',
   exported: 'Xogta si guul leh ayaa loo soo dejiyay',
-  unknownStudent: 'Arday aan la aqoon'
+  unknownStudent: 'Arday aan la aqoon',
+  printedOn: 'Daabacay'
 };
 
 const statusConfig = {
@@ -99,6 +101,59 @@ const fallbackStatus = {
 };
 
 const STATUS_KEYS = ['gartay', 'garan waayay', 'majoogo'];
+
+// Colors used only in the print report
+const printStatusColors = {
+  gartay: { bg: '#dcfce7', color: '#166534' },
+  'garan waayay': { bg: '#fee2e2', color: '#991b1b' },
+  majoogo: { bg: '#fef9c3', color: '#854d0e' }
+};
+
+const printCss = `
+  #quran-print-root { display: none; }
+
+  @media print {
+    @page { size: A4 landscape; margin: 12mm; }
+
+    /* Hide the whole app (sidebar, filters, toasts...) and show only the report */
+    body > *:not(#quran-print-root) { display: none !important; }
+    html, body {
+      height: auto !important;
+      overflow: visible !important;
+      background: #fff !important;
+    }
+    #quran-print-root {
+      display: block !important;
+      width: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #000;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    #quran-print-root .pr-title { font-size: 20px; font-weight: bold; margin: 0 0 4px; }
+    #quran-print-root .pr-meta { font-size: 12px; margin: 2px 0; color: #333; }
+    #quran-print-root .pr-stats {
+      display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 14px; font-size: 12px;
+    }
+    #quran-print-root .pr-stat {
+      border: 1px solid #999; padding: 6px 12px; border-radius: 4px; text-align: center;
+    }
+    #quran-print-root .pr-stat b { display: block; font-size: 16px; }
+    #quran-print-root table {
+      width: 100%; border-collapse: collapse; font-size: 11px;
+    }
+    #quran-print-root thead { display: table-header-group; }
+    #quran-print-root tr { page-break-inside: avoid; break-inside: avoid; }
+    #quran-print-root th, #quran-print-root td {
+      border: 1px solid #777; padding: 5px 7px; text-align: left; vertical-align: top;
+    }
+    #quran-print-root th { background: #e5e7eb !important; font-weight: bold; }
+    #quran-print-root .pr-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 10px;
+    }
+    #quran-print-root .pr-footer { margin-top: 14px; font-size: 10px; color: #555; }
+  }
+`;
 
 /* ------------------------------------------------------------------ */
 /* Pure helpers                                                        */
@@ -289,7 +344,7 @@ const RecordCard = ({ record, expanded, onToggle }) => {
 
   return (
     <div
-      className={`overflow-hidden rounded-xl border border-l-4 border-gray-200 bg-white shadow-sm print:shadow-none ${config.accent}`}
+      className={`overflow-hidden rounded-xl border border-l-4 border-gray-200 bg-white shadow-sm ${config.accent}`}
     >
       <button
         type="button"
@@ -348,6 +403,72 @@ const EmptyState = ({ icon: Icon, text, action }) => (
     <Icon className="mx-auto h-12 w-12 text-gray-300 sm:h-14 sm:w-14" aria-hidden="true" />
     <p className="mx-auto mt-4 max-w-sm text-base text-gray-600">{text}</p>
     {action}
+  </div>
+);
+
+/* ------------------------------------------------------------------ */
+/* Print-only report: static table, no animation, no layout           */
+/* ------------------------------------------------------------------ */
+
+const PrintReport = ({ records, stats, selectedClass, selectedDate }) => (
+  <div id="quran-print-root">
+    <h1 className="pr-title">{translations.heading}</h1>
+    <p className="pr-meta">
+      <b>{translations.class}:</b>{' '}
+      {selectedClass ? `${selectedClass.name} - ${selectedClass.subject}` : 'N/A'}
+      {'   |   '}
+      <b>{translations.date}:</b> {formatDate(selectedDate)}
+    </p>
+
+    <div className="pr-stats">
+      <div className="pr-stat"><b>{stats.total}</b>{translations.totalSessions}</div>
+      <div className="pr-stat"><b>{stats.students}</b>{translations.totalStudents}</div>
+      <div className="pr-stat"><b>{stats.gartay}</b>{getStatusConfig('gartay').label}</div>
+      <div className="pr-stat"><b>{stats.garanWaayay}</b>{getStatusConfig('garan waayay').label}</div>
+      <div className="pr-stat"><b>{stats.majoogo}</b>{getStatusConfig('majoogo').label}</div>
+      <div className="pr-stat"><b>{stats.comprehensionRate}%</b>{translations.comprehensionRate}</div>
+      <div className="pr-stat"><b>{stats.attendanceRate}%</b>{translations.attendanceRate}</div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style={{ width: '4%' }}>#</th>
+          <th style={{ width: '20%' }}>{translations.student}</th>
+          <th style={{ width: '10%' }}>ID</th>
+          <th style={{ width: '12%' }}>{translations.status}</th>
+          <th style={{ width: '13%' }}>{translations.surah}</th>
+          <th style={{ width: '10%' }}>{translations.verses}</th>
+          <th style={{ width: '17%' }}>{translations.notes}</th>
+          <th style={{ width: '14%' }}>{translations.createdBy}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {records.map((record, index) => {
+          const colors = printStatusColors[record.status] || { bg: '#f3f4f6', color: '#374151' };
+          return (
+            <tr key={record._id || index}>
+              <td>{index + 1}</td>
+              <td>{record.student?.fullname || translations.unknownStudent}</td>
+              <td>{record.student?.studentId || 'N/A'}</td>
+              <td>
+                <span className="pr-badge" style={{ background: colors.bg, color: colors.color }}>
+                  {getStatusConfig(record.status).label}
+                </span>
+              </td>
+              <td>{getRecordValue(record, 'surah', '-')}</td>
+              <td>{versesText(record)}</td>
+              <td>{getRecordValue(record, 'notes', '') || '-'}</td>
+              <td>{record.createdBy?.username || 'System'}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+
+    <p className="pr-footer">
+      {translations.printedOn}: {formatDateTime(new Date().toISOString())}
+    </p>
   </div>
 );
 
@@ -438,7 +559,14 @@ const ViewDailyQuranRecords = () => {
     setStatusFilter('all');
   };
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => {
+    if (filteredRecords.length === 0) {
+      toast.error(translations.noData);
+      return;
+    }
+    // Small delay so the print report is fully rendered before the dialog opens
+    setTimeout(() => window.print(), 100);
+  };
 
   const handleExport = () => {
     if (filteredRecords.length === 0) {
@@ -640,6 +768,20 @@ const ViewDailyQuranRecords = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <style>{printCss}</style>
+
+      {/* Rendered directly in <body> so the dashboard layout/sidebar can't affect printing */}
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <PrintReport
+            records={filteredRecords}
+            stats={stats}
+            selectedClass={selectedClass}
+            selectedDate={selectedDate}
+          />,
+          document.body
+        )}
+
       <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-8">
         {/* Header */}
         <header className="mb-4 flex items-start justify-between gap-3 sm:mb-6">
@@ -656,7 +798,7 @@ const ViewDailyQuranRecords = () => {
           </div>
 
           <div
-            className="hidden shrink-0 items-center gap-1 rounded-lg bg-white p-1 shadow-sm md:flex print:hidden"
+            className="hidden shrink-0 items-center gap-1 rounded-lg bg-white p-1 shadow-sm md:flex"
             role="group"
             aria-label="View mode"
           >
@@ -681,7 +823,7 @@ const ViewDailyQuranRecords = () => {
         </header>
 
         {/* Filters */}
-        <section className="mb-4 rounded-2xl border border-gray-100 bg-white p-3 shadow-md sm:mb-6 sm:p-5 print:hidden">
+        <section className="mb-4 rounded-2xl border border-gray-100 bg-white p-3 shadow-md sm:mb-6 sm:p-5">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <label htmlFor="class-select" className="mb-1.5 block text-sm font-semibold text-gray-700">
@@ -828,7 +970,7 @@ const ViewDailyQuranRecords = () => {
         {/* Results */}
         <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-md">
           {selectedClassId && records.length > 0 && !loading && (
-            <div className="border-b border-gray-100 p-3 sm:px-5 print:hidden">
+            <div className="border-b border-gray-100 p-3 sm:px-5">
               <div
                 className="-mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                 role="group"
