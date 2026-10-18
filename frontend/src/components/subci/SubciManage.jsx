@@ -49,6 +49,7 @@ const SubcisManage = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768); // Changed from isMobileView to isMobile
+  const [studentSearch, setStudentSearch] = useState(''); // search box for "Dhamaan Ardayda"
 
   // Handle window resize
   useEffect(() => {
@@ -125,6 +126,7 @@ const SubcisManage = () => {
 
   const selectHalaqa = (h) => {
     setSelected(h);
+    setStudentSearch('');
     setEditingMeta({ 
       name: h.name, 
       startingSurah: h.startingSurah || '', 
@@ -216,6 +218,16 @@ const SubcisManage = () => {
   };
 
   const memberIds = new Set((selected?.students || []).map(s => s._id));
+
+  // Students shown in "Dhamaan Ardayda", filtered by name or student ID
+  const filteredStudents = useMemo(() => {
+    const q = studentSearch.trim().toLowerCase();
+    if (!q) return students;
+    return students.filter(s =>
+      s.fullname?.toLowerCase().includes(q) ||
+      String(s.studentId || '').toLowerCase().includes(q)
+    );
+  }, [students, studentSearch]);
 
   const getStats = () => {
     const totalHalaqas = halaqas.length;
@@ -765,14 +777,37 @@ const SubcisManage = () => {
                             <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
                             Dhamaan Ardayda
                           </h4>
+
+                          {/* Student search */}
+                          <div className="relative mb-3">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                            <input
+                              type="text"
+                              value={studentSearch}
+                              onChange={e => setStudentSearch(e.target.value)}
+                              placeholder="Raadi arday (magac ama ID)..."
+                              className="w-full border border-gray-300 rounded-lg pl-10 pr-9 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                            {studentSearch && (
+                              <button
+                                type="button"
+                                onClick={() => setStudentSearch('')}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
+                                aria-label="Clear search"
+                              >
+                                <X size={16} />
+                              </button>
+                            )}
+                          </div>
+
                           <div className="border border-gray-200 rounded-lg divide-y max-h-96 overflow-auto">
                             {studentsLoading ? (
                               <div className="p-6 text-center">
                                 <RefreshCw className="w-6 h-6 text-indigo-600 animate-spin mx-auto mb-2" />
                                 <p className="text-sm text-gray-500">Soo degaya...</p>
                               </div>
-                            ) : students.length > 0 ? (
-                              students.map(student => (
+                            ) : filteredStudents.length > 0 ? (
+                              filteredStudents.map(student => (
                                 <StudentItem
                                   key={student._id}
                                   student={student}
@@ -784,7 +819,9 @@ const SubcisManage = () => {
                             ) : (
                               <div className="p-6 text-center">
                                 <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                                <p className="text-sm text-gray-500">Ardayda majiraan</p>
+                                <p className="text-sm text-gray-500">
+                                  {studentSearch ? 'Arday lama helin' : 'Ardayda majiraan'}
+                                </p>
                               </div>
                             )}
                           </div>
