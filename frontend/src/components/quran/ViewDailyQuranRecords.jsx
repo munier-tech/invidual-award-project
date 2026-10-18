@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -109,8 +109,47 @@ const printStatusColors = {
   majoogo: { bg: '#fef9c3', color: '#854d0e' }
 };
 
+// A4 landscape (210mm tall) minus 12mm margins top and bottom = 186mm printable.
+// We use 184mm so a second page can never be created.
+const PRINT_PAGE_HEIGHT_MM = 184;
+const PRINT_PAGE_WIDTH_MM = 273; // 297mm - 2 * 12mm margins
+const PRINT_PAGE_HEIGHT_PX = (PRINT_PAGE_HEIGHT_MM / 25.4) * 96;
+const PRINT_MIN_SCALE = 0.3;
+
 const printCss = `
-  #quran-print-root { display: none; }
+  /* Off-screen on the page so it can be measured; sized to the A4 landscape printable area */
+  #quran-print-root {
+    position: fixed; left: -10000px; top: 0;
+    width: ${PRINT_PAGE_WIDTH_MM}mm;
+    visibility: hidden; pointer-events: none;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #000;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* Slightly shorter than the printable height so a 2nd page can never be created */
+  #quran-print-root .pr-page { height: ${PRINT_PAGE_HEIGHT_MM}mm; overflow: hidden; }
+  #quran-print-root .pr-inner { transform-origin: top left; }
+
+  #quran-print-root .pr-title { font-size: 20px; font-weight: bold; margin: 0 0 4px; }
+  #quran-print-root .pr-meta { font-size: 12px; margin: 2px 0; color: #333; }
+  #quran-print-root .pr-stats {
+    display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 14px; font-size: 12px;
+  }
+  #quran-print-root .pr-stat {
+    border: 1px solid #999; padding: 6px 12px; border-radius: 4px; text-align: center;
+  }
+  #quran-print-root .pr-stat b { display: block; font-size: 16px; }
+  #quran-print-root table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  #quran-print-root tr { page-break-inside: avoid; break-inside: avoid; }
+  #quran-print-root th, #quran-print-root td {
+    border: 1px solid #777; padding: 5px 7px; text-align: left; vertical-align: top;
+  }
+  #quran-print-root th { background: #e5e7eb !important; font-weight: bold; }
+  #quran-print-root .pr-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 10px;
+  }
+  #quran-print-root .pr-footer { margin-top: 14px; font-size: 10px; color: #555; }
 
   @media print {
     @page { size: A4 landscape; margin: 12mm; }
@@ -123,35 +162,12 @@ const printCss = `
       background: #fff !important;
     }
     #quran-print-root {
-      display: block !important;
+      position: static;
+      left: auto; top: auto;
       width: 100%;
-      font-family: Arial, Helvetica, sans-serif;
-      color: #000;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
+      visibility: visible;
+      pointer-events: auto;
     }
-    #quran-print-root .pr-title { font-size: 20px; font-weight: bold; margin: 0 0 4px; }
-    #quran-print-root .pr-meta { font-size: 12px; margin: 2px 0; color: #333; }
-    #quran-print-root .pr-stats {
-      display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 14px; font-size: 12px;
-    }
-    #quran-print-root .pr-stat {
-      border: 1px solid #999; padding: 6px 12px; border-radius: 4px; text-align: center;
-    }
-    #quran-print-root .pr-stat b { display: block; font-size: 16px; }
-    #quran-print-root table {
-      width: 100%; border-collapse: collapse; font-size: 11px;
-    }
-    #quran-print-root thead { display: table-header-group; }
-    #quran-print-root tr { page-break-inside: avoid; break-inside: avoid; }
-    #quran-print-root th, #quran-print-root td {
-      border: 1px solid #777; padding: 5px 7px; text-align: left; vertical-align: top;
-    }
-    #quran-print-root th { background: #e5e7eb !important; font-weight: bold; }
-    #quran-print-root .pr-badge {
-      display: inline-block; padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 10px;
-    }
-    #quran-print-root .pr-footer { margin-top: 14px; font-size: 10px; color: #555; }
   }
 `;
 
@@ -407,70 +423,109 @@ const EmptyState = ({ icon: Icon, text, action }) => (
 );
 
 /* ------------------------------------------------------------------ */
-/* Print-only report: static table, no animation, no layout           */
+/* Print-only report: static table, always fits ONE page               */
 /* ------------------------------------------------------------------ */
 
-const PrintReport = ({ records, stats, selectedClass, selectedDate }) => (
-  <div id="quran-print-root">
-    <h1 className="pr-title">{translations.heading}</h1>
-    <p className="pr-meta">
-      <b>{translations.class}:</b>{' '}
-      {selectedClass ? `${selectedClass.name} - ${selectedClass.subject}` : 'N/A'}
-      {'   |   '}
-      <b>{translations.date}:</b> {formatDate(selectedDate)}
-    </p>
+const PrintReport = ({ records, stats, selectedClass, selectedDate }) => {
+  const innerRef = useRef(null);
+  const [scale, setScale] = useState(1);
 
-    <div className="pr-stats">
-      <div className="pr-stat"><b>{stats.total}</b>{translations.totalSessions}</div>
-      <div className="pr-stat"><b>{stats.students}</b>{translations.totalStudents}</div>
-      <div className="pr-stat"><b>{stats.gartay}</b>{getStatusConfig('gartay').label}</div>
-      <div className="pr-stat"><b>{stats.garanWaayay}</b>{getStatusConfig('garan waayay').label}</div>
-      <div className="pr-stat"><b>{stats.majoogo}</b>{getStatusConfig('majoogo').label}</div>
-      <div className="pr-stat"><b>{stats.comprehensionRate}%</b>{translations.comprehensionRate}</div>
-      <div className="pr-stat"><b>{stats.attendanceRate}%</b>{translations.attendanceRate}</div>
+  // Measure the report at 100% size and shrink it just enough to fit one page
+  useLayoutEffect(() => {
+    const el = innerRef.current;
+    if (!el) return;
+
+    const prev = { transform: el.style.transform, width: el.style.width };
+    el.style.transform = 'none';
+    el.style.width = `${PRINT_PAGE_WIDTH_MM}mm`;
+    const naturalHeight = el.offsetHeight;
+    el.style.transform = prev.transform;
+    el.style.width = prev.width;
+
+    const next =
+      naturalHeight > PRINT_PAGE_HEIGHT_PX
+        ? Math.max(
+            PRINT_MIN_SCALE,
+            Math.floor((PRINT_PAGE_HEIGHT_PX / naturalHeight) * 1000) / 1000
+          )
+        : 1;
+    setScale(next);
+  }, [records, stats, selectedClass, selectedDate]);
+
+  return (
+    <div id="quran-print-root">
+      <div className="pr-page">
+        <div
+          ref={innerRef}
+          className="pr-inner"
+          style={{
+            transform: `scale(${scale})`,
+            // widen the content by 1/scale so the scaled result still fills the page width
+            width: scale < 1 ? `${100 / scale}%` : '100%'
+          }}
+        >
+          <h1 className="pr-title">{translations.heading}</h1>
+          <p className="pr-meta">
+            <b>{translations.class}:</b>{' '}
+            {selectedClass ? `${selectedClass.name} - ${selectedClass.subject}` : 'N/A'}
+            {'   |   '}
+            <b>{translations.date}:</b> {formatDate(selectedDate)}
+          </p>
+
+          <div className="pr-stats">
+            <div className="pr-stat"><b>{stats.total}</b>{translations.totalSessions}</div>
+            <div className="pr-stat"><b>{stats.students}</b>{translations.totalStudents}</div>
+            <div className="pr-stat"><b>{stats.gartay}</b>{getStatusConfig('gartay').label}</div>
+            <div className="pr-stat"><b>{stats.garanWaayay}</b>{getStatusConfig('garan waayay').label}</div>
+            <div className="pr-stat"><b>{stats.majoogo}</b>{getStatusConfig('majoogo').label}</div>
+            <div className="pr-stat"><b>{stats.comprehensionRate}%</b>{translations.comprehensionRate}</div>
+            <div className="pr-stat"><b>{stats.attendanceRate}%</b>{translations.attendanceRate}</div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th style={{ width: '4%' }}>#</th>
+                <th style={{ width: '20%' }}>{translations.student}</th>
+                <th style={{ width: '10%' }}>ID</th>
+                <th style={{ width: '12%' }}>{translations.status}</th>
+                <th style={{ width: '13%' }}>{translations.surah}</th>
+                <th style={{ width: '10%' }}>{translations.verses}</th>
+                <th style={{ width: '17%' }}>{translations.notes}</th>
+                <th style={{ width: '14%' }}>{translations.createdBy}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {records.map((record, index) => {
+                const colors = printStatusColors[record.status] || { bg: '#f3f4f6', color: '#374151' };
+                return (
+                  <tr key={record._id || index}>
+                    <td>{index + 1}</td>
+                    <td>{record.student?.fullname || translations.unknownStudent}</td>
+                    <td>{record.student?.studentId || 'N/A'}</td>
+                    <td>
+                      <span className="pr-badge" style={{ background: colors.bg, color: colors.color }}>
+                        {getStatusConfig(record.status).label}
+                      </span>
+                    </td>
+                    <td>{getRecordValue(record, 'surah', '-')}</td>
+                    <td>{versesText(record)}</td>
+                    <td>{getRecordValue(record, 'notes', '') || '-'}</td>
+                    <td>{record.createdBy?.username || 'System'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          <p className="pr-footer">
+            {translations.printedOn}: {formatDateTime(new Date().toISOString())}
+          </p>
+        </div>
+      </div>
     </div>
-
-    <table>
-      <thead>
-        <tr>
-          <th style={{ width: '4%' }}>#</th>
-          <th style={{ width: '20%' }}>{translations.student}</th>
-          <th style={{ width: '10%' }}>ID</th>
-          <th style={{ width: '12%' }}>{translations.status}</th>
-          <th style={{ width: '13%' }}>{translations.surah}</th>
-          <th style={{ width: '10%' }}>{translations.verses}</th>
-          <th style={{ width: '17%' }}>{translations.notes}</th>
-          <th style={{ width: '14%' }}>{translations.createdBy}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {records.map((record, index) => {
-          const colors = printStatusColors[record.status] || { bg: '#f3f4f6', color: '#374151' };
-          return (
-            <tr key={record._id || index}>
-              <td>{index + 1}</td>
-              <td>{record.student?.fullname || translations.unknownStudent}</td>
-              <td>{record.student?.studentId || 'N/A'}</td>
-              <td>
-                <span className="pr-badge" style={{ background: colors.bg, color: colors.color }}>
-                  {getStatusConfig(record.status).label}
-                </span>
-              </td>
-              <td>{getRecordValue(record, 'surah', '-')}</td>
-              <td>{versesText(record)}</td>
-              <td>{getRecordValue(record, 'notes', '') || '-'}</td>
-              <td>{record.createdBy?.username || 'System'}</td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-
-    <p className="pr-footer">
-      {translations.printedOn}: {formatDateTime(new Date().toISOString())}
-    </p>
-  </div>
-);
+  );
+};
 
 /* ------------------------------------------------------------------ */
 /* Page                                                                */
@@ -564,7 +619,7 @@ const ViewDailyQuranRecords = () => {
       toast.error(translations.noData);
       return;
     }
-    // Small delay so the print report is fully rendered before the dialog opens
+    // Small delay so the print report is fully rendered/measured before the dialog opens
     setTimeout(() => window.print(), 100);
   };
 
