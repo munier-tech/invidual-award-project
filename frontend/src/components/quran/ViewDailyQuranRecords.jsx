@@ -485,14 +485,13 @@ const PrintReport = ({ records, stats, selectedClass, selectedDate }) => {
           <table>
             <thead>
               <tr>
-                <th style={{ width: '4%' }}>#</th>
-                <th style={{ width: '20%' }}>{translations.student}</th>
-                <th style={{ width: '10%' }}>ID</th>
-                <th style={{ width: '12%' }}>{translations.status}</th>
-                <th style={{ width: '13%' }}>{translations.surah}</th>
-                <th style={{ width: '10%' }}>{translations.verses}</th>
+                <th style={{ width: '5%' }}>#</th>
+                <th style={{ width: '24%' }}>{translations.student}</th>
+                <th style={{ width: '12%' }}>ID</th>
+                <th style={{ width: '14%' }}>{translations.status}</th>
+                <th style={{ width: '16%' }}>{translations.surah}</th>
+                <th style={{ width: '12%' }}>{translations.verses}</th>
                 <th style={{ width: '17%' }}>{translations.notes}</th>
-                <th style={{ width: '14%' }}>{translations.createdBy}</th>
               </tr>
             </thead>
             <tbody>
@@ -511,7 +510,6 @@ const PrintReport = ({ records, stats, selectedClass, selectedDate }) => {
                     <td>{getRecordValue(record, 'surah', '-')}</td>
                     <td>{versesText(record)}</td>
                     <td>{getRecordValue(record, 'notes', '') || '-'}</td>
-                    <td>{record.createdBy?.username || 'System'}</td>
                   </tr>
                 );
               })}
