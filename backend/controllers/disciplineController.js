@@ -34,7 +34,7 @@ export const getAllDisciplineRecords = async (req, res) => {
     const records = await Discipline.find().populate("student", "fullname studentId");
     res.status(200).json(records);
   } catch (error) {
-    res.status(500).json({ message: "Failed to fetch discipline records", error });
+    res.status(500).json({ message: "Failed to fetch discipline records!", error });
   }
 };
 
