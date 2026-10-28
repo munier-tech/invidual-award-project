@@ -4,8 +4,12 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 import { useNavigate, Link } from 'react-router-dom'
 import { Lock, User, Eye, EyeOff, Loader2, Mail } from 'lucide-react'
+import { FiAlertCircle } from 'react-icons/fi'
 import { motion } from 'framer-motion'
 import useAuthStore from '../store/authStore'
+import { toast } from 'react-hot-toast'
+
+const FORGOT_TOAST_ID = 'auth-forgot-password'
 
 const schema = yup.object({
   email: yup
@@ -51,7 +55,9 @@ const formVariants = {
 
 function Login() {
   const navigate = useNavigate()
-  const { login, forgotPassword, isLoading, isAuthenticated, user } = useAuthStore()
+  const { login, forgotPassword, isLoading, isRequestingReset, isAuthenticated, user } = useAuthStore()
+  const [signingIn, setSigningIn] = React.useState(false)
+  const [loginError, setLoginError] = React.useState('')
   const [showPassword, setShowPassword] = React.useState(false)
   const [showForgotPassword, setShowForgotPassword] = React.useState(false)
   const [forgotEmail, setForgotEmail] = React.useState('')
@@ -73,11 +79,25 @@ function Login() {
   }, [isAuthenticated, navigate, user])
 
   const onSubmit = async (data) => {
-    const result = await login(data)
-    if (result.success) {
-      const destination = result.user?.role === 'teacher' ? '/quran' : '/dashboard'
-      navigate(destination)
+    if (signingIn) return
+    setSigningIn(true)
+    setLoginError('')
+    try {
+      const result = await login(data)
+      if (result?.success) {
+        const destination = result.user?.role === 'teacher' ? '/quran' : '/dashboard'
+        navigate(destination)
+      } else {
+        setLoginError(result?.message || 'Login failed')
+        // Keep the flag up briefly so the spinner doesn't flash on a fast failure
+        setSigningIn(false)
+      }
+    } catch (err) {
+      setLoginError(err?.message || 'Login failed')
+      setSigningIn(false)
     }
+    // On success we stay in the "signing in" state until the route changes,
+    // so the button never looks idle while the dashboard loads.
   }
 
   const handleForgotPassword = async (e) => {
@@ -87,7 +107,9 @@ function Login() {
       return
     }
 
+    toast.loading('Diraya linkga dib u hagaajinta...', { id: FORGOT_TOAST_ID })
     const result = await forgotPassword({ email: forgotEmail.trim() })
+    toast.dismiss(FORGOT_TOAST_ID)
     setForgotResetLink(result.resetLink || '')
     setForgotMessage(result.message || '')
     setShowForgotPassword(false)
@@ -231,16 +253,28 @@ function Login() {
               </button>
             </div>
 
+            {/* Inline error so the failure is visible next to the button */}
+            {loginError && (
+              <p
+                role="alert"
+                className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+              >
+                <FiAlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>{loginError}</span>
+              </p>
+            )}
+
             {/* Submit Button */}
             <motion.button
               type="submit"
-              disabled={isLoading}
+              disabled={signingIn || isLoading}
+              aria-busy={signingIn}
               className="w-full flex justify-center items-center text-black py-3 px-4 border border-black rounded-lg shadow-sm text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               variants={itemVariants}
-              whileHover={{ scale: isLoading ? 1 : 1.02 }}
-              whileTap={{ scale: isLoading ? 1 : 0.98 }}
+              whileHover={{ scale: signingIn ? 1 : 1.02 }}
+              whileTap={{ scale: signingIn ? 1 : 0.98 }}
             >
-              {isLoading ? (
+              {signingIn ? (
                 <>
                   <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5" />
                   Gelaya...
@@ -272,10 +306,11 @@ function Login() {
               </div>
               <button
                 type="submit"
-                disabled={isLoading}
-                className="w-full py-2 px-4 rounded-lg bg-primary-600 text-white text-sm font-medium disabled:opacity-50"
+                disabled={isRequestingReset || signingIn}
+                className="flex w-full items-center justify-center gap-2 py-2 px-4 rounded-lg bg-primary-600 text-white text-sm font-medium disabled:opacity-50"
               >
-                {isLoading ? 'Furay... ' : 'Dib u hagaajinta passwordka'}
+                {isRequestingReset && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+                {isRequestingReset ? 'Diraya...' : 'Dib u hagaajinta passwordka'}
               </button>
             </form>
           )}

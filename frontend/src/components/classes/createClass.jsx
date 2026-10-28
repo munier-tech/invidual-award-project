@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiSave } from 'react-icons/fi';
 import useClassesStore from '../../store/classesStore';
+import { toast } from 'react-hot-toast';
+
+const CREATE_TOAST_ID = 'store-class-create'; // same id the store uses, so one toast
 
 const CreateClass = () => {
   const { createClass } = useClassesStore();
@@ -48,10 +51,15 @@ const CreateClass = () => {
     setIsSubmitting(true);
     
     try {
+      toast.loading('Diiwaangelinaya fasalka...', { id: CREATE_TOAST_ID });
       const result = await createClass(formData);
+      toast.dismiss(CREATE_TOAST_ID);
       if (result.success) {
         navigate('/getAll');
       }
+    } catch (error) {
+      toast.dismiss(CREATE_TOAST_ID);
+      toast.error(error.response?.data?.message || 'Khalad ayaa dhacay markii fasalka la abuurayay');
     } finally {
       setIsSubmitting(false);
     }

@@ -9,6 +9,8 @@ import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import CertificateViewer from '../CertificateViewer';
 
+const TOAST_IDS = { remove: 'teacher-delete', update: 'teacher-edit' };
+
 // Animation variants
 const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } };
 const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1, transition: { duration: 0.5 } } };
@@ -48,7 +50,9 @@ const GetAllTeachers = () => {
 
   const handleDelete = async (id) => {
     if (window.confirm('Ma hubtaa inaad rabto inaad tirtirto macallinkan?')) {
+      toast.loading('Tirtiraya macallinka...', { id: TOAST_IDS.remove });
       const result = await deleteTeacher(id);
+      toast.dismiss(TOAST_IDS.remove);
       if (result.success) toast.success('Macallinka waa la tirtiray si guul leh');
     }
   };
@@ -117,7 +121,9 @@ const GetAllTeachers = () => {
       profilePicture: editForm.profilePicture,
       certificate: editForm.certificate
     };
+    toast.loading('Cusboonaysiinaya macallinka...', { id: TOAST_IDS.update });
     const result = await updateTeacher(id, payload);
+    toast.dismiss(TOAST_IDS.update);
     if (result.success) {
       toast.success('Macallinka waa la cusboonaysiiyay si guul leh');
       setEditingTeacher(null);

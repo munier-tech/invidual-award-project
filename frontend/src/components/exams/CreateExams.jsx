@@ -8,6 +8,8 @@ import useTeachersStore from "../../store/teachersStore";
 import { useSubjectStore } from "../../store/subjectsStore";
 import useClassesStore from "../../store/classesStore";
 
+const CREATE_TOAST_ID = "store-exam-create"; // shared with the store, so one toast
+
 const CreateExam = () => {
   const { createExam, isLoading, error, successMessage, clearMessages } = useExamStore();
   const { students, fetchStudents } = useStudentsStore();
@@ -84,6 +86,7 @@ const CreateExam = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
     clearMessages();
 
     if (!selectedStudent || !selectedSubject || !selectedTeacher || 
@@ -109,7 +112,9 @@ const CreateExam = () => {
     };
 
     try {
+      toast.loading('Diiwaangelinaya imtixaanka...', { id: CREATE_TOAST_ID });
       await createExam(payload);
+      toast.dismiss(CREATE_TOAST_ID);
       if (!error) {
         setFormData({ obtainedMarks: "", totalMarks: "", date: "", examType: "" });
         setSelectedStudent(null);
@@ -120,6 +125,7 @@ const CreateExam = () => {
       }
     } catch (err) {
       console.error("Exam creation error:", err);
+      toast.dismiss(CREATE_TOAST_ID);
       toast.error(error || "Failed to create exam");
     }
   };

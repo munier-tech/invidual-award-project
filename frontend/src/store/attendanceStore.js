@@ -1,6 +1,14 @@
 import { create } from 'zustand'
 import axios from '../config/axios'
 import toast from 'react-hot-toast'
+import { withSaveToast } from '../utils/saveToast'
+
+const TOAST_IDS = {
+  create: 'store-attendance-create',
+  update: 'store-attendance-update',
+  remove: 'store-attendance-delete',
+  load: 'store-attendance-load'
+}
 
 const useAttendanceStore = create((set, get) => ({
   // State
@@ -46,59 +54,80 @@ const useAttendanceStore = create((set, get) => ({
 
   createAttendance: async (attendanceData) => {
     set({ creating: true })
+    let outcome
     try {
-      const response = await axios.post('/attendance/create', attendanceData)
-      
-      set(state => ({
-        attendance: [...state.attendance, response.data.attendance],
-        creating: false
-      }))
-      
-      toast.success('Attendance record created successfully')
-      return { success: true, attendance: response.data.attendance }
+      outcome = await withSaveToast(toast, { id: TOAST_IDS.create, loading: 'Diiwaangelinaya xaadiriska...' }, async () => {
+        const response = await axios.post('/attendance/create', attendanceData)
+
+        set(state => ({
+          attendance: [...state.attendance, response.data.attendance],
+          creating: false
+        }))
+
+        toast.success('Attendance record created successfully')
+        return { success: true, attendance: response.data.attendance }
+      })
     } catch (error) {
       console.error('Error creating attendance:', error)
       const message = error.response?.data?.message || 'Failed to create attendance record'
+      toast.dismiss(TOAST_IDS.create)
       toast.error(message)
       set({ creating: false })
       return { success: false, message }
     }
+    if (outcome.thrown) {
+      set({ creating: false })
+      return { success: false, message: outcome.error }
+    }
+    return outcome
   },
 
   updateAttendance: async (id, attendanceData) => {
     set({ updating: true })
+    let outcome
     try {
-      const response = await axios.put(`/attendance/update/${id}`, attendanceData)
-      const updatedAttendance = response.data.attendance
-      
-      set(state => ({
-        attendance: state.attendance.map(record => 
-          record._id === id ? updatedAttendance : record
-        ),
-        selectedAttendance: state.selectedAttendance?._id === id ? updatedAttendance : state.selectedAttendance,
-        updating: false
-      }))
-      
-      toast.success('Attendance record updated successfully')
-      return { success: true, attendance: updatedAttendance }
+      outcome = await withSaveToast(toast, { id: TOAST_IDS.update, loading: 'Cusboonaysiinaya xaadiriska...' }, async () => {
+        const response = await axios.put(`/attendance/update/${id}`, attendanceData)
+        const updatedAttendance = response.data.attendance
+
+        set(state => ({
+          attendance: state.attendance.map(record =>
+            record._id === id ? updatedAttendance : record
+          ),
+          selectedAttendance: state.selectedAttendance?._id === id ? updatedAttendance : state.selectedAttendance,
+          updating: false
+        }))
+
+        toast.success('Attendance record updated successfully')
+        return { success: true, attendance: updatedAttendance }
+      })
     } catch (error) {
       console.error('Error updating attendance:', error)
       const message = error.response?.data?.message || 'Failed to update attendance record'
+      toast.dismiss(TOAST_IDS.update)
       toast.error(message)
       set({ updating: false })
       return { success: false, message }
     }
+    if (outcome.thrown) {
+      set({ updating: false })
+      return { success: false, message: outcome.error }
+    }
+    return outcome
   },
 
    getAttendanceClassByDate: async (classId, date) => {
     set({ loading: true });
 
     try {
+      toast.loading('Soo dejinaya xaadiriska...', { id: TOAST_IDS.load });
       const response = await axios.get(`/attendance/get/${classId}/${date}`);
+      toast.dismiss(TOAST_IDS.load);
       set({ attendance: response.data.attendance, loading: false });
       return { success: true, attendance: response.data.attendance };
     } catch (error) {
       console.error('Error fetching attendance:', error);
+      toast.dismiss(TOAST_IDS.load);
       toast.error(
         error?.response?.data?.message || 'Failed to fetch attendance'
       );
@@ -109,24 +138,33 @@ const useAttendanceStore = create((set, get) => ({
 
   deleteAttendance: async (id) => {
     set({ deleting: true })
+    let outcome
     try {
-      await axios.delete(`/attendance/delete/${id}`)
-      
-      set(state => ({
-        attendance: state.attendance.filter(record => record._id !== id),
-        selectedAttendance: state.selectedAttendance?._id === id ? null : state.selectedAttendance,
-        deleting: false
-      }))
-      
-      toast.success('Attendance record deleted successfully')
-      return { success: true }
+      outcome = await withSaveToast(toast, { id: TOAST_IDS.remove, loading: 'Tirtiraya xaadiriska...' }, async () => {
+        await axios.delete(`/attendance/delete/${id}`)
+
+        set(state => ({
+          attendance: state.attendance.filter(record => record._id !== id),
+          selectedAttendance: state.selectedAttendance?._id === id ? null : state.selectedAttendance,
+          deleting: false
+        }))
+
+        toast.success('Attendance record deleted successfully')
+        return { success: true }
+      })
     } catch (error) {
       console.error('Error deleting attendance:', error)
       const message = error.response?.data?.message || 'Failed to delete attendance record'
+      toast.dismiss(TOAST_IDS.remove)
       toast.error(message)
       set({ deleting: false })
       return { success: false, message }
     }
+    if (outcome.thrown) {
+      set({ deleting: false })
+      return { success: false, message: outcome.error }
+    }
+    return outcome
   },
 
   fetchAttendanceByClass: async (classId) => {

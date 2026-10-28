@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { FiDollarSign, FiPlus, FiCalendar, FiTrendingUp, FiTrendingDown, FiCreditCard } from 'react-icons/fi';
 import useFinanceStore from '../../store/financeStore';
 import { Loader } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+
+const FINANCE_TOAST_ID = 'store-finance-create';
 
 const AddFinance = () => {
   const { addFinance, loading, clearMessages } = useFinanceStore();
@@ -47,12 +50,14 @@ const AddFinance = () => {
     
     if (!validateForm()) return;
 
+    toast.loading('Diiwaangelinaya maalgelinta...', { id: FINANCE_TOAST_ID });
     const result = await addFinance({
       income: parseFloat(formData.income),
       expenses: parseFloat(formData.expenses),
       debt: parseFloat(formData.debt),
       date: formData.date
     });
+    toast.dismiss(FINANCE_TOAST_ID);
 
     if (result.success) {
       setFormData({
@@ -62,6 +67,8 @@ const AddFinance = () => {
         date: new Date().toISOString().split('T')[0]
       });
       setErrors({});
+    } else {
+      toast.error(result.error || 'Khalad ayaa dhacay');
     }
   };
 

@@ -1,5 +1,13 @@
 import { create } from "zustand";
 import axios from "../config/axios";
+import toast from "react-hot-toast";
+
+const TOAST_IDS = {
+  create: "store-family-fee-create",
+  update: "store-family-fee-update",
+  payment: "store-family-fee-payment",
+  remove: "store-family-fee-delete",
+};
 
 export const useFamilyFeeStore = create((set, get) => ({
   familyFees: [],
@@ -12,7 +20,9 @@ export const useFamilyFeeStore = create((set, get) => ({
   createFamilyFee: async (data) => {
     try {
       set({ loading: true });
+      toast.loading("Diiwaangelinaya lacagta qoyska...", { id: TOAST_IDS.create });
       const res = await axios.post("/family-fees/create", data);
+      toast.dismiss(TOAST_IDS.create);
       set((state) => ({
         familyFees: [res.data.familyFee, ...state.familyFees],
         loading: false,
@@ -20,6 +30,7 @@ export const useFamilyFeeStore = create((set, get) => ({
       return res.data.familyFee;
     } catch (err) {
       console.error("Error creating family fee:", err);
+      toast.dismiss(TOAST_IDS.create);
       set({ error: err.response?.data?.message || err.message, loading: false });
       throw err;
     }
@@ -64,7 +75,9 @@ export const useFamilyFeeStore = create((set, get) => ({
   updateFamilyFee: async (id, updatedData) => {
     try {
       set({ loading: true });
+      toast.loading("Cusboonaysiinaya lacagta qoyska...", { id: TOAST_IDS.update });
       const res = await axios.put(`/family-fees/update/${id}`, updatedData);
+      toast.dismiss(TOAST_IDS.update);
       set((state) => ({
         familyFees: state.familyFees.map((fee) =>
           fee._id === id ? res.data.familyFee : fee
@@ -75,6 +88,7 @@ export const useFamilyFeeStore = create((set, get) => ({
       return res.data.familyFee;
     } catch (err) {
       console.error("Error updating family fee:", err);
+      toast.dismiss(TOAST_IDS.update);
       set({ error: err.response?.data?.message || err.message, loading: false });
       throw err;
     }
@@ -84,7 +98,9 @@ export const useFamilyFeeStore = create((set, get) => ({
   processFamilyFeePayment: async (id, paymentData) => {
     try {
       set({ loading: true });
+      toast.loading("Diiwaangelinaya lacag bixinta...", { id: TOAST_IDS.payment });
       const res = await axios.put(`/family-fees/payment/${id}`, paymentData);
+      toast.dismiss(TOAST_IDS.payment);
       set((state) => ({
         familyFees: state.familyFees.map((fee) =>
           fee._id === id ? res.data.familyFee : fee
@@ -95,6 +111,7 @@ export const useFamilyFeeStore = create((set, get) => ({
       return res.data.familyFee;
     } catch (err) {
       console.error("Error processing family fee payment:", err);
+      toast.dismiss(TOAST_IDS.payment);
       set({ error: err.response?.data?.message || err.message, loading: false });
       throw err;
     }
@@ -104,7 +121,9 @@ export const useFamilyFeeStore = create((set, get) => ({
   deleteFamilyFee: async (id) => {
     try {
       set({ loading: true });
+      toast.loading("Tirtiraya lacagta qoyska...", { id: TOAST_IDS.remove });
       await axios.delete(`/family-fees/delete/${id}`);
+      toast.dismiss(TOAST_IDS.remove);
       set((state) => ({
         familyFees: state.familyFees.filter((fee) => fee._id !== id),
         currentFamilyFee: state.currentFamilyFee?._id === id ? null : state.currentFamilyFee,
@@ -112,6 +131,7 @@ export const useFamilyFeeStore = create((set, get) => ({
       }));
     } catch (err) {
       console.error("Error deleting family fee:", err);
+      toast.dismiss(TOAST_IDS.remove);
       set({ error: err.response?.data?.message || err.message, loading: false });
       throw err;
     }

@@ -22,6 +22,10 @@ import toast from 'react-hot-toast'
 import useUsersStore from '../store/usersStore'
 import useAuthStore from '../store/authStore'
 
+const CREATE_TOAST_ID = 'store-user-create'
+const UPDATE_TOAST_ID = 'store-user-update'
+const DELETE_TOAST_ID = 'store-user-delete'
+
 const userSchema = yup.object({
   username: yup.string().required('Magaca isticmaalaha ayaa loo baahan yahay').min(3, 'Magaca isticmaalahu wuxuu noqon karaa ugu yaraan 3 xaraf'),
   email: yup.string().email('Geli email sax ah').required('Email ayaa loo baahan yahay'),
@@ -121,11 +125,14 @@ function UserManagement() {
 
   const onSubmitCreate = async (data) => {
     try {
+      toast.loading('Diiwaangelinaya isticmaalaha...', { id: CREATE_TOAST_ID })
       await createUser(data)
+      toast.dismiss(CREATE_TOAST_ID)
       toast.success('Isticmaalaha si guul leh ayaa loo sameeyay!')
       reset()
       setShowCreateForm(false)
     } catch (error) {
+      toast.dismiss(CREATE_TOAST_ID)
       toast.error('Qalad ayaa ka dhacay')
     }
   }
@@ -133,15 +140,19 @@ function UserManagement() {
   const onSubmitUpdate = async (data) => {
     try {
       // Remove password if it's the placeholder
-      if (data.password === 'placeholder') {
-        delete data.password
+      const payload = { ...data }
+      if (payload.password === 'placeholder') {
+        delete payload.password
       }
       
-      await updateUser(selectedUser._id, data)
+      toast.loading('Cusboonaysiinaya isticmaalaha...', { id: UPDATE_TOAST_ID })
+      await updateUser(selectedUser._id, payload)
+      toast.dismiss(UPDATE_TOAST_ID)
       toast.success('Isticmaalaha si guul leh ayaa loo cusboonaysiiyay!')
       setShowEditForm(false)
       clearSelectedUser()
     } catch (error) {
+      toast.dismiss(UPDATE_TOAST_ID)
       toast.error('Qalad ayaa ka dhacay')
     }
   }
@@ -158,9 +169,12 @@ function UserManagement() {
   const handleDeleteUser = async (userId) => {
     if (window.confirm('Ma hubtaa inaad rabto inaad tirtirto isticmaalahan?')) {
       try {
+        toast.loading('Tirtiraya isticmaalaha...', { id: DELETE_TOAST_ID })
         await deleteUser(userId)
+        toast.dismiss(DELETE_TOAST_ID)
         toast.success('Isticmaalaha si guul leh ayaa loo tirtiray!')
       } catch (error) {
+        toast.dismiss(DELETE_TOAST_ID)
         toast.error('Qalad ayaa ka dhacay')
       }
     }

@@ -1,5 +1,13 @@
 import { create } from "zustand";
 import axios from "../config/axios";
+import toast from "react-hot-toast";
+
+const TOAST_IDS = {
+  create: "store-fee-create",
+  createClass: "store-fee-create-class",
+  update: "store-fee-update",
+  remove: "store-fee-delete",
+};
 
 export const useFeeStore = create((set, get) => ({
   feeRecords: [],
@@ -13,7 +21,9 @@ export const useFeeStore = create((set, get) => ({
   createFeeRecord: async (data) => {
     try {
       set({ loading: true });
+      toast.loading("Diiwaangelinaya lacagta...", { id: TOAST_IDS.create });
       const res = await axios.post("/fees/create", data);
+      toast.dismiss(TOAST_IDS.create);
       set((state) => ({
         feeRecords: [res.data.feeRecord, ...state.feeRecords],
         loading: false,
@@ -21,6 +31,7 @@ export const useFeeStore = create((set, get) => ({
       return res.data.feeRecord;
     } catch (err) {
       console.error("Error creating fee record:", err);
+      toast.dismiss(TOAST_IDS.create);
       set({ error: err.response?.data?.message || err.message, loading: false });
       throw err;
     }
@@ -30,7 +41,9 @@ export const useFeeStore = create((set, get) => ({
   createClassFees: async (data) => {
     try {
       set({ loading: true });
+      toast.loading("Diiwaangelinaya lacagta fasalka...", { id: TOAST_IDS.createClass });
       const res = await axios.post("/fees/create-class", data);
+      toast.dismiss(TOAST_IDS.createClass);
       set((state) => ({
         feeRecords: [...res.data.feeRecords, ...state.feeRecords],
         loading: false,
@@ -38,6 +51,7 @@ export const useFeeStore = create((set, get) => ({
       return res.data;
     } catch (err) {
       console.error("Error creating class fees:", err);
+      toast.dismiss(TOAST_IDS.createClass);
       set({ error: err.response?.data?.message || err.message, loading: false });
       throw err;
     }
@@ -101,7 +115,9 @@ export const useFeeStore = create((set, get) => ({
   updateFeeRecord: async (feeId, updatedData) => {
     try {
       set({ loading: true });
+      toast.loading("Cusboonaysiinaya lacagta...", { id: TOAST_IDS.update });
       const res = await axios.put(`/fees/update/${feeId}`, updatedData);
+      toast.dismiss(TOAST_IDS.update);
       set((state) => ({
         feeRecords: state.feeRecords.map((rec) =>
           rec._id === feeId ? res.data.feeRecord : rec
@@ -111,6 +127,7 @@ export const useFeeStore = create((set, get) => ({
       return res.data.feeRecord;
     } catch (err) {
       console.error("Error updating fee record:", err);
+      toast.dismiss(TOAST_IDS.update);
       set({ error: err.response?.data?.message || err.message, loading: false });
       throw err;
     }
@@ -120,13 +137,16 @@ export const useFeeStore = create((set, get) => ({
   deleteFeeRecord: async (feeId) => {
     try {
       set({ loading: true });
+      toast.loading("Tirtiraya diiwaanka lacagta...", { id: TOAST_IDS.remove });
       await axios.delete(`/fees/delete/${feeId}`);
+      toast.dismiss(TOAST_IDS.remove);
       set((state) => ({
         feeRecords: state.feeRecords.filter((rec) => rec._id !== feeId),
         loading: false,
       }));
     } catch (err) {
       console.error("Error deleting fee record:", err);
+      toast.dismiss(TOAST_IDS.remove);
       set({ error: err.response?.data?.message || err.message, loading: false });
       throw err;
     }

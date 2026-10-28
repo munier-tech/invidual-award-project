@@ -1,5 +1,13 @@
 import { create } from "zustand";
 import axios from "../config/axios";
+import toast from "react-hot-toast";
+
+const TOAST_IDS = {
+  create: "store-salary-create",
+  bulk: "store-salary-bulk",
+  update: "store-salary-update",
+  remove: "store-salary-delete",
+};
 
 export const useSalaryStore = create((set, get) => ({
   salaryRecords: [],
@@ -28,7 +36,9 @@ export const useSalaryStore = create((set, get) => ({
         totalAmount,
       };
 
+      toast.loading("Diiwaangelinaya mushaharka...", { id: TOAST_IDS.create });
       const res = await axios.post("/salaries/create", payload);
+      toast.dismiss(TOAST_IDS.create);
       set((state) => ({
         salaryRecords: [res.data.salaryRecord, ...state.salaryRecords],
         loading: false,
@@ -36,6 +46,7 @@ export const useSalaryStore = create((set, get) => ({
       return res.data.salaryRecord;
     } catch (err) {
       console.error("Error creating salary record:", err);
+      toast.dismiss(TOAST_IDS.create);
       set({ error: err.response?.data?.message || err.message, loading: false });
       throw err;
     }
@@ -45,7 +56,9 @@ export const useSalaryStore = create((set, get) => ({
   createAllTeachersSalaries: async (data) => {
     try {
       set({ loading: true });
+      toast.loading("Diiwaangelinaya mushaharrada macallimiinta...", { id: TOAST_IDS.bulk });
       const res = await axios.post("/salaries/create-all", data);
+      toast.dismiss(TOAST_IDS.bulk);
       set((state) => ({
         salaryRecords: [...res.data.salaryRecords, ...state.salaryRecords],
         loading: false,
@@ -53,6 +66,7 @@ export const useSalaryStore = create((set, get) => ({
       return res.data;
     } catch (err) {
       console.error("Error creating teacher salaries:", err);
+      toast.dismiss(TOAST_IDS.bulk);
       set({ error: err.response?.data?.message || err.message, loading: false });
       throw err;
     }
@@ -125,7 +139,9 @@ export const useSalaryStore = create((set, get) => ({
 
       const payload = { ...updatedData, amount, bonus, deductions, totalAmount };
 
+      toast.loading("Cusboonaysiinaya mushaharka...", { id: TOAST_IDS.update });
       const res = await axios.put(`/salaries/update/${salaryId}`, payload);
+      toast.dismiss(TOAST_IDS.update);
       set((state) => ({
         salaryRecords: state.salaryRecords.map((rec) => (rec._id === salaryId ? res.data.salaryRecord : rec)),
         loading: false,
@@ -133,6 +149,7 @@ export const useSalaryStore = create((set, get) => ({
       return res.data.salaryRecord;
     } catch (err) {
       console.error("Error updating salary record:", err);
+      toast.dismiss(TOAST_IDS.update);
       set({ error: err.response?.data?.message || err.message, loading: false });
       throw err;
     }
@@ -142,13 +159,16 @@ export const useSalaryStore = create((set, get) => ({
   deleteSalaryRecord: async (salaryId) => {
     try {
       set({ loading: true });
+      toast.loading("Tirtiraya mushaharka...", { id: TOAST_IDS.remove });
       await axios.delete(`/salaries/delete/${salaryId}`);
+      toast.dismiss(TOAST_IDS.remove);
       set((state) => ({
         salaryRecords: state.salaryRecords.filter((rec) => rec._id !== salaryId),
         loading: false,
       }));
     } catch (err) {
       console.error("Error deleting salary record:", err);
+      toast.dismiss(TOAST_IDS.remove);
       set({ error: err.response?.data?.message || err.message, loading: false });
       throw err;
     }

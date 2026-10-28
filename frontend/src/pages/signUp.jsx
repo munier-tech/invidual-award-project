@@ -8,6 +8,8 @@ import { motion } from 'framer-motion'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
 
+const SIGNUP_TOAST_ID = 'auth-signup'
+
 // Add role validation
 const schema = yup.object({
   username: yup.string().required('Fadlan geli magacaaga'),
@@ -72,7 +74,9 @@ function Signup() {
   }, [isAuthenticated, navigate])
 
   const onSubmit = async (data) => {
+    toast.loading('Diiwaangelinaya isticmaalaha...', { id: SIGNUP_TOAST_ID })
     const result = await signup(data)
+    toast.dismiss(SIGNUP_TOAST_ID)
     if (result.success) {
       if (user?.role === 'admin') {
         toast.success('User created successfully!')
@@ -81,6 +85,7 @@ function Signup() {
         navigate('/dashboard') // for public users
       }
     }
+    // failure toast already comes from the auth store
   }
 
   return (

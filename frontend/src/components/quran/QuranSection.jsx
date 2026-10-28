@@ -31,6 +31,13 @@ import {
 import { toast } from 'react-toastify'
 import PrintButton from '../common/PrintButton'
 
+const QURAN_TOAST_IDS = {
+  load: 'quran-section-load',
+  save: 'quran-section-save',
+  update: 'quran-section-update',
+  remove: 'quran-section-delete'
+}
+
 const statusConfig = {
   gaadhay: {
     label: 'Gaadhay',
@@ -202,11 +209,14 @@ function QuranSection() {
   const loadRecords = async (classId, m, y) => {
     setLoadingRecords(true)
     try {
+      toast.loading('Soo dejinaya diiwaannada...', { toastId: QURAN_TOAST_IDS.load })
       const res = await LessonRecordsAPI.getQuranByClassMonth(classId, m, y)
+      toast.dismiss(QURAN_TOAST_IDS.load)
       setRecords(res.data)
     } catch (e) { 
+      toast.dismiss(QURAN_TOAST_IDS.load)
       toast.error('Ku guuldareysatay helista diiwaannada bisha') 
-    } finally { 
+    } finally {  
       setLoadingRecords(false) 
     }
   }
@@ -247,7 +257,9 @@ function QuranSection() {
         notes: '', 
         studentPerformances: studentRows 
       }
+      toast.loading('Kaydinaya diiwaanka...', { toastId: QURAN_TOAST_IDS.save })
       const res = await LessonRecordsAPI.createQuran(payload)
+      toast.dismiss(QURAN_TOAST_IDS.save)
       setRecords(prev => [res.data, ...prev])
       setStudentRows(students.map(s => ({ 
         student: s._id, 
@@ -260,7 +272,8 @@ function QuranSection() {
       toast.success('Diiwaan la kaydiyay')
       if (isMobileView) setActiveTab('records')
     } catch (e) { 
-      toast.error('Kaydintu wey fashilantay') 
+      toast.dismiss(QURAN_TOAST_IDS.save)
+      toast.error('Kaydintu wey fashilantay')  
     } finally { 
       setSaving(false) 
     }
@@ -298,13 +311,16 @@ function QuranSection() {
   
   const saveEdit = async (id) => {
     try {
+      toast.loading('Cusboonaysiinaya diiwaanka...', { toastId: QURAN_TOAST_IDS.update })
       const res = await LessonRecordsAPI.update(id, { studentPerformances: editingRows })
+      toast.dismiss(QURAN_TOAST_IDS.update)
       setRecords(prev => prev.map(r => r._id === id ? res.data : r))
       setEditingRecordId(null)
       setEditingRows([])
       toast.success('Diiwaan waa la cusbooneysiiyay')
     } catch (e) { 
-      toast.error('Cusbooneysiintu waa fashilantay') 
+      toast.dismiss(QURAN_TOAST_IDS.update)
+      toast.error('Cusbooneysiintu waa fashilantay')  
     }
   }
   
@@ -312,11 +328,14 @@ function QuranSection() {
     if (!window.confirm('Ma hubtaa inaad tirtirto diiwaankan?')) return
     
     try {
+      toast.loading('Tirtiraya diiwaanka...', { toastId: QURAN_TOAST_IDS.remove })
       await LessonRecordsAPI.remove(id)
+      toast.dismiss(QURAN_TOAST_IDS.remove)
       setRecords(prev => prev.filter(r => r._id !== id))
       toast.success('Diiwaan waa la tirtiray')
     } catch (e) { 
-      toast.error('Tirtiristu waa fashilantay') 
+      toast.dismiss(QURAN_TOAST_IDS.remove)
+      toast.error('Tirtiristu waa fashilantay')  
     }
   }
 

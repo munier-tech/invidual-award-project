@@ -5,6 +5,9 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import { useForm } from 'react-hook-form'
 import * as yup from 'yup'
 import useAuthStore from '../store/authStore'
+import { toast } from 'react-hot-toast'
+
+const RESET_TOAST_ID = 'auth-reset-password'
 
 const schema = yup.object({
   newPassword: yup
@@ -38,7 +41,9 @@ function ResetPassword() {
       return
     }
 
+    toast.loading('Cusboonaysiinaya passwordka...', { id: RESET_TOAST_ID })
     const result = await resetPassword({ token, newPassword: data.newPassword })
+    toast.dismiss(RESET_TOAST_ID)
     if (result.success) {
       navigate('/login')
     }

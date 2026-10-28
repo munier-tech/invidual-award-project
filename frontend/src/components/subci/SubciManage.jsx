@@ -28,6 +28,15 @@ import { HalaqaAPI } from '../../api/halaqa';
 import { toast } from 'react-toastify';
 import useStudentsStore from '../../store/studentsStore';
 
+// One id per action so a loading toast is replaced by its own success/error toast
+const TOAST_IDS = {
+  create: 'halaqa-create',
+  saveMeta: 'halaqa-save-meta',
+  delete: 'halaqa-delete',
+  addStudent: 'halaqa-add-student',
+  removeStudent: 'halaqa-remove-student'
+};
+
 const statusColors = {
   active: 'bg-green-100 text-green-700 border-green-200',
   inactive: 'bg-gray-100 text-gray-700 border-gray-200',
@@ -107,13 +116,16 @@ const SubcisManage = () => {
     
     setSaving(true);
     try {
+      toast.loading('Xalqada la abuurayaa...', { toastId: TOAST_IDS.create });
       const res = await HalaqaAPI.create(creating);
       setHalaqas(prev => [res.data, ...prev]);
       setCreating({ name: '', startingSurah: '', taxdiid: '', description: '' });
       setMobileView('list');
+      toast.dismiss(TOAST_IDS.create);
       toast.success('Xalqad la abuuray');
     } catch (e) {
       console.error('Creation failed', e);
+      toast.dismiss(TOAST_IDS.create);
       if (e.response?.status === 403) {
         toast.error('You are not authorized to create this Halaqa.');
       } else {
@@ -140,13 +152,16 @@ const SubcisManage = () => {
     if (!selected) return;
     setSaving(true);
     try {
+      toast.loading('Xalqada la cusbooneysiinayaa...', { toastId: TOAST_IDS.saveMeta });
       const updatedHalaqa = { ...selected, ...editingMeta };
       const res = await HalaqaAPI.update(selected._id, updatedHalaqa);
       setHalaqas(prev => prev.map(h => h._id === selected._id ? res.data : h));
       setSelected(res.data);
+      toast.dismiss(TOAST_IDS.saveMeta);
       toast.success('Xalqad la cusbooneysiiyay');
     } catch (e) {
       console.error('Update failed', e);
+      toast.dismiss(TOAST_IDS.saveMeta);
       if (e.response?.status === 403) {
         toast.error('You are not authorized to access this Halaqa.');
       } else {
@@ -160,15 +175,18 @@ const SubcisManage = () => {
   const deleteHalaqa = async (id) => {
     if (!window.confirm('Ma hubtaa inaad tirtirayso?')) return;
     try {
+      toast.loading('Xalqada la tirtirayaa...', { toastId: TOAST_IDS.delete });
       await HalaqaAPI.remove(id);
       setHalaqas(prev => prev.filter(h => h._id !== id));
       if (selected?._id === id) {
         setSelected(null);
         setMobileView('list');
       }
+      toast.dismiss(TOAST_IDS.delete);
       toast.success('Xalqad la tirtiray');
     } catch (e) {
       console.error('Deletion failed', e);
+      toast.dismiss(TOAST_IDS.delete);
       if (e.response?.status === 403) {
         toast.error('You are not authorized to access this Halaqa.');
       } else {
@@ -181,12 +199,15 @@ const SubcisManage = () => {
     if (!selected) return;
     setSaving(true);
     try {
+      toast.loading('Ardayga la darayaa xalqada...', { toastId: TOAST_IDS.addStudent });
       const res = await HalaqaAPI.addStudents(selected._id, [sid]);
       setHalaqas(prev => prev.map(h => h._id === selected._id ? res.data : h));
       setSelected(res.data);
+      toast.dismiss(TOAST_IDS.addStudent);
       toast.success('Arday la daray');
     } catch (e) {
       console.error('Adding student failed', e);
+      toast.dismiss(TOAST_IDS.addStudent);
       if (e.response?.status === 403) {
         toast.error('You are not authorized to access this Halaqa.');
       } else {
@@ -201,12 +222,15 @@ const SubcisManage = () => {
     if (!selected) return;
     setSaving(true);
     try {
+      toast.loading('Ardayga laga saarayaa xalqada...', { toastId: TOAST_IDS.removeStudent });
       const res = await HalaqaAPI.removeStudent(selected._id, sid);
       setHalaqas(prev => prev.map(h => h._id === selected._id ? res.data : h));
       setSelected(res.data);
+      toast.dismiss(TOAST_IDS.removeStudent);
       toast.success('Arday la saaray');
     } catch (e) {
       console.error('Removing student failed', e);
+      toast.dismiss(TOAST_IDS.removeStudent);
       if (e.response?.status === 403) {
         toast.error('You are not authorized to access this Halaqa.');
       } else {
@@ -835,6 +859,9 @@ const SubcisManage = () => {
           </div>
         </div>
       </div>
+
+      {/* react-toastify needs its container mounted, otherwise none of the toasts above show */}
+
 
       <style jsx global>{`
         .line-clamp-2 {

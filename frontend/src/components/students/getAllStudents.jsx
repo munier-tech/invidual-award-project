@@ -6,6 +6,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import useClassesStore from '../../store/classesStore';
 import useStudentsStore from '../../store/studentsStore';
 
+const TOAST_IDS = {
+  assign: 'student-assign-class',
+  remove: 'student-delete',
+  update: 'student-quick-edit'
+};
+
 const translations = {
   header: {
     title: "Maamulka Ardayda",
@@ -92,13 +98,16 @@ const GetAllStudents = () => {
     }
     
     try {
+      toast.loading('Ardayga fasalka loo qoondeynayaa...', { id: TOAST_IDS.assign });
       const { success } = await assignStudentToClass(currentStudent._id, selectedClassId);
+      toast.dismiss(TOAST_IDS.assign);
       if (success) {
         toast.success('Ardayga si guul leh ayaa loo qoondeeyay fasalka');
         setIsAssignDialogOpen(false);
         fetchStudents();
       }
     } catch (error) {
+      toast.dismiss(TOAST_IDS.assign);
       toast.error('Qalad ayaa ka dhacay markii la qoondeynayay fasalka');
     }
   };
@@ -107,26 +116,32 @@ const GetAllStudents = () => {
     if (!currentStudent) return;
     
     try {
+      toast.loading('Tirtiraya ardayga...', { id: TOAST_IDS.remove });
       const { success } = await deleteStudent(currentStudent._id);
+      toast.dismiss(TOAST_IDS.remove);
       if (success) {
         toast.success('Ardayga si guul leh ayaa loo tirtiray');
         setIsDeleteDialogOpen(false);
         fetchStudents();
       }
     } catch (error) {
+      toast.dismiss(TOAST_IDS.remove);
       toast.error('Qalad ayaa ka dhacay markii la tirtirayay ardayga');
     }
   };
 
   const handleEditStudent = async () => {
     try {
+      toast.loading('Cusboonaysiinaya ardayga...', { id: TOAST_IDS.update });
       const { success } = await updateStudent(currentStudent._id, editForm);
+      toast.dismiss(TOAST_IDS.update);
       if (success) {
         toast.success('Ardayga si guul leh ayaa loo cusboonaysiiyay');
         setIsEditDialogOpen(false);
         fetchStudents();
       }
     } catch (error) {
+      toast.dismiss(TOAST_IDS.update);
       toast.error('Qalad ayaa ka dhacay markii la cusboonaysiinayay ardayga');
     }
   };

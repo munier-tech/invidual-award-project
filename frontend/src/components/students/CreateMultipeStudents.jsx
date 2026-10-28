@@ -7,6 +7,8 @@ import { motion } from 'framer-motion';
 import useStudentsStore from '../../store/studentsStore';
 import useClassesStore from '../../store/classesStore';
 
+const BULK_TOAST_ID = 'students-create-bulk';
+
 const containerVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, staggerChildren: 0.08 } }
@@ -116,7 +118,9 @@ const CreateMultipleStudents = () => {
         
         console.log('Manual payload:', payload);
         // CORRECTED: Pass two parameters - studentsData and null for formData
+        toast.loading(`Diiwaangelinaya ${students.length} arday...`, { id: BULK_TOAST_ID });
         const res = await createMultipleStudents(payload, null);
+        toast.dismiss(BULK_TOAST_ID);
         if (res.success) {
           toast.success(`${students.length} arday ayaa loo guuleystay in lagu daro fasalka`);
           navigate('/getAllStudents');
@@ -137,7 +141,9 @@ const CreateMultipleStudents = () => {
         }
         
         // CORRECTED: Pass two parameters - null for studentsData and formData
+        toast.loading('Soo gelinaya ardayda Excel-ka...', { id: BULK_TOAST_ID });
         const res = await createMultipleStudents(null, formData);
+        toast.dismiss(BULK_TOAST_ID);
         if (res.success) {
           toast.success('Ardayada Excel-ka ayaa loo guuleystay in lagu daro fasalka');
           navigate('/getAllStudents');
@@ -145,6 +151,7 @@ const CreateMultipleStudents = () => {
       }
     } catch (err) {
       console.error('Submit error:', err);
+      toast.dismiss(BULK_TOAST_ID);
       toast.error(err.message || 'Qalad ayaa dhacay');
     }
   };

@@ -126,6 +126,15 @@ const dedupeById = (items = []) => {
 
 const todayLocal = () => toLocalISO(new Date());
 
+// Separate id for each form, so a save in progress never replaces another
+// form's loading toast (e.g. updating a record vs. creating new ones).
+const SINGLE_TOAST_ID = 'daily-quran-save-single';
+const BULK_TOAST_ID = 'daily-quran-save-bulk';
+const PDF_TOAST_ID = 'daily-quran-pdf';
+
+const saveLoadingMessage = (isUpdate, name) =>
+  isUpdate ? `Cusboonaysiinaya diiwaanka${name ? ` ${name}` : ''}...` : `Diiwaangelinaya${name ? ` ${name}` : ''}...`;
+
 const shiftDate = (iso, days) => {
   const [y, m, d] = iso.split('-').map(Number);
   return toLocalISO(new Date(y, m - 1, d + days));
@@ -693,19 +702,23 @@ const CreateDailyQuranSession = () => {
 
     setSavingId(studentId);
     try {
+      toast.loading(saveLoadingMessage(Boolean(record.sessionId), record.name), { id: SINGLE_TOAST_ID });
       const payload = { status: record.status, date: selectedDate, ...lessonOf(record) };
       const result = record.sessionId
         ? await updateDailyQuran(record.sessionId, payload)
         : await createDailyQuran({ student: studentId, class: selectedClassId, ...payload });
 
       if (result?.success) {
+        toast.dismiss(SINGLE_TOAST_ID);
         toast.success(record.sessionId ? 'Casharka maalinle waa la cusboonaysiiyay' : 'Casharka maalinle waa lagu daray');
         setQuranRecords((prev) => prev.map((r) => (r.student === studentId ? { ...r, dirty: false } : r)));
         await fetchSessions(true); // silent: other unsaved rows keep their edits
       } else {
+        toast.dismiss(SINGLE_TOAST_ID);
         toast.error(result?.error || translations.error);
       }
     } catch (err) {
+      toast.dismiss(SINGLE_TOAST_ID);
       toast.error(err?.message || translations.error);
     } finally {
       setSavingId(null);
@@ -720,6 +733,7 @@ const CreateDailyQuranSession = () => {
 
     setSavingAll(true);
     try {
+      toast.loading(`Diiwaangelinaya ${quranRecords.length} arday...`, { id: BULK_TOAST_ID });
       const result = await createBulkDailyQuran({
         classId: selectedClassId,
         date: selectedDate,
@@ -727,14 +741,17 @@ const CreateDailyQuranSession = () => {
       });
 
       if (result?.success) {
+        toast.dismiss(BULK_TOAST_ID);
         toast.success(result.message || `${quranRecords.length} arday ayaa loo diiwaangeliyay`);
         setQuranRecords((prev) => prev.map((r) => ({ ...r, dirty: false })));
         await fetchSessions(true);
       } else {
+        toast.dismiss(BULK_TOAST_ID);
         toast.error(result?.error || translations.error);
       }
     } catch (err) {
       console.error('Bulk save error:', err);
+      toast.dismiss(BULK_TOAST_ID);
       toast.error(err?.message || translations.error);
     } finally {
       setSavingAll(false);
@@ -816,6 +833,7 @@ const CreateDailyQuranSession = () => {
     }
 
     setPdfBusy(true);
+    toast.loading('Diyaarinaya PDF-ka...', { id: PDF_TOAST_ID });
     const holder = document.createElement('div');
     holder.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;padding:24px;background:#fff';
     holder.innerHTML = `<style>${REPORT_CSS}</style>${buildReportBody()}`;
@@ -856,9 +874,11 @@ const CreateDailyQuranSession = () => {
 
       pdf.save(`Cashar_Maalinle_${selectedClass?.name || 'Fasalka'}_${selectedDate}.pdf`);
       setShowPrintModal(false);
+      toast.dismiss(PDF_TOAST_ID);
       toast.success('Warbixinta PDF ayaa la soo dejiyay');
     } catch (err) {
       console.error('PDF generation error:', err);
+      toast.dismiss(PDF_TOAST_ID);
       toast.error('Khalad ayaa dhacay markii la sameeyay PDF');
     } finally {
       holder.remove();

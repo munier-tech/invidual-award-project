@@ -1,5 +1,13 @@
 import { create } from "zustand";
 import axios from "../config/axios"; 
+import toast from "react-hot-toast";
+
+const TOAST_IDS = {
+  create: "store-subject-create",
+  update: "store-subject-update",
+  remove: "store-subject-delete",
+  load: "store-subject-load",
+};
 
 export const useSubjectStore = create((set) => ({
   subjects: [],
@@ -15,13 +23,16 @@ export const useSubjectStore = create((set) => ({
   createSubject: async (data) => {
     try {
       set({ isLoading: true, error: null });
+      toast.loading("Diiwaangelinaya maadada...", { id: TOAST_IDS.create });
       const res = await axios.post("/subjects/create", data);
+      toast.dismiss(TOAST_IDS.create);
       set((state) => ({
         subjects: [...state.subjects, res.data.subject],
         successMessage: res.data.message,
         isLoading: false,
       }));
     } catch (err) {
+      toast.dismiss(TOAST_IDS.create);
       set({
         error: err.response?.data?.message || "Failed to create subject",
         isLoading: false,
@@ -68,7 +79,9 @@ getAllSubjects: async () => {
   updateSubject: async (subjectId, data) => {
     try {
       set({ isLoading: true, error: null });
+      toast.loading("Cusboonaysiinaya maadada...", { id: TOAST_IDS.update });
       const res = await axios.put(`/subjects/update/${subjectId}`, data);
+      toast.dismiss(TOAST_IDS.update);
       set((state) => ({
         subjects: state.subjects.map((s) =>
           s._id === subjectId ? res.data.subject : s
@@ -77,6 +90,7 @@ getAllSubjects: async () => {
         isLoading: false,
       }));
     } catch (err) {
+      toast.dismiss(TOAST_IDS.update);
       set({
         error: err.response?.data?.message || "Failed to update subject",
         isLoading: false,
@@ -88,13 +102,16 @@ getAllSubjects: async () => {
   deleteSubject: async (subjectId) => {
     try {
       set({ isLoading: true, error: null });
+      toast.loading("Tirtiraya maadada...", { id: TOAST_IDS.remove });
       await axios.delete(`/subjects/delete/${subjectId}`);
+      toast.dismiss(TOAST_IDS.remove);
       set((state) => ({
         subjects: state.subjects.filter((s) => s._id !== subjectId),
         successMessage: "Subject deleted",
         isLoading: false,
       }));
     } catch (err) {
+      toast.dismiss(TOAST_IDS.remove);
       set({
         error: err.response?.data?.message || "Failed to delete subject",
         isLoading: false,

@@ -1,6 +1,13 @@
 import { create } from 'zustand'
 import axios from '../config/axios'
 import toast from 'react-hot-toast'
+import { withSaveToast } from '../utils/saveToast'
+
+const TOAST_IDS = {
+  create: 'store-user-create',
+  update: 'store-user-update',
+  remove: 'store-user-delete'
+}
 
 const useUsersStore = create((set, get) => ({
   // State
@@ -29,71 +36,98 @@ const useUsersStore = create((set, get) => ({
 
   createUser: async (userData) => {
     set({ creating: true })
+    let outcome
     try {
-      const response = await axios.post('/auth/signUp', userData)
-      
-      // Add the new user to the local state
-      set(state => ({
-        users: [...state.users, response.data.user],
-        creating: false
-      }))
-      
-      toast.success('User created successfully')
-      return { success: true, user: response.data.user }
+      outcome = await withSaveToast(toast, { id: TOAST_IDS.create, loading: 'Diiwaangelinaya isticmaalaha...' }, async () => {
+        const response = await axios.post('/auth/signUp', userData)
+
+        // Add the new user to the local state
+        set(state => ({
+          users: [...state.users, response.data.user],
+          creating: false
+        }))
+
+        toast.success('User created successfully')
+        return { success: true, user: response.data.user }
+      })
     } catch (error) {
       console.error('Error creating user:', error)
       const message = error.response?.data?.message || 'Failed to create user'
+      toast.dismiss(TOAST_IDS.create)
       toast.error(message)
       set({ creating: false })
       return { success: false, message }
     }
+    if (outcome.thrown) {
+      set({ creating: false })
+      return { success: false, message: outcome.error }
+    }
+    return outcome
   },
 
   updateUser: async (id, userData) => {
     set({ updating: true })
+    let outcome
     try {
-      const response = await axios.put(`/auth/update/${id}`, userData)
-      const updatedUser = response.data.user
-      
-      set(state => ({
-        users: state.users.map(user => 
-          user._id === id ? updatedUser : user
-        ),
-        selectedUser: state.selectedUser?._id === id ? updatedUser : state.selectedUser,
-        updating: false
-      }))
-      
-      toast.success('User updated successfully')
-      return { success: true, user: updatedUser }
+      outcome = await withSaveToast(toast, { id: TOAST_IDS.update, loading: 'Cusboonaysiinaya isticmaalaha...' }, async () => {
+        const response = await axios.put(`/auth/update/${id}`, userData)
+        const updatedUser = response.data.user
+
+        set(state => ({
+          users: state.users.map(user =>
+            user._id === id ? updatedUser : user
+          ),
+          selectedUser: state.selectedUser?._id === id ? updatedUser : state.selectedUser,
+          updating: false
+        }))
+
+        toast.success('User updated successfully')
+        return { success: true, user: updatedUser }
+      })
     } catch (error) {
       console.error('Error updating user:', error)
       const message = error.response?.data?.message || 'Failed to update user'
+      toast.dismiss(TOAST_IDS.update)
       toast.error(message)
       set({ updating: false })
       return { success: false, message }
     }
+    if (outcome.thrown) {
+      set({ updating: false })
+      return { success: false, message: outcome.error }
+    }
+    return outcome
   },
 
   deleteUser: async (id) => {
     set({ deleting: true })
+    let outcome
     try {
-      await axios.delete(`/auth/delete/${id}`)
-      
-      set(state => ({
-        users: state.users.filter(user => user._id !== id),
-        selectedUser: state.selectedUser?._id === id ? null : state.selectedUser,
-        deleting: false
-      }))
-      
-      toast.success('User deleted successfully')
-      return { success: true }
+      outcome = await withSaveToast(toast, { id: TOAST_IDS.remove, loading: 'Tirtiraya isticmaalaha...' }, async () => {
+        await axios.delete(`/auth/delete/${id}`)
+
+        set(state => ({
+          users: state.users.filter(user => user._id !== id),
+          selectedUser: state.selectedUser?._id === id ? null : state.selectedUser,
+          deleting: false
+        }))
+
+        toast.success('User deleted successfully')
+        return { success: true }
+      })
     } catch (error) {
       console.error('Error deleting user:', error)
       const message = error.response?.data?.message || 'Failed to delete user'
+      toast.dismiss(TOAST_IDS.remove)
       toast.error(message)
       set({ deleting: false })
       return { success: false, message }
     }
+    if (outcome.thrown) {
+      set({ deleting: false })
+      return { success: false, message: outcome.error }
+    }
+    return outcome
   },
 
   // Utility functions

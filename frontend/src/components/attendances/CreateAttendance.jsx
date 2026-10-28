@@ -29,6 +29,8 @@ const translations = {
   requiredFields: "Fadlan buuxi dhammaan goobaha loo baahan yahay"
 };
 
+const SAVE_TOAST_ID = 'attendance-create-form';
+
 const CreateAttendance = () => {
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -78,6 +80,7 @@ const CreateAttendance = () => {
     }
 
     try {
+      toast.loading(translations.creating, { id: SAVE_TOAST_ID });
       const attendanceData = {
         classId: selectedClassId,
         date: selectedDate,
@@ -85,6 +88,7 @@ const CreateAttendance = () => {
       };
 
       const result = await createAttendance(attendanceData);
+      toast.dismiss(SAVE_TOAST_ID);
       
       if (result.success) {
         toast.success(translations.success);
@@ -94,6 +98,8 @@ const CreateAttendance = () => {
         setAttendanceRecords([]);
       }
     } catch (error) {
+      toast.dismiss(SAVE_TOAST_ID);
+      toast.error(translations.error);
     }
   };
 

@@ -83,7 +83,9 @@ const FamilyFees = () => {
     };
 
     try {
+      toast.loading('Diiwaangelinaya lacagta qoyska...', { id: CREATE_TOAST_ID });
       await createFamilyFee(payload);
+      toast.dismiss(CREATE_TOAST_ID);
       toast.success('Diiwaanka lacagta qoyska waa la abuuray');
       setForm({
         familyName: '',
@@ -97,6 +99,7 @@ const FamilyFees = () => {
       });
       await getAllFamilyFees({ month: form.month, year: form.year });
     } catch (err) {
+      toast.dismiss(CREATE_TOAST_ID);
       toast.error(err.response?.data?.message || 'Khalad ayaa dhacay');
     }
   };
@@ -108,16 +111,22 @@ const FamilyFees = () => {
       return;
     }
     try {
+      toast.loading('Diiwaangelinaya lacag bixinta...', { id: PAYMENT_TOAST_ID });
       await processFamilyFeePayment(familyFeeId, { paidAmount: amount });
+      toast.dismiss(PAYMENT_TOAST_ID);
       toast.success('Lacag bixinta waa la cusboonaysiiyay');
       setPayInputs(prev => ({ ...prev, [familyFeeId]: '' }));
       await getAllFamilyFees({ month: form.month, year: form.year });
     } catch (err) {
+      toast.dismiss(PAYMENT_TOAST_ID);
       toast.error(err.response?.data?.message || 'Khalad ayaa dhacay lacag bixinta');
     }
   };
 
   const remaining = (fee) => Math.max((fee.totalAmount || 0) - (fee.paidAmount || 0), 0);
+
+const CREATE_TOAST_ID = 'store-family-fee-create';
+const PAYMENT_TOAST_ID = 'store-family-fee-payment';
 
   return (
     <div className="container mx-auto px-4 py-8">

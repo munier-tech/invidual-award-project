@@ -18,6 +18,8 @@ import toast from 'react-hot-toast'
 import useStudentsStore from '../store/studentsStore'
 import useClassesStore from '../store/classesStore'
 
+const TOAST_IDS = { save: 'students-page-save', remove: 'students-page-delete' }
+
 const studentSchema = yup.object({
   fullname: yup.string().required('Full name is required'),
   age: yup.number().min(5, 'Age must be at least 5').max(25, 'Age cannot exceed 25'),
@@ -90,18 +92,32 @@ function Students() {
 
   const handleDeleteStudent = async (studentId, studentName) => {
     if (window.confirm(`Are you sure you want to delete ${studentName}?`)) {
-      await deleteStudent(studentId)
+      try {
+        toast.loading('Tirtiraya ardayga...', { id: TOAST_IDS.remove })
+        await deleteStudent(studentId)
+        toast.dismiss(TOAST_IDS.remove)
+      } catch (error) {
+        toast.dismiss(TOAST_IDS.remove)
+        toast.error(error.message || 'Qalad ayaa ka dhacay tirtirista ardayga')
+      }
     }
   }
 
   const onSubmit = async (data) => {
-    const result = editingStudent 
-      ? await updateStudent(editingStudent._id, data)
-      : await createStudent(data)
-    
-    if (result.success) {
-      setShowDialog(false)
-      reset()
+    try {
+      toast.loading(editingStudent ? 'Cusboonaysiinaya ardayga...' : 'Diiwaangelinaya ardayga...', { id: TOAST_IDS.save })
+      const result = editingStudent 
+        ? await updateStudent(editingStudent._id, data)
+        : await createStudent(data)
+      toast.dismiss(TOAST_IDS.save)
+
+      if (result.success) {
+        setShowDialog(false)
+        reset()
+      }
+    } catch (error) {
+      toast.dismiss(TOAST_IDS.save)
+      toast.error(error.message || 'Qalad ayaa dhacay')
     }
   }
 

@@ -7,6 +7,10 @@ import useAttendanceStore from '../../store/attendanceStore';
 import useClassesStore from '../../store/classesStore';
 import PrintButton from '../common/PrintButton';
 
+const LOAD_TOAST_ID = 'store-attendance-load';
+const UPDATE_TOAST_ID = 'attendance-update-status';
+const DELETE_TOAST_ID = 'store-attendance-delete';
+
 const AttendanceByDate = () => {
   const navigate = useNavigate();
   
@@ -44,7 +48,9 @@ const AttendanceByDate = () => {
     if (!selectedClass || !selectedDate) return;
     
     try {
+      toast.loading('Soo dejinaya xaadiriska...', { id: LOAD_TOAST_ID });
       const response = await getAttendanceClassByDate(selectedClass, selectedDate);
+      toast.dismiss(LOAD_TOAST_ID);
       if (response.success) {
         setAttendance(response.attendance);
       } else {
@@ -52,6 +58,7 @@ const AttendanceByDate = () => {
       }
     } catch (error) {
       console.error('Error fetching attendance:', error);
+      toast.dismiss(LOAD_TOAST_ID);
       toast.error('Khalad ayaa dhacay markii la soo dejiniyay xogta xaadiriska');
       setAttendance(null);
     }
@@ -62,7 +69,8 @@ const AttendanceByDate = () => {
     if (!editedStatus) return;
     
     try {
-      const updatedStudents = attendance.students.map(student => 
+      toast.loading('Cusbooneysiinaya xaadiriska...', { id: UPDATE_TOAST_ID });
+      const updatedStudents = attendance.students.map(student =>  
         student.student._id === studentId ? { ...student, status: editedStatus } : student
       );
       
@@ -72,10 +80,12 @@ const AttendanceByDate = () => {
       };
       
       await updateAttendance(attendance._id, updatedAttendance);
+      toast.dismiss(UPDATE_TOAST_ID);
       setAttendance(updatedAttendance);
       setEditingId(null);
       toast.success('Xaaladda xaadiriska si guul leh ayaa loo cusbooneysiiyay');
     } catch (error) {
+      toast.dismiss(UPDATE_TOAST_ID);
       toast.error('Khalad ayaa dhacay markii la cusbooneysiinayay xaadiriska');
       console.error('Error updating attendance:', error);
     }
@@ -87,10 +97,13 @@ const AttendanceByDate = () => {
     if (!confirmation) return;
     
     try {
+      toast.loading('Tirtiraya xaadiriska...', { id: DELETE_TOAST_ID });
       await deleteAttendance(attendance?._id);
+      toast.dismiss(DELETE_TOAST_ID);
       toast.success('Xaadiriska si guul leh ayaa loo tirtiray');
       setAttendance(null);
     } catch (error) {
+      toast.dismiss(DELETE_TOAST_ID);
       toast.error('Khalad ayaa dhacay markii la tirtirayay xaadiriska');
       console.error('Error deleting attendance:', error);
     }

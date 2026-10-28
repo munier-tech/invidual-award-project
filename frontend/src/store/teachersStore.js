@@ -1,6 +1,13 @@
 import { create } from "zustand";
 import axios from "../config/axios";
 import toast from "react-hot-toast";
+import { withSaveToast } from "../utils/saveToast";
+
+const TOAST_IDS = {
+  create: "store-teacher-create",
+  update: "store-teacher-update",
+  remove: "store-teacher-delete",
+};
 
 const useTeachersStore = create((set, get) => ({
   // ===========================
@@ -63,19 +70,26 @@ const useTeachersStore = create((set, get) => ({
   createTeacher: async (teacherData) => {
     set({ creating: true });
     try {
-      const response = await axios.post("/teachers/create", teacherData, {
-        withCredentials: true,
-      }); // Do NOT set Content-Type manually
+      return await withSaveToast(
+        toast,
+        { id: TOAST_IDS.create, loading: "Diiwaangelinaya macallinka..." },
+        async () => {
+          const response = await axios.post("/teachers/create", teacherData, {
+            withCredentials: true,
+          }); // Do NOT set Content-Type manually
 
-      set((state) => ({
-        teachers: [...state.teachers, response.data.teacher],
-        creating: false,
-      }));
+          set((state) => ({
+            teachers: [...state.teachers, response.data.teacher],
+            creating: false,
+          }));
 
-      toast.success("macalinka si guul leh ayaa loo abuuray");
-      return { success: true, teacher: response.data.teacher };
+          toast.success("macalinka si guul leh ayaa loo abuuray");
+          return { success: true, teacher: response.data.teacher };
+        }
+      );
     } catch (error) {
       console.error("Error creating teacher:", error);
+      toast.dismiss(TOAST_IDS.create);
       toast.error(error.response?.data?.message || "fadlan khadka iska hubi");
       set({ creating: false });
       return { success: false };
@@ -88,27 +102,34 @@ const useTeachersStore = create((set, get) => ({
   updateTeacher: async (id, teacherData) => {
     set({ updating: true });
     try {
-      const response = await axios.put(`/teachers/update/${id}`, teacherData, {
-        withCredentials: true,
-      });
+      return await withSaveToast(
+        toast,
+        { id: TOAST_IDS.update, loading: "Cusboonaysiinaya macallinka..." },
+        async () => {
+          const response = await axios.put(`/teachers/update/${id}`, teacherData, {
+            withCredentials: true,
+          });
 
-      const updatedTeacher = response.data.teacher;
+          const updatedTeacher = response.data.teacher;
 
-      set((state) => ({
-        teachers: state.teachers.map((t) =>
-          t._id === id ? updatedTeacher : t
-        ),
-        selectedTeacher:
-          state.selectedTeacher?._id === id
-            ? updatedTeacher
-            : state.selectedTeacher,
-        updating: false,
-      }));
+          set((state) => ({
+            teachers: state.teachers.map((t) =>
+              t._id === id ? updatedTeacher : t
+            ),
+            selectedTeacher:
+              state.selectedTeacher?._id === id
+                ? updatedTeacher
+                : state.selectedTeacher,
+            updating: false,
+          }));
 
-      toast.success("macalinka si guul leh ayaa loo cusboonaysiiyay");
-      return { success: true, teacher: updatedTeacher };
+          toast.success("macalinka si guul leh ayaa loo cusboonaysiiyay");
+          return { success: true, teacher: updatedTeacher };
+        }
+      );
     } catch (error) {
       console.error("Error updating teacher:", error);
+      toast.dismiss(TOAST_IDS.update);
       toast.error(error.response?.data?.message || "fadlan khadka iska hubi");
       set({ updating: false });
       return { success: false };
@@ -121,18 +142,25 @@ const useTeachersStore = create((set, get) => ({
   deleteTeacher: async (id) => {
     set({ deleting: true });
     try {
-      await axios.delete(`/teachers/delete/${id}`, { withCredentials: true });
+      return await withSaveToast(
+        toast,
+        { id: TOAST_IDS.remove, loading: "Tirtiraya macallinka..." },
+        async () => {
+          await axios.delete(`/teachers/delete/${id}`, { withCredentials: true });
 
-      set((state) => ({
-        teachers: state.teachers.filter((t) => t._id !== id),
-        selectedTeacher:
-          state.selectedTeacher?._id === id ? null : state.selectedTeacher,
-        deleting: false,
-      }));
+          set((state) => ({
+            teachers: state.teachers.filter((t) => t._id !== id),
+            selectedTeacher:
+              state.selectedTeacher?._id === id ? null : state.selectedTeacher,
+            deleting: false,
+          }));
 
-      toast.success("Teacher deleted successfully");
-      return { success: true };
+          toast.success("Teacher deleted successfully");
+          return { success: true };
+        }
+      );
     } catch (error) {
+      toast.dismiss(TOAST_IDS.remove);
       toast.error(error.response?.data?.message || "fadlan khadka iska hubi");
       set({ deleting: false });
       return { success: false };

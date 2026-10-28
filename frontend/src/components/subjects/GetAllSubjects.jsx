@@ -3,6 +3,9 @@ import { FiEdit, FiTrash2, FiBookOpen, FiSave, FiX } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import { useSubjectStore } from "../../store/subjectsStore";
 
+const EDIT_TOAST_ID = "store-subject-update";
+const DELETE_TOAST_ID = "store-subject-delete";
+
 const GetAllSubjects = () => {
   const {
     subjects,
@@ -53,16 +56,19 @@ const GetAllSubjects = () => {
     }
 
     try {
+      toast.loading("Cusboonaysiinaya maadada...", { id: EDIT_TOAST_ID });
       await updateSubject(editId, {
         name: editData.name,
         code: editData.code || "",
       });
+      toast.dismiss(EDIT_TOAST_ID);
 
       await getAllSubjects();
 
       setEditId(null);
       setEditData({ name: "", code: "" });
     } catch {
+      toast.dismiss(EDIT_TOAST_ID);
       toast.error("Failed to update subject");
     }
   };
@@ -71,8 +77,13 @@ const GetAllSubjects = () => {
     if (!id) return;
 
     if (window.confirm("Are you sure you want to delete this subject?")) {
-      await deleteSubject(id);
-      await getAllSubjects();
+      toast.loading("Tirtiraya maadada...", { id: DELETE_TOAST_ID });
+      try {
+        await deleteSubject(id);
+        await getAllSubjects();
+      } finally {
+        toast.dismiss(DELETE_TOAST_ID);
+      }
     }
   };
 

@@ -7,6 +7,8 @@ import useStudentsStore from '../../store/studentsStore';
 import useClassesStore from '../../store/classesStore';
 import { useHealthStore } from '../../store/healthStore';
 
+const CREATE_TOAST_ID = 'student-create';
+
 // Animation variants
 const containerVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -79,7 +81,9 @@ const CreateStudent = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      toast.loading('Diiwaangelinaya ardayga...', { id: CREATE_TOAST_ID });
       const { success, student } = await createStudent(formData);
+      toast.dismiss(CREATE_TOAST_ID);
       if (success) {
         // If health fields are provided, create health record immediately
         if (healthData.condition && healthData.date) {
@@ -93,6 +97,7 @@ const CreateStudent = () => {
             });
           } catch (err) {
             // Non-blocking: notify but continue navigation
+            toast.dismiss('store-health-create');
             toast.error('Xogta caafimaadka lama kaydin, fadlan isku day mar kale.');
           }
         }
@@ -100,6 +105,7 @@ const CreateStudent = () => {
         navigate('/getAllStudents');
       }
     } catch (error) {
+      toast.dismiss(CREATE_TOAST_ID);
       toast.error(error.message || 'Qalad ayaa ka dhacay ardayga sameynta');
     }
   };

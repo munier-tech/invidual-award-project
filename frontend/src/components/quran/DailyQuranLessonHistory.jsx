@@ -23,6 +23,8 @@ const translations = {
   recordsFound: 'Casharro la helay'
 };
 
+const HISTORY_TOAST_ID = 'daily-quran-history-load';
+
 const DailyQuranLessonHistory = () => {
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -72,11 +74,14 @@ const DailyQuranLessonHistory = () => {
     if (!classId || !date) return;
     setIsLoadingHistory(true);
     try {
+      toast.loading(translations.loading, { id: HISTORY_TOAST_ID });
       const result = await getClassSessionsByDate(classId, date);
+      toast.dismiss(HISTORY_TOAST_ID);
       if (!result.success) {
         toast.error(result.error || 'Khalad ayaa dhacay');
       }
     } catch (error) {
+      toast.dismiss(HISTORY_TOAST_ID);
       toast.error('Khalad ayaa dhacay markii la soo dejinayay taariikhda');
     } finally {
       setIsLoadingHistory(false);

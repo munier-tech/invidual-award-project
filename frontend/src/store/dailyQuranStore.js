@@ -190,6 +190,36 @@ export const useDailyQuranStore = create((set, get) => ({
     }
   },
 
+  // ✅ Delete several sessions at once (group delete)
+  deleteBulkDailyQuran: async (ids) => {
+    try {
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return { success: false, error: "Ma jiraan diiwaanno la doortay" };
+      }
+
+      set({ loading: true, error: null });
+      const res = await axios.delete("/dailyQuran/delete/bulk", { data: { ids } });
+      const removed = new Set(ids.map(String));
+
+      set((state) => ({
+        dailyQuranRecords: state.dailyQuranRecords.filter((item) => !removed.has(String(item._id))),
+        todaySessions: state.todaySessions.filter((item) => !removed.has(String(item._id))),
+        classSessionsByDate: state.classSessionsByDate.filter((item) => !removed.has(String(item._id))),
+        loading: false,
+      }));
+
+      return {
+        success: true,
+        deletedCount: res.data?.deletedCount ?? ids.length,
+        message: res.data?.message,
+      };
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || "Diiwaannada lama tirtirin";
+      set({ error: errorMsg, loading: false });
+      return { success: false, error: errorMsg };
+    }
+  },
+
   // ✅ Get all sessions for a class (with optional date range)
   getClassSessions: async (classId, date = null) => {
     try {

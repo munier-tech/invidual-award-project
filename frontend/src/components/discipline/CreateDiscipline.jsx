@@ -99,7 +99,8 @@ const CreateDisciplineTab = () => {
       return;
     }
 
-    await createDiscipline(formData);
+    const result = await createDiscipline(formData);
+    if (!result?.success) return;
     setFormData({
       student: "",
       date: "",
@@ -292,8 +293,8 @@ const ViewDisciplineTab = () => {
       return;
     }
 
-    await updateDiscipline(editingId, editFormData);
-    setEditingId(null);
+    const result = await updateDiscipline(editingId, editFormData);
+    if (result?.success) setEditingId(null);
   };
 
   const cancelEdit = () => {

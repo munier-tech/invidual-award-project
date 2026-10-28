@@ -2,6 +2,11 @@ import { create } from 'zustand';
 import axios from '../config/axios';
 import toast from 'react-hot-toast';
 
+const TOAST_IDS = {
+  create: 'store-finance-create',
+  generate: 'store-finance-generate',
+};
+
 const useFinanceStore = create((set, get) => ({
   // State
   finances: [],
@@ -17,9 +22,11 @@ const useFinanceStore = create((set, get) => ({
     try {
       set({ loading: true, error: null, successMessage: null });
       
+      toast.loading('Diiwaangelinaya maalgelinta...', { id: TOAST_IDS.create });
       const response = await axios.post('/finance/create', financeData);
+      toast.dismiss(TOAST_IDS.create);
       
-      set({ 
+      set({  
         loading: false, 
         successMessage: response.data.message,
         finances: [response.data.finance, ...get().finances]
@@ -29,6 +36,7 @@ const useFinanceStore = create((set, get) => ({
       return { success: true, finance: response.data.finance };
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Khalad ayaa dhacay markii la abuurayay maalgelinta';
+      toast.dismiss(TOAST_IDS.create);
       set({ loading: false, error: errorMessage });
       toast.error(errorMessage);
       return { success: false, error: errorMessage };
@@ -40,9 +48,11 @@ const useFinanceStore = create((set, get) => ({
     try {
       set({ loading: true, error: null, successMessage: null });
       
+      toast.loading('Abuuraya maalgelinta bisha...', { id: TOAST_IDS.generate });
       const response = await axios.post('/finance/generate-monthly', { month, year });
+      toast.dismiss(TOAST_IDS.generate);
       
-      set({ 
+      set({  
         loading: false, 
         successMessage: response.data.message,
         finances: [response.data.finance, ...get().finances]
@@ -52,6 +62,7 @@ const useFinanceStore = create((set, get) => ({
       return { success: true, finance: response.data.finance };
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Khalad ayaa dhacay markii la abuurayay maalgelinta bishan';
+      toast.dismiss(TOAST_IDS.generate);
       set({ loading: false, error: errorMessage });
       toast.error(errorMessage);
       return { success: false, error: errorMessage };

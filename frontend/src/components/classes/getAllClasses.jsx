@@ -6,6 +6,10 @@ import {
   FiBook, FiFilter, FiX, FiChevronDown, FiClock
 } from 'react-icons/fi';
 import useClassesStore from '../../store/classesStore';
+import { toast } from 'react-hot-toast';
+
+const DELETE_TOAST_ID = 'class-delete';
+const EDIT_TOAST_ID = 'class-edit';
 
 // Animation variants
 const containerVariants = {
@@ -62,7 +66,12 @@ const GetAllClass = () => {
   const handleDelete = async (classId) => {
     const confirmation = window.confirm('Ma hubtaa inaad tirtirayso fasalkan?');
     if (confirmation) {
-      await deleteClass(classId);
+      toast.loading('Fasalka la tirtirayaa...', { id: DELETE_TOAST_ID });
+      try {
+        await deleteClass(classId);
+      } finally {
+        toast.dismiss(DELETE_TOAST_ID);
+      }
     }
   };
 
@@ -87,8 +96,13 @@ const GetAllClass = () => {
   };
 
   const submitEdit = async (classId) => {
-    await updateClass(classId, editFormData);
-    setEditingClassId(null);
+    toast.loading('Cusboonaysiinaya fasalka...', { id: EDIT_TOAST_ID });
+    try {
+      await updateClass(classId, editFormData);
+      setEditingClassId(null);
+    } finally {
+      toast.dismiss(EDIT_TOAST_ID);
+    }
   };
 
   // Get unique levels for filter

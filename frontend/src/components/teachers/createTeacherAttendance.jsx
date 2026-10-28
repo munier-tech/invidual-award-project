@@ -6,6 +6,8 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const CREATE_ATTENDANCE_TOAST_ID = 'teacher-attendance-create-form';
+
 // Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -74,6 +76,8 @@ const CreateTeacherAttendance = () => {
     if (!formData.teacherId) {
       return toast.error("Macallinka ayaa loo baahan yahay");
     }
+    toast.loading('Diiwaangelinaya xaadiriska macallinka...', { id: CREATE_ATTENDANCE_TOAST_ID });
+    // The store's success/error toast replaces this loading toast (same id)
     createAttendance({
       ...formData,
       date: formData.date.toISOString().split('T')[0]

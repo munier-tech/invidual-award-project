@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Class from "../models/classModel.js";
 import DailyQuran from "../models/dailyQuranModel.js";
 import Student from "../models/studentsModel.js";
@@ -573,6 +574,63 @@ export const createBulkSessions = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Khalad ayaa dhacay markii la sameeynayo casharrada badan",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// @desc    Delete several daily Quran sessions in one request (group delete)
+// @route   DELETE /api/daily-quran/delete/bulk
+// @access  Private/Teacher
+export const deleteBulkDailyQuran = async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Fadlan dooro ugu yaraan hal diiwaan"
+      });
+    }
+
+    // Keep only well-formed ObjectIds so a bad value can't break the whole request
+    const validIds = ids.filter((id) => mongoose.Types.ObjectId.isValid(id));
+    if (validIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Diiwaannada la doortay waa khalad"
+      });
+    }
+
+    // Teachers may only delete records that belong to their own classes
+    if (req.user?.role === 'teacher') {
+      const allowedIds = getAllowedTeacherClassIds(req);
+      const ownedCount = await DailyQuran.countDocuments({
+        _id: { $in: validIds },
+        class: { $in: allowedIds }
+      });
+
+      if (ownedCount !== validIds.length) {
+        return res.status(403).json({
+          success: false,
+          message: "Forbidden - Qaar ka mid ah diiwaannadan uma aadan haysan"
+        });
+      }
+    }
+
+    const result = await DailyQuran.deleteMany({ _id: { $in: validIds } });
+
+    res.status(200).json({
+      success: true,
+      message: `${result.deletedCount} diiwaan ayaa la tirtiray`,
+      deletedCount: result.deletedCount,
+      requestedCount: validIds.length
+    });
+  } catch (error) {
+    console.error('Error deleting bulk daily Quran sessions:', error);
+    res.status(500).json({
+      success: false,
+      message: "Khalad ayaa dhacay markii la tirtirayay diiwaannada",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }

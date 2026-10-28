@@ -7,6 +7,8 @@ import useClassesStore from '../../store/classesStore';
 import useStudentsStore from '../../store/studentsStore';
 import { useSubjectStore } from '../../store/subjectsStore';
 
+const CLASS_EXAM_TOAST_ID = 'store-exam-create-class'; // shared with the store
+
 const CreateClassExam = () => {
   const { createClassExam, isLoading } = useExamStore();
   const { classes, fetchClasses } = useClassesStore();
@@ -100,6 +102,7 @@ const CreateClassExam = () => {
     }));
 
     try {
+      toast.loading('Diiwaangelinaya saniyadaha fasalka...', { id: CLASS_EXAM_TOAST_ID });
       const result = await createClassExam({
         examType: examType.value,
         date,
@@ -109,6 +112,7 @@ const CreateClassExam = () => {
         marksList,
       });
 
+      toast.dismiss(CLASS_EXAM_TOAST_ID);
       if (result?.success) {
         toast.success("Imtixanka Fasalka si Fican Ayaa Loo Abuuray");
         setFormData({
@@ -122,6 +126,7 @@ const CreateClassExam = () => {
       }
     } catch (error) {
       console.error('Error creating exam:', error);
+      toast.dismiss(CLASS_EXAM_TOAST_ID);
     }
   };
 

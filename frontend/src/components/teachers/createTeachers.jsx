@@ -5,6 +5,8 @@ import useTeachersStore from '../../store/teachersStore';
 import useClassesStore from '../../store/classesStore';
 import { motion } from 'framer-motion';
 
+const CREATE_TOAST_ID = 'teacher-create-form';
+
 const CreateTeachers = ({ onClose }) => {
   const { createTeacher } = useTeachersStore();
   const { classes, fetchClasses } = useClassesStore();
@@ -67,6 +69,7 @@ const CreateTeachers = ({ onClose }) => {
     setIsSubmitting(true);
 
     try {
+      toast.loading('Diiwaangelinaya macallinka...', { id: CREATE_TOAST_ID });
       // Send JSON instead of FormData
       const teacherPayload = {
         ...formData,
@@ -76,10 +79,12 @@ const CreateTeachers = ({ onClose }) => {
       };
 
       await createTeacher(teacherPayload);
+      toast.dismiss(CREATE_TOAST_ID);
       toast.success('Macallinka si guul leh ayaa loo abuuray');
       onClose?.();
     } catch (error) {
       console.error('Khalad markii la abuurnayay macallinka:', error);
+      toast.dismiss(CREATE_TOAST_ID);
       toast.error(error.response?.data?.message || 'Khalad ayaa dhacay markii la abuurayay macallinka');
     } finally {
       setIsSubmitting(false);

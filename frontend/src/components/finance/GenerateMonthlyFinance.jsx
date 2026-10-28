@@ -3,7 +3,9 @@ import { FiRefreshCw, FiCalendar, FiDollarSign, FiUsers, FiTrendingUp, FiTrendin
 import useFinanceStore from '../../store/financeStore';
 import {useFeeStore} from '../../store/feeStore';
 import {useSalaryStore} from '../../store/salaryStore';
+import { toast } from 'react-hot-toast';
 
+const GENERATE_TOAST_ID = 'store-finance-generate';
 
 const GenerateMonthlyFinance = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -46,13 +48,19 @@ const GenerateMonthlyFinance = () => {
 
   const handleGenerateFinance = async () => {
     try {
+      toast.loading('Abuuraya maalgelinta bisha...', { id: GENERATE_TOAST_ID });
       const result = await generateMonthlyFinance(selectedMonth, selectedYear);
+      toast.dismiss(GENERATE_TOAST_ID);
       if (result.success) {
         setGeneratedFinance(result.finance);
         setShowPreview(true);
+      } else {
+        toast.error(result.error || 'Khalad ayaa dhacay');
       }
     } catch (error) {
       console.error('Error generating finance:', error);
+      toast.dismiss(GENERATE_TOAST_ID);
+      toast.error('Khalad ayaa dhacay markii maalgelinta la abuurayay');
     }
   };
 

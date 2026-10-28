@@ -21,6 +21,12 @@ import useStudentsStore from '../../store/studentsStore';
 import useClassesStore from '../../store/classesStore';
 import { useSubjectStore } from '../../store/subjectsStore';
 
+const TOAST_IDS = {
+  fee: 'student-fee-payment',
+  assign: 'student-assign-class-page',
+  update: 'student-update-page'
+};
+
 // Somali translations
 const translations = {
   search: {
@@ -325,10 +331,12 @@ const GetStudentById = () => {
     }
 
     try {
+      toast.loading('Diiwaangelinaya lacagta...', { id: TOAST_IDS.fee });
       const { success } = await trackFeePayment(selectedStudent._id, {
         total: parseFloat(totalFee),
         paid: parseFloat(paidAmount),
       });
+      toast.dismiss(TOAST_IDS.fee);
 
       if (success) {
         toast.success('Lacagta si guul leh ayaa loo diiwaan geliyay');
@@ -338,6 +346,7 @@ const GetStudentById = () => {
         await fetchStudentById(selectedStudent._id);
       }
     } catch {
+      toast.dismiss(TOAST_IDS.fee);
       toast.error('Qalad ayaa ka dhacay markii la diiwaan gelinayay lacagta');
     }
   };
@@ -349,26 +358,32 @@ const GetStudentById = () => {
     }
 
     try {
+      toast.loading('Fasalka loo qoondeynayaa ardayga...', { id: TOAST_IDS.assign });
       const { success } = await assignStudentToClass(selectedStudent._id, selectedClassId);
+      toast.dismiss(TOAST_IDS.assign);
       if (success) {
         toast.success('Fasalka si guul leh ayaa loo qoondeeyay');
         setIsAssignModalOpen(false);
         await fetchStudentById(selectedStudent._id);
       }
     } catch {
+      toast.dismiss(TOAST_IDS.assign);
       toast.error('Qalad ayaa ka dhacay markii la qoondeynayay fasalka');
     }
   };
 
   const handleUpdateStudent = async () => {
     try {
+      toast.loading('Cusboonaysiinaya ardayga...', { id: TOAST_IDS.update });
       const { success } = await updateStudent(selectedStudent._id, editForm);
+      toast.dismiss(TOAST_IDS.update);
       if (success) {
         toast.success('Ardayga si guul leh ayaa loo cusboonaysiiyay');
         setIsEditing(false);
         await fetchStudentById(selectedStudent._id);
       }
     } catch {
+      toast.dismiss(TOAST_IDS.update);
       toast.error('Qalad ayaa ka dhacay markii la cusboonaysiinayay ardayga');
     }
   };

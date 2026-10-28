@@ -6,6 +6,10 @@ import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import useStudentsStore from '../../store/studentsStore';
 
+const ASSIGN_TOAST_ID = 'class-assign-student';
+const REMOVE_TOAST_ID = 'class-remove-student';
+const DELETE_TOAST_ID = 'class-delete';
+
 const ClassDetails = () => {
   const { classId } = useParams();
   const navigate = useNavigate();
@@ -83,7 +87,9 @@ const ClassDetails = () => {
 
     try {
       setAssigningStudent(true);
+      toast.loading('Ardayga fasalka lagu darayaa...', { id: ASSIGN_TOAST_ID });
       await axios.post(`/classes/${studentId}/${classId}`);
+      toast.dismiss(ASSIGN_TOAST_ID);
       toast.success('Arday si guul leh ayaa loogu daray fasalka');
 
       const studentsRes = await axios.get(`/classes/getStudents/${classId}`);
@@ -97,6 +103,7 @@ const ClassDetails = () => {
       setShowStudentSelector(false);
       setAddStudentSearch('');
     } catch (error) {
+      toast.dismiss(ASSIGN_TOAST_ID);
       toast.error(error.response?.data?.message || 'Khalad ayaa dhacay markii la darayay ardayga');
     } finally {
       setAssigningStudent(false);
@@ -108,7 +115,9 @@ const ClassDetails = () => {
     if (!confirmation) return;
 
     try {
+      toast.loading('Ardayga fasalka laga saarayaa...', { id: REMOVE_TOAST_ID });
       await axios.delete(`/classes/${studentId}/${classId}`);
+      toast.dismiss(REMOVE_TOAST_ID);
       toast.success('Arday si guul leh ayaa laga saaray fasalka');
 
       const studentsRes = await axios.get(`/classes/getStudents/${classId}`);
@@ -122,6 +131,7 @@ const ClassDetails = () => {
         setFilteredAvailableStudents(updatedAvailable);
       }
     } catch (error) {
+      toast.dismiss(REMOVE_TOAST_ID);
       toast.error(error.response?.data?.message || 'Khalad ayaa dhacay markii la saarayay ardayga');
     }
   };
@@ -131,10 +141,13 @@ const ClassDetails = () => {
     if (!confirmation) return;
 
     try {
+      toast.loading('Fasalka la tirtirayaa...', { id: DELETE_TOAST_ID });
       await axios.delete(`/classes/delete/${classId}`);
+      toast.dismiss(DELETE_TOAST_ID);
       toast.success('Fasalka si guul leh ayaa loo tirtiray');
       navigate('/classes');
     } catch (error) {
+      toast.dismiss(DELETE_TOAST_ID);
       toast.error(error.response?.data?.message || 'Khalad ayaa dhacay markii la tirtirayay fasalka');
     }
   };

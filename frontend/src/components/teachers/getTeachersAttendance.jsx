@@ -5,6 +5,8 @@ import dayjs from 'dayjs';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const SEARCH_TOAST_ID = 'teacher-attendance-search';
+
 // Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -57,7 +59,10 @@ const GetTeacherAttendanceByDate = () => {
       toast.error('Fadlan dooro taariikhda "laga bilaabo" iyo "ilaa"');
       return;
     }
-    getAttendanceByDate({ from: dateRange.from, to: dateRange.to, teacherId: selectedTeacher || null });
+    toast.loading('Soo dejinaya xaadiriska...', { id: SEARCH_TOAST_ID });
+    getAttendanceByDate({ from: dateRange.from, to: dateRange.to, teacherId: selectedTeacher || null })
+      .catch(() => {})
+      .finally(() => toast.dismiss(SEARCH_TOAST_ID));
   };
 
   const handleClearFilters = () => {
@@ -66,10 +71,11 @@ const GetTeacherAttendanceByDate = () => {
       from: dayjs().subtract(7, 'day').format('YYYY-MM-DD'),
       to: dayjs().format('YYYY-MM-DD')
     });
-    getAttendanceByDate({ 
+    toast.loading('Soo dejinaya xaadiriska...', { id: SEARCH_TOAST_ID });
+    getAttendanceByDate({
       from: dayjs().subtract(7, 'day').format('YYYY-MM-DD'),
       to: dayjs().format('YYYY-MM-DD')
-    });
+    }).catch(() => {}).finally(() => toast.dismiss(SEARCH_TOAST_ID));
   };
 
   useEffect(() => {

@@ -13,6 +13,9 @@ import {
 import { toast } from 'react-hot-toast';
 import useAuthStore from '../../store/authStore';
 
+const UPDATE_TOAST_ID = 'store-user-update';
+const DELETE_TOAST_ID = 'store-user-delete';
+
 const GetAllUser = () => {
   const navigate = useNavigate();
   const {
@@ -102,13 +105,23 @@ const GetAllUser = () => {
       return;
     }
 
-    await updateUser(editingId, editedUser);
-    setEditingId(null);
+    toast.loading('Cusboonaysiinaya isticmaalaha...', { id: UPDATE_TOAST_ID });
+    try {
+      await updateUser(editingId, editedUser);
+      setEditingId(null);
+    } finally {
+      toast.dismiss(UPDATE_TOAST_ID);
+    }
   };
 
   const handleDelete = async (userId) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
-      await deleteUser(userId);
+      toast.loading('Tirtiraya isticmaalaha...', { id: DELETE_TOAST_ID });
+      try {
+        await deleteUser(userId);
+      } finally {
+        toast.dismiss(DELETE_TOAST_ID);
+      }
     }
   };
 

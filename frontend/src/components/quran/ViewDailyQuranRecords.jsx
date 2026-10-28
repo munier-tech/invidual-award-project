@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiCalendar, FiUsers, FiBook, FiSearch, FiDownload, FiPrinter,
   FiRefreshCw, FiChevronDown, FiUserCheck, FiUserX, FiUserMinus,
-  FiGrid, FiList, FiAlertCircle, FiX, FiClock
+  FiGrid, FiList, FiAlertCircle, FiX, FiClock, FiEdit2, FiTrash2, FiSave
 } from 'react-icons/fi';
 import { useDailyQuranStore } from '../../store/dailyQuranStore';
 import useClassesStore from '../../store/classesStore';
@@ -50,6 +50,8 @@ const translations = {
   lessonDetails: 'Faahfaahin Casharka',
   extraDetails: 'Qoraal dheeraad ah',
   surah: 'Suurada',
+  fromVerse: 'Laga bilaabo',
+  toVerse: 'Ilaa',
   verses: 'Aayadaha',
   none: 'Ma jiro',
   createdAt: 'La abuuray',
@@ -57,7 +59,27 @@ const translations = {
   noData: 'Ma jiro xog la soo dejin karo',
   exported: 'Xogta si guul leh ayaa loo soo dejiyay',
   unknownStudent: 'Arday aan la aqoon',
-  printedOn: 'Daabacay'
+  printedOn: 'Daabacay',
+  edit: 'Wax ka beddel',
+  save: 'Kaydi',
+  cancel: 'Jooji',
+  delete: 'Tirtir',
+  editRecord: 'Wax ka beddel diiwaanka',
+  deleteConfirm: 'Ma hubtaa inaad tirtirto diiwaanka ardaygan?',
+  updateSuccess: 'Diiwaanka waa la cusboonaysiiyay',
+  updateError: 'Cusboonaysiinta diiwaanka waa fashilantay',
+  deleteSuccess: 'Diiwaanka waa la tirtiray',
+  deleteError: 'Tirtirista diiwaanka waa fashilantay',
+  deleteSelected: 'Tirtir kuwa la doortay',
+  deleteAll: 'Tirtir dhammaan maalintan',
+  deleteSelectedConfirm:
+    'Ma hubtaa inaad tirtirto diiwaannada aad dooratay? Tallaabaddan lama soo celin karo.',
+  deleteAllConfirm:
+    'Ma hubtaa inaad tirtirto DHAMMAAN diiwaannada maalintan? Tallaabaddan lama soo celin karo.',
+  selectAll: 'Dooro dhammaan',
+  selectRecord: 'Dooro diiwaanka',
+  selectedCount: 'la doortay',
+  clearSelection: 'Tirtir doorashada'
 };
 
 const statusConfig = {
@@ -101,6 +123,11 @@ const fallbackStatus = {
 };
 
 const STATUS_KEYS = ['gartay', 'garan waayay', 'majoogo'];
+
+const LOAD_TOAST_ID = 'daily-quran-records-load';
+const EDIT_TOAST_ID = 'daily-quran-records-edit';
+const DELETE_TOAST_ID = 'daily-quran-records-delete';
+const BULK_DELETE_TOAST_ID = 'daily-quran-records-bulk-delete';
 
 // Colors used only in the print report
 const printStatusColors = {
@@ -338,6 +365,139 @@ const RecordDetails = ({ record }) => (
   </div>
 );
 
+const inputCls =
+  'w-full min-h-[44px] rounded-lg border border-gray-300 bg-white px-3 py-2 text-base text-gray-900 ' +
+  'focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm';
+
+// Inline edit form used by both the card and the table row
+const RecordEditForm = ({ record, onChange, onSave, onCancel, saving }) => (
+  <div className="space-y-3">
+    <div>
+      <span className="mb-1 block text-xs font-medium text-gray-600">{translations.status}</span>
+      <div className="grid grid-cols-3 gap-1.5">
+        {STATUS_KEYS.map((key) => {
+          const config = getStatusConfig(key);
+          const Icon = config.icon;
+          const active = record.status === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onChange('status', key)}
+              aria-pressed={active}
+              className={`flex min-h-[44px] items-center justify-center gap-1 rounded-lg border px-1 text-xs font-medium transition-colors sm:text-sm ${
+                active
+                  ? 'border-blue-600 bg-blue-600 text-white'
+                  : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span className="truncate">{config.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <label className="block sm:col-span-2">
+        <span className="mb-1 block text-xs font-medium text-gray-600">{translations.surah}</span>
+        <input
+          type="text"
+          value={record.surah}
+          onChange={(e) => onChange('surah', e.target.value)}
+          placeholder={translations.surah}
+          className={inputCls}
+        />
+      </label>
+      <label className="block">
+        <span className="mb-1 block text-xs font-medium text-gray-600">{translations.fromVerse}</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={record.fromVerse}
+          onChange={(e) => onChange('fromVerse', e.target.value)}
+          placeholder="1"
+          className={inputCls}
+        />
+      </label>
+      <label className="block">
+        <span className="mb-1 block text-xs font-medium text-gray-600">{translations.toVerse}</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={record.toVerse}
+          onChange={(e) => onChange('toVerse', e.target.value)}
+          placeholder="7"
+          className={inputCls}
+        />
+      </label>
+      <label className="block sm:col-span-2">
+        <span className="mb-1 block text-xs font-medium text-gray-600">{translations.notes}</span>
+        <input
+          type="text"
+          value={record.notes}
+          onChange={(e) => onChange('notes', e.target.value)}
+          placeholder={translations.notes}
+          className={inputCls}
+        />
+      </label>
+    </div>
+
+    <div className="flex gap-2">
+      <button
+        type="button"
+        onClick={onSave}
+        disabled={saving}
+        className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+      >
+        {saving ? (
+          <FiRefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />
+        ) : (
+          <FiSave className="h-4 w-4" aria-hidden="true" />
+        )}
+        {translations.save}
+      </button>
+      <button
+        type="button"
+        onClick={onCancel}
+        disabled={saving}
+        className="min-h-[44px] rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+      >
+        {translations.cancel}
+      </button>
+    </div>
+  </div>
+);
+
+const RowActions = ({ onEdit, onDelete, busy }) => (
+  <div className="flex items-center gap-1">
+    <button
+      type="button"
+      onClick={onEdit}
+      aria-label={translations.editRecord}
+      title={translations.edit}
+      className="flex h-9 w-9 items-center justify-center rounded-lg text-blue-600 hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+    >
+      <FiEdit2 className="h-4 w-4" aria-hidden="true" />
+    </button>
+    <button
+      type="button"
+      onClick={onDelete}
+      disabled={busy}
+      aria-label={translations.delete}
+      title={translations.delete}
+      className="flex h-9 w-9 items-center justify-center rounded-lg text-red-600 hover:bg-red-50 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+    >
+      {busy ? (
+        <FiRefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />
+      ) : (
+        <FiTrash2 className="h-4 w-4" aria-hidden="true" />
+      )}
+    </button>
+  </div>
+);
+
 const Expandable = ({ open, children }) => (
   <AnimatePresence initial={false}>
     {open && (
@@ -354,18 +514,34 @@ const Expandable = ({ open, children }) => (
   </AnimatePresence>
 );
 
-const RecordCard = ({ record, expanded, onToggle }) => {
+const RecordCard = ({ record, expanded, onToggle, editing, editForm, onChange, onSave, onCancel, onEdit, onDelete, saving, deleting, selected, onSelect }) => {
   const config = getStatusConfig(record.status);
   const surah = getRecordValue(record, 'surah', '');
 
   return (
     <div
-      className={`overflow-hidden rounded-xl border border-l-4 border-gray-200 bg-white shadow-sm ${config.accent}`}
+      className={`overflow-hidden rounded-xl border border-l-4 bg-white shadow-sm ${config.accent} ${
+        selected ? 'border-blue-300 ring-2 ring-blue-200' : 'border-gray-200'
+      }`}
     >
+      {/* Selection sits outside the toggle button (no nested buttons) */}
+      <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-2">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onSelect}
+          aria-label={`${translations.selectRecord} ${record.student?.fullname || ''}`}
+          className="h-5 w-5 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+        />
+        <span className="text-xs text-gray-500">
+          {selected ? translations.selectedCount : translations.selectRecord}
+        </span>
+      </div>
       <button
         type="button"
-        onClick={onToggle}
+        onClick={editing ? undefined : onToggle}
         aria-expanded={expanded}
+        disabled={editing}
         className="flex w-full items-start gap-3 p-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 sm:p-4"
       >
         <StatusAvatar status={record.status} />
@@ -405,11 +581,30 @@ const RecordCard = ({ record, expanded, onToggle }) => {
         </div>
       </button>
 
-      <Expandable open={expanded}>
-        <div className="border-t border-gray-100 bg-gray-50 p-3 sm:p-4">
-          <RecordDetails record={record} />
+      {/* Outside the toggle button on purpose: avoids nesting buttons in a button */}
+      {!editing && (
+        <div className="flex items-center justify-end gap-1 border-t border-gray-100 px-3 pb-2 sm:px-4">
+          <RowActions onEdit={onEdit} onDelete={onDelete} busy={deleting} />
         </div>
-      </Expandable>
+      )}
+
+      {editing ? (
+        <div className="border-t border-blue-100 bg-blue-50/60 p-3 sm:p-4">
+          <RecordEditForm
+            record={editForm}
+            onChange={onChange}
+            onSave={onSave}
+            onCancel={onCancel}
+            saving={saving}
+          />
+        </div>
+      ) : (
+        <Expandable open={expanded}>
+          <div className="border-t border-gray-100 bg-gray-50 p-3 sm:p-4">
+            <RecordDetails record={record} />
+          </div>
+        </Expandable>
+      )}
     </div>
   );
 };
@@ -537,7 +732,25 @@ const ViewDailyQuranRecords = () => {
   const [expandedRecords, setExpandedRecords] = useState({});
   const [viewMode, setViewMode] = useState('table'); // only affects screens >= md
 
-  const { classSessionsByDate, getClassSessionsByDate, loading, error } = useDailyQuranStore();
+  // Edit / delete state
+  const [editingId, setEditingId] = useState(null);
+  const [editValues, setEditValues] = useState(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+
+  // Group selection (for "delete selected") and whole-day delete
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  const {
+    classSessionsByDate,
+    getClassSessionsByDate,
+    updateDailyQuran,
+    deleteDailyQuran,
+    deleteBulkDailyQuran,
+    loading,
+    error
+  } = useDailyQuranStore();
   const { classes, fetchClasses } = useClassesStore();
 
   useEffect(() => {
@@ -547,9 +760,16 @@ const ViewDailyQuranRecords = () => {
   const loadRecords = useCallback(async () => {
     if (!selectedClassId || !selectedDate) return;
     try {
-      await getClassSessionsByDate(selectedClassId, selectedDate);
+      toast.loading(translations.loading, { id: LOAD_TOAST_ID });
+      const result = await getClassSessionsByDate(selectedClassId, selectedDate);
+      toast.dismiss(LOAD_TOAST_ID);
+      // The store reports request failures as { success: false } without throwing
+      if (result && result.success === false) {
+        toast.error(result.error || translations.loadError);
+      }
     } catch (err) {
       console.error('Error loading records:', err);
+      toast.dismiss(LOAD_TOAST_ID);
       toast.error(translations.loadError);
     }
   }, [selectedClassId, selectedDate, getClassSessionsByDate]);
@@ -558,9 +778,12 @@ const ViewDailyQuranRecords = () => {
     loadRecords();
   }, [loadRecords]);
 
-  // Collapse open rows whenever the data set changes
+  // Collapse open rows / cancel editing whenever the data set changes
   useEffect(() => {
     setExpandedRecords({});
+    setEditingId(null);
+    setEditValues(null);
+    setSelectedIds([]);
   }, [selectedClassId, selectedDate]);
 
   const records = useMemo(() => classSessionsByDate || [], [classSessionsByDate]);
@@ -610,6 +833,169 @@ const ViewDailyQuranRecords = () => {
   const clearFilters = () => {
     setSearchQuery('');
     setStatusFilter('all');
+  };
+
+  /* ---------- edit / delete ---------- */
+
+
+
+  const startEdit = (record) => {
+    setEditingId(record._id);
+    setEditValues({
+      status: record.status || 'majoogo',
+      surah: getRecordValue(record, 'surah', ''),
+      fromVerse: getRecordValue(record, 'fromVerse', ''),
+      toVerse: getRecordValue(record, 'toVerse', ''),
+      notes: getRecordValue(record, 'notes', '')
+    });
+    // Open the row so the form is visible on every screen size
+    setExpandedRecords((prev) => ({ ...prev, [record._id]: true }));
+  };
+
+  const cancelEdit = () => {
+    if (savingEdit) return;
+    setEditingId(null);
+    setEditValues(null);
+  };
+
+  const changeEdit = (field, value) =>
+    setEditValues((prev) => (prev ? { ...prev, [field]: value } : prev));
+
+  const saveEdit = async (record) => {
+    if (!editValues || savingEdit) return;
+
+    setSavingEdit(true);
+    toast.loading('Cusboonaysiinaya diiwaanka...', { id: EDIT_TOAST_ID });
+    try {
+      const result = await updateDailyQuran(record._id, {
+        status: editValues.status,
+        surah: editValues.surah || '',
+        fromVerse: editValues.fromVerse || '',
+        toVerse: editValues.toVerse || '',
+        notes: editValues.notes || '',
+        date: record.date || selectedDate
+      });
+      toast.dismiss(EDIT_TOAST_ID);
+
+      if (result?.success) {
+        toast.success(translations.updateSuccess);
+        setEditingId(null);
+        setEditValues(null);
+        await loadRecords();
+      } else {
+        toast.error(result?.error || translations.updateError);
+      }
+    } catch (err) {
+      console.error('Error updating record:', err);
+      toast.dismiss(EDIT_TOAST_ID);
+      toast.error(err?.message || translations.updateError);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const toggleSelected = (id) =>
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const allVisibleSelected =
+    filteredRecords.length > 0 && filteredRecords.every((r) => selectedIds.includes(r._id));
+
+  const toggleSelectAll = () => {
+    if (allVisibleSelected) {
+      // Only clear the rows currently shown, so hidden selections aren't lost
+      const visible = new Set(filteredRecords.map((r) => r._id));
+      setSelectedIds((prev) => prev.filter((id) => !visible.has(id)));
+    } else {
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...filteredRecords.map((r) => r._id)])));
+    }
+  };
+
+  // Group delete: everything the user ticked. One request, reports what happened.
+  const deleteSelected = async () => {
+    if (bulkDeleting || selectedIds.length === 0) return;
+    if (!window.confirm(`${translations.deleteSelectedConfirm} (${selectedIds.length})`)) return;
+
+    setBulkDeleting(true);
+    toast.loading(`Tirtiraya ${selectedIds.length} diiwaan...`, { id: BULK_DELETE_TOAST_ID });
+    try {
+      const result = await deleteBulkDailyQuran(selectedIds);
+      toast.dismiss(BULK_DELETE_TOAST_ID);
+
+      if (result?.success) {
+        toast.success(`${result.deletedCount ?? selectedIds.length} diiwaan ayaa la tirtiray`);
+        setSelectedIds([]);
+        setEditingId(null);
+        setEditValues(null);
+        await loadRecords();
+      } else {
+        toast.error(result?.error || translations.deleteError);
+      }
+    } catch (err) {
+      console.error('Error deleting selected records:', err);
+      toast.dismiss(BULK_DELETE_TOAST_ID);
+      toast.error(err?.message || translations.deleteError);
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
+  // Delete the entire day for this class (every record on this date)
+  const deleteDay = async () => {
+    if (bulkDeleting || records.length === 0) return;
+    if (!window.confirm(translations.deleteAllConfirm)) return;
+
+    const ids = records.map((r) => r._id);
+    setBulkDeleting(true);
+    toast.loading(`Tirtiraya ${ids.length} diiwaan...`, { id: BULK_DELETE_TOAST_ID });
+    try {
+      const result = await deleteBulkDailyQuran(ids);
+      toast.dismiss(BULK_DELETE_TOAST_ID);
+
+      if (result?.success) {
+        toast.success(`${result.deletedCount ?? ids.length} diiwaan ayaa la tirtiray`);
+        setSelectedIds([]);
+        setEditingId(null);
+        setEditValues(null);
+        await loadRecords();
+      } else {
+        toast.error(result?.error || translations.deleteError);
+      }
+    } catch (err) {
+      console.error('Error deleting day records:', err);
+      toast.dismiss(BULK_DELETE_TOAST_ID);
+      toast.error(err?.message || translations.deleteError);
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
+  const removeRecord = async (record) => {
+    if (!record?._id || deletingId) return;
+    if (!window.confirm(translations.deleteConfirm)) return;
+
+    setDeletingId(record._id);
+    toast.loading('Tirtiraya diiwaanka...', { id: DELETE_TOAST_ID });
+    try {
+      const result = await deleteDailyQuran(record._id);
+      toast.dismiss(DELETE_TOAST_ID);
+
+      if (result?.success) {
+        toast.success(translations.deleteSuccess);
+        if (editingId === record._id) {
+          setEditingId(null);
+          setEditValues(null);
+        }
+        await loadRecords();
+      } else {
+        toast.error(result?.error || translations.deleteError);
+      }
+    } catch (err) {
+      console.error('Error deleting record:', err);
+      toast.dismiss(DELETE_TOAST_ID);
+      toast.error(err?.message || translations.deleteError);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handlePrint = () => {
@@ -720,14 +1106,29 @@ const ViewDailyQuranRecords = () => {
             : 'space-y-3 p-3 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0 sm:p-4 md:hidden'
         }
       >
-        {filteredRecords.map((record) => (
-          <RecordCard
-            key={record._id}
-            record={record}
-            expanded={!!expandedRecords[record._id]}
-            onToggle={() => toggleRecordExpansion(record._id)}
-          />
-        ))}
+        {filteredRecords.map((record) => {
+          // Nothing to edit if the form values were cleared
+          const editing = editingId === record._id && editValues !== null;
+          return (
+            <RecordCard
+              key={record._id}
+              record={record}
+              expanded={!!expandedRecords[record._id]}
+              onToggle={() => toggleRecordExpansion(record._id)}
+              editing={editing}
+              editForm={editing ? editValues : null}
+              onChange={changeEdit}
+              onSave={() => saveEdit(record)}
+              onCancel={cancelEdit}
+              onEdit={() => startEdit(record)}
+              onDelete={() => removeRecord(record)}
+              saving={savingEdit}
+              deleting={deletingId === record._id}
+              selected={selectedIds.includes(record._id)}
+              onSelect={() => toggleSelected(record._id)}
+            />
+          );
+        })}
       </div>
     );
 
@@ -743,6 +1144,15 @@ const ViewDailyQuranRecords = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
+                <th scope="col" className="w-10 px-4 py-3 lg:px-6">
+                  <input
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    onChange={toggleSelectAll}
+                    aria-label={translations.selectAll}
+                    className="h-5 w-5 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                </th>
                 {[translations.student, translations.status, translations.lesson, translations.createdBy, translations.actions].map(
                   (h) => (
                     <th
@@ -759,12 +1169,25 @@ const ViewDailyQuranRecords = () => {
             <tbody className="divide-y divide-gray-200 bg-white">
               {filteredRecords.map((record) => {
                 const expanded = !!expandedRecords[record._id];
+                const editing = editingId === record._id && editValues !== null;
                 return (
                   <React.Fragment key={record._id}>
                     <tr
                       className="cursor-pointer transition-colors hover:bg-gray-50"
-                      onClick={() => toggleRecordExpansion(record._id)}
+                      onClick={() => {
+                        // Don't collapse the row while its edit form is open
+                        if (!editing) toggleRecordExpansion(record._id);
+                      }}
                     >
+                      <td className="w-10 px-4 py-3 lg:px-6" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(record._id)}
+                          onChange={() => toggleSelected(record._id)}
+                          aria-label={`${translations.selectRecord} ${record.student?.fullname || ''}`}
+                          className="h-5 w-5 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </td>
                       <td className="px-4 py-3 lg:px-6">
                         <div className="flex items-center gap-3">
                           <StatusAvatar status={record.status} />
@@ -789,23 +1212,44 @@ const ViewDailyQuranRecords = () => {
                         {record.createdBy?.username || 'System'}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-sm lg:px-6">
-                        <button
-                          type="button"
-                          aria-expanded={expanded}
-                          className="flex items-center gap-1 font-medium text-blue-600 hover:text-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                        >
-                          <FiChevronDown
-                            className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`}
-                            aria-hidden="true"
-                          />
-                          {translations.viewDetails}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            aria-expanded={expanded}
+                            className="flex items-center gap-1 font-medium text-blue-600 hover:text-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                          >
+                            <FiChevronDown
+                              className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`}
+                              aria-hidden="true"
+                            />
+                            {translations.viewDetails}
+                          </button>
+                          <span onClick={(e) => e.stopPropagation()}>
+                            <RowActions
+                              onEdit={() => (editing ? cancelEdit() : startEdit(record))}
+                              onDelete={() => removeRecord(record)}
+                              busy={deletingId === record._id}
+                            />
+                          </span>
+                        </div>
                       </td>
                     </tr>
                     {expanded && (
                       <tr>
-                        <td colSpan={5} className="bg-gray-50 px-4 py-4 lg:px-6">
-                          <RecordDetails record={record} />
+                        <td colSpan={6} className={editing ? 'bg-blue-50/60 px-4 py-4 lg:px-6' : 'bg-gray-50 px-4 py-4 lg:px-6'}>
+                          {editing ? (
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <RecordEditForm
+                                record={editValues}
+                                onChange={changeEdit}
+                                onSave={() => saveEdit(record)}
+                                onCancel={cancelEdit}
+                                saving={savingEdit}
+                              />
+                            </div>
+                          ) : (
+                            <RecordDetails record={record} />
+                          )}
                         </td>
                       </tr>
                     )}
@@ -967,7 +1411,49 @@ const ViewDailyQuranRecords = () => {
               <FiDownload className="h-4 w-4" aria-hidden="true" />
               {translations.exportShort}
             </button>
+
+            {/* Group delete: selected rows, or the whole day */}
+            <button
+              type="button"
+              onClick={deleteSelected}
+              disabled={selectedIds.length === 0 || bulkDeleting}
+              className="flex min-h-[48px] flex-col items-center justify-center gap-1 rounded-lg bg-red-600 px-2 text-xs font-medium text-white shadow-sm hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-row sm:gap-2 sm:px-5 sm:text-sm"
+            >
+              {bulkDeleting ? (
+                <FiRefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <FiTrash2 className="h-4 w-4" aria-hidden="true" />
+              )}
+              {translations.deleteSelected}
+              {selectedIds.length > 0 && (
+                <span className="rounded-full bg-white/25 px-2 text-xs">{selectedIds.length}</span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={deleteDay}
+              disabled={records.length === 0 || bulkDeleting}
+              className="flex min-h-[48px] flex-col items-center justify-center gap-1 rounded-lg border border-red-300 bg-red-50 px-2 text-xs font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-row sm:gap-2 sm:px-5 sm:text-sm"
+            >
+              <FiTrash2 className="h-4 w-4" aria-hidden="true" />
+              {translations.deleteAll}
+            </button>
           </div>
+
+          {selectedIds.length > 0 && (
+            <div className="mt-3 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+              <span>
+                {selectedIds.length} {translations.selectedCount}
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedIds([])}
+                className="font-medium text-red-700 underline hover:text-red-900"
+              >
+                {translations.clearSelection}
+              </button>
+            </div>
+          )}
         </section>
 
         {/* Summary */}

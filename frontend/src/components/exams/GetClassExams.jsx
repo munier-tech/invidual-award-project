@@ -6,6 +6,8 @@ import { FiSearch, FiBook, FiUser, FiAward, FiCalendar, FiEdit2, FiSave, FiX } f
 import PrintButton from "../common/PrintButton";
 import { toast } from "react-hot-toast";
 
+const UPDATE_MARKS_TOAST_ID = 'store-exam-update';
+
 // Somali translations
 const translations = {
   title: "Natiijooyinka Imtixaannada Fasalka",
@@ -129,11 +131,13 @@ const GetClassExams = () => {
       return;
     }
 
+    toast.loading("Cusboonaysiinaya dhibcaha...", { id: UPDATE_MARKS_TOAST_ID });
     const result = await updateExam(exam._id, {
       obtainedMarks,
       totalMarks,
       date: editForm.date,
     });
+    toast.dismiss(UPDATE_MARKS_TOAST_ID);
 
     if (result?.success) {
       cancelEdit();

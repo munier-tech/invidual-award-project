@@ -31,6 +31,17 @@ import {
 } from 'lucide-react'
 import { toast } from 'react-toastify'
 import { LessonRecordsAPI } from '../../api/lessonRecords'
+
+const SUBCI_TOAST_IDS = {
+  createHalaqa: 'subci-section-create-halaqa',
+  deleteHalaqa: 'subci-section-delete-halaqa',
+  addStudents: 'subci-section-add-students',
+  removeStudent: 'subci-section-remove-student',
+  saveRecord: 'subci-section-save-record',
+  update: 'subci-section-update',
+  remove: 'subci-section-delete',
+  load: 'subci-section-load'
+}
 import { Link } from 'react-router-dom'
 import PrintButton from '../common/PrintButton'
 
@@ -116,13 +127,16 @@ function SubcisSection() {
     if (!newHalaqa.name.trim()) return toast.error('Magaca Xalqada geli')
     setSaving(true)
     try {
+      toast.loading('Xalqada la abuurayaa...', { toastId: SUBCI_TOAST_IDS.createHalaqa })
       const res = await HalaqaAPI.create(newHalaqa)
+      toast.dismiss(SUBCI_TOAST_IDS.createHalaqa)
       setHalaqas(prev => [res.data, ...prev])
       setNewHalaqa({ name: '', description: '', startingSurah: '', taxdiid: '' })
       setCreating(false)
       setMobileView('list')
       toast.success('Xalqad la abuuray')
     } catch (e) {
+      toast.dismiss(SUBCI_TOAST_IDS.createHalaqa)
       if (e.response?.status === 403) {
         toast.error('You are not authorized to create this Halaqa.')
       } else {
@@ -153,11 +167,14 @@ function SubcisSection() {
     if (!selected) return
     setSaving(true)
     try {
+      toast.loading('Ardayda la darayaa xalqada...', { toastId: SUBCI_TOAST_IDS.addStudents })
       const res = await HalaqaAPI.addStudents(selected._id, ids)
+      toast.dismiss(SUBCI_TOAST_IDS.addStudents)
       setSelected(res.data)
       setHalaqas(prev => prev.map(h => h._id === res.data._id ? res.data : h))
       toast.success('Arday la daray')
     } catch (e) {
+      toast.dismiss(SUBCI_TOAST_IDS.addStudents)
       if (e.response?.status === 403) {
         toast.error('You are not authorized to access this Halaqa.')
       } else {
@@ -170,11 +187,14 @@ function SubcisSection() {
     if (!selected) return
     setRemoving(true)
     try {
+      toast.loading('Ardayga laga saarayaa xalqada...', { toastId: SUBCI_TOAST_IDS.removeStudent })
       const res = await HalaqaAPI.removeStudent(selected._id, studentId)
+      toast.dismiss(SUBCI_TOAST_IDS.removeStudent)
       setSelected(res.data)
       setHalaqas(prev => prev.map(h => h._id === res.data._id ? res.data : h))
       toast.success('Arday la saaray')
     } catch (e) {
+      toast.dismiss(SUBCI_TOAST_IDS.removeStudent)
       if (e.response?.status === 403) {
         toast.error('You are not authorized to access this Halaqa.')
       } else {
@@ -186,14 +206,19 @@ function SubcisSection() {
   const deleteHalaqa = async (id) => {
     if (!window.confirm('Ma hubtaa inaad tirtirayso?')) return
     try {
+      toast.loading('Xalqada la tirtirayaa...', { toastId: SUBCI_TOAST_IDS.deleteHalaqa })
       await HalaqaAPI.remove(id)
+      toast.dismiss(SUBCI_TOAST_IDS.deleteHalaqa)
       setHalaqas(prev => prev.filter(h => h._id !== id))
       if (selected?._id === id) {
         setSelected(null)
         setMobileView('list')
       }
       toast.success('Xalqad la tirtiray')
-    } catch (e) { toast.error('Tirtiristu wey fashilantay') }
+    } catch (e) {
+      toast.dismiss(SUBCI_TOAST_IDS.deleteHalaqa)
+      toast.error('Tirtiristu wey fashilantay')
+    }
   }
 
   useEffect(() => {
@@ -228,7 +253,8 @@ function SubcisSection() {
     if (!subciDate) return toast.error('Fadlan dooro taariikhda Subciska')
     setSaving(true)
     try {
-      await LessonRecordsAPI.createSubci({ 
+      toast.loading('Kaydinaya diiwaanka Subciga...', { toastId: SUBCI_TOAST_IDS.saveRecord })
+      await LessonRecordsAPI.createSubci({  
         halaqaId: selected._id, 
         startingSurah: subciMeta.startingSurah, 
         taxdiid: subciMeta.taxdiid, 
@@ -236,6 +262,7 @@ function SubcisSection() {
         notes: subciMeta.notes, 
         studentPerformances: subciPerformances 
       })
+      toast.dismiss(SUBCI_TOAST_IDS.saveRecord)
       toast.success('Diiwaan Subci waa la kaydiyay')
       setEditMode(false)
       loadRecords(selected._id)
@@ -247,6 +274,7 @@ function SubcisSection() {
         notes: ''
       })
     } catch (e) { 
+      toast.dismiss(SUBCI_TOAST_IDS.saveRecord)
       toast.error('Kaydinta Subci waa fashilantay') 
     } finally {
       setSaving(false)
@@ -255,9 +283,13 @@ function SubcisSection() {
 
   const loadRecords = async (halaqaId) => {
     try {
+      toast.loading('Soo dejinaya diiwaannada...', { toastId: SUBCI_TOAST_IDS.load })
       const res = await LessonRecordsAPI.getByHalaqa(halaqaId)
+      toast.dismiss(SUBCI_TOAST_IDS.load)
       setRecords(res.data)
-    } catch { /* ignore */ }
+    } catch {
+      toast.dismiss(SUBCI_TOAST_IDS.load)
+    }
   }
 
   useEffect(() => { 
@@ -299,27 +331,37 @@ function SubcisSection() {
   const saveEdit = async (id) => {
     if (!editingDate) return toast.error('Fadlan dooro taariikhda Subciska')
     try {
+      toast.loading('Cusboonaysiinaya diiwaanka Subciga...', { toastId: SUBCI_TOAST_IDS.update })
       const res = await LessonRecordsAPI.update(id, { 
         date: editingDate, 
         subci: editingSubciMeta,
         studentPerformances: editingRows 
       })
+      toast.dismiss(SUBCI_TOAST_IDS.update)
       setRecords(prev => prev.map(r => r._id === id ? res.data : r))
       setEditingId(null); 
       setEditingDate('');
       setEditingSubciMeta({ startingSurah: '', taxdiid: '', notes: '' });
       setEditingRows([])
       toast.success('Diiwaan Subcis waa la cusbooneysiiyay')
-    } catch { toast.error('Cusbooneysiin fashilantay') }
+    } catch {
+      toast.dismiss(SUBCI_TOAST_IDS.update)
+      toast.error('Cusbooneysiin fashilantay')
+    }
   }
   
   const removeRecord = async (id) => {
     if (!window.confirm('Ma hubtaa inaad tirtirto diiwaankan?')) return
     try {
+      toast.loading('Tirtiraya diiwaanka...', { toastId: SUBCI_TOAST_IDS.remove })
       await LessonRecordsAPI.remove(id)
+      toast.dismiss(SUBCI_TOAST_IDS.remove)
       setRecords(prev => prev.filter(r => r._id !== id))
       toast.success('Diiwaan waa la tirtiray')
-    } catch { toast.error('Tirtiristu fashilantay') }
+    } catch {
+      toast.dismiss(SUBCI_TOAST_IDS.remove)
+      toast.error('Tirtiristu fashilantay')
+    }
   }
 
   const toggleRecordExpansion = (recordId) => {

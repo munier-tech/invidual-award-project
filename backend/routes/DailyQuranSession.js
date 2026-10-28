@@ -6,6 +6,7 @@ import {
   createBulkSessions,
   getStudentSessions,
   deleteDailyQuran,
+  deleteBulkDailyQuran,
   getClassSessionsByDate // ADD THIS IMPORT
 } from "../controllers/dailyQuranController.js";
 import { protectedRoute } from "../middlewares/authorization.js";
@@ -29,6 +30,9 @@ router.get("/student/:studentId", protectedRoute, getStudentSessions);
 
 // Update daily Quran session
 router.put("/update/:id", protectedRoute, updateDailyQuran);
+
+// Delete several sessions at once (group delete) — must stay ABOVE "/delete/:id"
+router.delete("/delete/bulk", protectedRoute, deleteBulkDailyQuran);
 
 // Delete daily Quran session
 router.delete("/delete/:id", protectedRoute, deleteDailyQuran);

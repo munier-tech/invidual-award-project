@@ -6,6 +6,8 @@ const useAuthStore = create((set, get) => ({
   user: null,
   isAuthenticated: false,
   isLoading: false,
+  isLoggingOut: false,
+  isRequestingReset: false,
 
   // Check auth by verifying with the backend
  checkAuth: async () => {
@@ -35,6 +37,7 @@ const useAuthStore = create((set, get) => ({
     }
   },
   login: async (credentials) => {
+    if (get().isLoading) return { success: false, message: 'Login is already in progress' }
     set({ isLoading: true })
     try {
       const response = await axios.post('/auth/login', credentials)
@@ -62,18 +65,20 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
+  // Uses its own flag: keeping the login button spinning while a reset
+  // request runs made the form look like it was signing in.
   forgotPassword: async (emailData) => {
-    set({ isLoading: true })
+    set({ isRequestingReset: true })
     try {
       const response = await axios.post('/auth/forgot-password', emailData)
       const message = response.data?.message || 'Password reset instructions sent.'
       const resetLink = response.data?.resetLink
-      set({ isLoading: false })
+      set({ isRequestingReset: false })
       toast.success(message)
       return { success: true, message, resetLink, emailDelivery: response.data?.emailDelivery }
     } catch (error) {
       console.error('Forgot password error:', error)
-      set({ isLoading: false })
+      set({ isRequestingReset: false })
       const message = error.response?.data?.message || error.message || 'Failed to request reset'
       toast.error(message)
       return { success: false, message }
@@ -209,6 +214,8 @@ const useAuthStore = create((set, get) => ({
   },
 
   logout: async () => {
+    if (get().isLoggingOut) return
+    set({ isLoggingOut: true })
     try {
       await axios.post('/auth/logout') // Cookie is cleared on backend
     } catch (error) {
@@ -217,7 +224,8 @@ const useAuthStore = create((set, get) => ({
       set({
         user: null,
         isAuthenticated: false,
-        isLoading: false
+        isLoading: false,
+        isLoggingOut: false
       })
       toast.success('Logged out successfully!')
     }

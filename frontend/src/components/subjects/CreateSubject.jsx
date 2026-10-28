@@ -3,6 +3,8 @@ import { FiBook, FiSave } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import { useSubjectStore } from "../../store/subjectsStore";
 
+const CREATE_TOAST_ID = "store-subject-create";
+
 const CreateSubject = () => {
   const { createSubject, isLoading, error, successMessage, clearMessages } = useSubjectStore();
   
@@ -74,11 +76,14 @@ const CreateSubject = () => {
     if (!validateForm()) return;
 
     try {
+      toast.loading("Diiwaangelinaya maadada...", { id: CREATE_TOAST_ID });
       await createSubject({
         name: formData.name,
       });
     } catch (err) {
       console.error("Submission error:", err);
+    } finally {
+      toast.dismiss(CREATE_TOAST_ID);
     }
   };
 

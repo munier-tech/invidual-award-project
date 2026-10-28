@@ -1,5 +1,14 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+
+// react-toastify uses `toastId` (not `id`); one per action so loaders and
+// their outcome toasts replace each other cleanly.
+const SALARY_TOAST_IDS = {
+  save: 'salary-save',
+  bulk: 'salary-bulk-save',
+  markPaid: 'salary-mark-paid',
+  remove: 'salary-delete',
+};
 import {
   Box,
   Typography,
@@ -264,17 +273,19 @@ export default function SalaryFile() {
     e.preventDefault();
     try {
       if (currentRecord) {
+        toast.loading('Cusboonaysiinaya mushaharka...', { toastId: SALARY_TOAST_IDS.save });
         await updateSalaryRecord(currentRecord._id, {
           ...formData,
           paid: !!formData.paid,
         });
-        toast.success(t.updateSuccess);
+        toast.success(t.updateSuccess, { toastId: SALARY_TOAST_IDS.save });
       } else {
+        toast.loading('Diiwaangelinaya mushaharka...', { toastId: SALARY_TOAST_IDS.save });
         await createSalaryRecord({
           ...formData,
           paid: !!formData.paid,
         });
-        toast.success(t.createSuccess);
+        toast.success(t.createSuccess, { toastId: SALARY_TOAST_IDS.save });
       }
       setOpenDialog(false);
       getAllSalaryRecords(filters);
@@ -282,31 +293,36 @@ export default function SalaryFile() {
       getAllTeachers(filters.month, filters.year);
     } catch (error) {
       console.error('Error saving salary record:', error);
+      toast.error(error.response?.data?.message || 'Khalad ayaa dhacay markii la kaydinayay mushaharka', { toastId: SALARY_TOAST_IDS.save });
     }
   };
 
   const handleBulkSubmit = async (e) => {
     e.preventDefault();
     try {
+      toast.loading('Diiwaangelinaya mushaharrada macallimiinta...', { toastId: SALARY_TOAST_IDS.bulk });
       await createAllTeachersSalaries(bulkFormData);
-      toast.success(t.createSuccess);
+      toast.success(t.createSuccess, { toastId: SALARY_TOAST_IDS.bulk });
       setOpenBulkDialog(false);
       getAllSalaryRecords(filters);
       getSalaryStatistics(filters.month, filters.year);
       getAllTeachers(filters.month, filters.year);
     } catch (error) {
       console.error('Error creating bulk salaries:', error);
+      toast.error(error.response?.data?.message || 'Khalad ayaa dhacay markii la abuurayay mushaharrada', { toastId: SALARY_TOAST_IDS.bulk });
     }
   };
 
   const handleMarkAsPaid = async (record) => {
     try {
+      toast.loading('Cusboonaysiinaya xaaladda lacag bixinta...', { toastId: SALARY_TOAST_IDS.markPaid });
       await updateSalaryRecord(record._id, { paid: true });
-      toast.success(t.markPaidSuccess);
+      toast.success(t.markPaidSuccess, { toastId: SALARY_TOAST_IDS.markPaid });
       getAllSalaryRecords(filters);
       getSalaryStatistics(filters.month, filters.year);
     } catch (error) {
       console.error('Error marking salary as paid:', error);
+      toast.error(error.response?.data?.message || 'Khalad ayaa dhacay', { toastId: SALARY_TOAST_IDS.markPaid });
     }
   };
 
@@ -318,14 +334,16 @@ export default function SalaryFile() {
   const handleDelete = async () => {
     if (!currentRecord) return;
     try {
+      toast.loading('Tirtiraya mushaharka...', { toastId: SALARY_TOAST_IDS.remove });
       await deleteSalaryRecord(currentRecord._id);
-      toast.success(t.deleteSuccess);
+      toast.success(t.deleteSuccess, { toastId: SALARY_TOAST_IDS.remove });
       setOpenDeleteDialog(false);
       getAllSalaryRecords(filters);
       getSalaryStatistics(filters.month, filters.year);
       getAllTeachers(filters.month, filters.year);
     } catch (error) {
       console.error('Error deleting salary record:', error);
+      toast.error(error.response?.data?.message || 'Khalad ayaa dhacay markii la tirtirayay mushaharka', { toastId: SALARY_TOAST_IDS.remove });
     }
   };
 

@@ -6,6 +6,8 @@ import { motion } from 'framer-motion';
 import useStudentsStore from '../../store/studentsStore';
 import useClassesStore from '../../store/classesStore';
 
+const UPDATE_TOAST_ID = 'student-update-form';
+
 // Animation variants
 const containerVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -90,12 +92,15 @@ const EditStudent = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      toast.loading('Cusboonaysiinaya ardayga...', { id: UPDATE_TOAST_ID });
       const { success } = await updateStudent(id, formData);
+      toast.dismiss(UPDATE_TOAST_ID);
       if (success) {
         toast.success('Ardayga si guul leh ayaa loo cusboonaysiiyay');
         navigate(`/students/${id}`);
       }
     } catch (error) {
+      toast.dismiss(UPDATE_TOAST_ID);
       toast.error(error.message || 'Qalad ayaa ka dhacay cusboonaysiinta ardayga');
     }
   };
